@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: platformiq/payment-service
-  tag: "0.1.0"
+  tag: "8767afc79350"
   pullPolicy: IfNotPresent
 
 service:
