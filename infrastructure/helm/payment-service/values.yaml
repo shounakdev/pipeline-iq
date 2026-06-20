@@ -1,0 +1,31 @@
+replicaCount: 1
+
+image:
+  repository: platformiq/payment-service
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  port: 8080
+  nodePort: 30082
+
+env:
+  SERVICE_NAME: "payment-service"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/platformiq"
+  SPRING_DATASOURCE_USERNAME: "platformiq"
+  SIMULATE_PAYMENT_FAILURE: "false"
+  SIMULATE_DATABASE_TIMEOUT: "false"
+  SIMULATE_HIGH_LATENCY: "false"
+  SIMULATE_RANDOM_500: "false"
+
+secret:
+  SPRING_DATASOURCE_PASSWORD: "platformiq"
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"

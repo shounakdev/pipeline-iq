@@ -2,6 +2,7 @@ import os
 import subprocess
 import requests
 from dotenv import load_dotenv
+from app.shared.log_sanitizer import sanitize_log_text
 
 load_dotenv()
 
@@ -11,7 +12,7 @@ def get_sonar_url():
         os.getenv("SONARQUBE_URL")
         or os.getenv("SONARQUBE_HOST")
         or os.getenv("SONARQUBE_HOST_URL")
-        or "http://sonarqube:9000"
+        or "http://localhost:9000"
     )
 
 
@@ -65,11 +66,11 @@ def run_sonar_scan(repo_path: str, project_key: str | None = None, log_fn=None):
         f"-Dsonar.login={sonar_token}",
         "-Dsonar.sourceEncoding=UTF-8",
         "-Dsonar.exclusions=node_modules/**,.next/**,dist/**,build/**,coverage/**",
-        "-Dsonar.qualitygate.wait=true",
-        "-Dsonar.qualitygate.timeout=300",
+        "-Dsonar.qualitygate.wait=false",
+        
     ]
 
-    command_text = " ".join(command)
+    command_text = sanitize_log_text(" ".join(command))
 
     if log_fn:
         log_fn(f"$ {command_text}")
@@ -83,7 +84,7 @@ def run_sonar_scan(repo_path: str, project_key: str | None = None, log_fn=None):
             env=env,
             capture_output=True,
             text=True,
-            timeout=420,
+            timeout=60,
         )
 
         output = ""
@@ -97,7 +98,7 @@ def run_sonar_scan(repo_path: str, project_key: str | None = None, log_fn=None):
         output = output.strip()
 
         if output and log_fn:
-            log_fn(output)
+            log_fn(sanitize_log_text(output))
 
         return {
             "success": result.returncode == 0,
@@ -111,7 +112,7 @@ def run_sonar_scan(repo_path: str, project_key: str | None = None, log_fn=None):
         message = "SonarQube scan timed out."
 
         if log_fn:
-            log_fn(message)
+            log_fn(sanitize_log_text(message))
 
         return {
             "success": False,

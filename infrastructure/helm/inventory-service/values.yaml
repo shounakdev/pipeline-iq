@@ -1,0 +1,22 @@
+replicaCount: 1
+
+image:
+  repository: platformiq/inventory-service
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  port: 8080
+  nodePort: 30081
+
+env:
+  SERVICE_NAME: "inventory-service"
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"

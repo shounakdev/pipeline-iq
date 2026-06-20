@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import uuid
 from pathlib import Path
+from app.shared.log_sanitizer import sanitize_log_text
 
 
 class PipelineExecutionError(Exception):
@@ -11,13 +12,16 @@ class PipelineExecutionError(Exception):
 
 
 def _emit(logs, text, on_log=None):
-    logs.append(text)
+    safe_text = sanitize_log_text(text)
+
+    logs.append(safe_text)
+
     if on_log:
         on_log("".join(logs))
 
 
 def _run_command(command, cwd, logs, timeout_seconds=900, env=None, on_log=None):
-    command_text = " ".join(command)
+    command_text = sanitize_log_text(" ".join(command))
     _emit(logs, f"\n$ {command_text}\n", on_log)
 
     try:
@@ -50,7 +54,13 @@ def _run_command(command, cwd, logs, timeout_seconds=900, env=None, on_log=None)
 
 
 
-def execute_node_pipeline(repo_url: str, branch: str = "main", on_log=None, on_progress=None):
+def execute_node_pipeline(
+    repo_url: str,
+    branch: str = "main",
+    on_log=None,
+    on_progress=None,
+    cleanup: bool = True,
+):
     logs = []
 
     if not repo_url.startswith("https://github.com/"):
@@ -160,6 +170,8 @@ def execute_node_pipeline(repo_url: str, branch: str = "main", on_log=None, on_p
         return {
             "success": True,
             "logs": "".join(logs),
+            "repo_path": str(repo_folder),
+            "run_folder": str(run_folder),
         }
 
     except Exception as error:
@@ -169,10 +181,13 @@ def execute_node_pipeline(repo_url: str, branch: str = "main", on_log=None, on_p
             "success": False,
             "logs": "".join(logs),
             "error": str(error),
+            "repo_path": str(repo_folder),
+            "run_folder": str(run_folder),
         }
 
     finally:
         keep_workdir = os.getenv("KEEP_PIPELINE_WORKDIR", "false").lower() == "true"
 
-        if not keep_workdir and run_folder.exists():
+        if cleanup and not keep_workdir and run_folder.exists():
             shutil.rmtree(run_folder, ignore_errors=True)
+
