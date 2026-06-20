@@ -8,15 +8,24 @@ image:
 service:
   type: NodePort
   port: 8080
+  targetPort: 8080
   nodePort: 30081
 
 env:
-  SERVICE_NAME: "inventory-service"
+  SPRING_PROFILES_ACTIVE: "kubernetes"
+
+secret:
+  enabled: false
+  data: {}
 
 resources:
   requests:
     cpu: "100m"
-    memory: "128Mi"
+    memory: "256Mi"
   limits:
     cpu: "500m"
     memory: "512Mi"
+
+probes:
+  livenessPath: /health
+  readinessPath: /ready

@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: payment-service
-  labels:
-    app: payment-service
+  name: {{ .Chart.Name }}
 spec:
   type: {{ .Values.service.type }}
   selector:
-    app: payment-service
+    app: {{ .Chart.Name }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: 8080
+      targetPort: {{ .Values.service.targetPort }}
+      {{- if eq .Values.service.type "NodePort" }}
       nodePort: {{ .Values.service.nodePort }}
+      {{- end }}

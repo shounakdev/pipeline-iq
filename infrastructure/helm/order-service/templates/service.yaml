@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: order-service
-  labels:
-    app: order-service
+  name: {{ .Chart.Name }}
 spec:
   type: {{ .Values.service.type }}
   selector:
-    app: order-service
+    app: {{ .Chart.Name }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: 8080
+      targetPort: {{ .Values.service.targetPort }}
+      {{- if eq .Values.service.type "NodePort" }}
       nodePort: {{ .Values.service.nodePort }}
+      {{- end }}

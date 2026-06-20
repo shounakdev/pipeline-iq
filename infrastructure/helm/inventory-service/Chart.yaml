@@ -1,6 +1,6 @@
 apiVersion: v2
 name: inventory-service
-description: Helm chart for PlatformIQ inventory-service
+description: PlatformIQ inventory-service Helm chart
 type: application
 version: 0.1.0
 appVersion: "0.1.0"

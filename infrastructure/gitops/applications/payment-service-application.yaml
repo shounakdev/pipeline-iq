@@ -12,7 +12,7 @@ spec:
     path: infrastructure/helm/payment-service
     helm:
       valueFiles:
-        - values.yaml
+        - ../../gitops/environments/staging/payment-service-values.yaml
 
   destination:
     server: https://kubernetes.default.svc

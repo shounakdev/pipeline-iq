@@ -19,33 +19,27 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: 5432
+            - containerPort: {{ .Values.service.targetPort }}
           envFrom:
             - configMapRef:
                 name: postgres-config
             - secretRef:
                 name: postgres-secret
-          livenessProbe:
-            exec:
-              command:
-                - pg_isready
-                - -U
-                - platformiq
-            initialDelaySeconds: 20
-            periodSeconds: 10
           readinessProbe:
             exec:
               command:
-                - pg_isready
-                - -U
-                - platformiq
+                - sh
+                - -c
+                - pg_isready -U platformiq -d platformiq_demo
             initialDelaySeconds: 10
             periodSeconds: 5
-          volumeMounts:
-            - name: postgres-data
-              mountPath: /var/lib/postgresql/data
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U platformiq -d platformiq_demo
+            initialDelaySeconds: 20
+            periodSeconds: 10
           resources:
-{{ toYaml .Values.resources | indent 12 }}
-      volumes:
-        - name: postgres-data
-          emptyDir: {}
+            {{- toYaml .Values.resources | nindent 12 }}

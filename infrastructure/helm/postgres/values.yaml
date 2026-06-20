@@ -8,11 +8,14 @@ image:
 service:
   type: ClusterIP
   port: 5432
+  targetPort: 5432
 
-postgres:
-  database: platformiq
-  username: platformiq
-  password: platformiq
+config:
+  POSTGRES_DB: "platformiq_demo"
+
+secret:
+  POSTGRES_USER: "platformiq"
+  POSTGRES_PASSWORD: "platformiq_password"
 
 resources:
   requests:
