@@ -1,0 +1,76 @@
+{
+  "uid": "incident-overview",
+  "title": "Incident Overview",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "tags": ["platformiq", "incidents", "operations"],
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Open Incidents",
+      "datasource": null,
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 6 },
+      "targets": [
+        {
+          "expr": "sum(platformiq_incidents_open)",
+          "legendFormat": "open"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Critical Incidents",
+      "datasource": null,
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 6 },
+      "targets": [
+        {
+          "expr": "sum(platformiq_incidents_open{severity=\"CRITICAL\"})",
+          "legendFormat": "critical"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "bargauge",
+      "title": "Incidents by Service",
+      "datasource": null,
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 6 },
+      "targets": [
+        {
+          "expr": "sum by (service_name) (platformiq_incidents_open)",
+          "legendFormat": "{{service_name}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Incident Created Events",
+      "datasource": null,
+      "gridPos": { "x": 0, "y": 6, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(platformiq_incident_events_total{event_type=\"INCIDENT_CREATED\"}[5m]))",
+          "legendFormat": "created"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Incident Resolved Events",
+      "datasource": null,
+      "gridPos": { "x": 12, "y": 6, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(platformiq_incident_events_total{event_type=\"INCIDENT_RESOLVED\"}[5m]))",
+          "legendFormat": "resolved"
+        }
+      ]
+    }
+  ]
+}

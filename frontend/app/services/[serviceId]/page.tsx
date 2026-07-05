@@ -1,299 +1,283 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import {
-  getLinkedRepository,
-  platformApi,
-  type Service,
-} from "@/lib/platformiq-api";
-import { ApiError } from "@/lib/api";
-import { canTriggerPipeline, getCurrentUser } from "@/lib/auth";
-import type { AuthUser } from "@/lib/auth";
+import { useParams } from "next/navigation";
+import { apiFetch } from "@/lib/api";
 
-const tabs = ["Overview", "Repository", "Environments", "Pipelines", "Audit"];
+type HealthSummary = {
+  service_id: string;
+  service_name: string;
+  environment: string;
+  status: string;
+  latency_ms?: number | null;
+  error_rate?: number | null;
+  pod_restart_count?: number | null;
+  replica_count?: number | null;
+  available_replicas?: number | null;
+  created_at?: string | null;
+};
 
-export default function ServiceDetailPage() {
-  const router = useRouter();
+type Incident = {
+  id: string;
+  title: string;
+  severity: string;
+  status: string;
+  service_id: string;
+  environment: string;
+  started_at: string;
+  resolved_at?: string | null;
+};
+
+type TimelineItem = {
+  timestamp: string;
+  source: string;
+  event_type: string;
+  title: string;
+  details: Record<string, unknown>;
+};
+
+function statusClass(status: string) {
+  switch (status) {
+    case "HEALTHY":
+      return "bg-green-100 text-green-700 border-green-200";
+    case "DEGRADED":
+      return "bg-yellow-100 text-yellow-700 border-yellow-200";
+    case "UNHEALTHY":
+      return "bg-red-100 text-red-700 border-red-200";
+    case "OPEN":
+      return "bg-red-100 text-red-700 border-red-200";
+    case "ACKNOWLEDGED":
+      return "bg-yellow-100 text-yellow-700 border-yellow-200";
+    case "RESOLVED":
+      return "bg-green-100 text-green-700 border-green-200";
+    default:
+      return "bg-zinc-100 text-zinc-700 border-zinc-200";
+  }
+}
+
+function severityClass(severity: string) {
+  switch (severity) {
+    case "CRITICAL":
+      return "bg-red-100 text-red-700 border-red-200";
+    case "HIGH":
+      return "bg-orange-100 text-orange-700 border-orange-200";
+    case "MEDIUM":
+      return "bg-yellow-100 text-yellow-700 border-yellow-200";
+    case "LOW":
+      return "bg-blue-100 text-blue-700 border-blue-200";
+    default:
+      return "bg-zinc-100 text-zinc-700 border-zinc-200";
+  }
+}
+
+export default function ServiceHealthPage() {
   const params = useParams<{ serviceId: string }>();
   const serviceId = params.serviceId;
 
-  const [service, setService] = useState<Service | null>(null);
-  const [activeTab, setActiveTab] = useState("Overview");
+  const [health, setHealth] = useState<HealthSummary | null>(null);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [triggering, setTriggering] = useState(false);
-  const [error, setError] = useState("");
-  const [triggerResultJson, setTriggerResultJson] = useState("");
-
-  const [user] = useState<AuthUser | null>(() => {
-    if (typeof window === "undefined") return null;
-    return getCurrentUser();
-  });
-
-  const allowedToTrigger = canTriggerPipeline(user?.role);
 
   useEffect(() => {
-    async function loadService() {
+    async function loadServiceHealth() {
       try {
-        const data = await platformApi.getService(serviceId);
-        setService(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load service");
+        const [rawHealthData, rawIncidentsData, rawTimelineData] =
+          await Promise.all([
+            apiFetch(`/api/observability/services/${serviceId}/health`),
+            apiFetch(`/api/services/${serviceId}/incidents`),
+            apiFetch(`/api/services/${serviceId}/runtime-timeline`),
+          ]);
+
+        const healthData = rawHealthData as HealthSummary;
+        const incidentsData = rawIncidentsData as Incident[];
+        const timelineData = rawTimelineData as TimelineItem[];
+
+        setHealth(healthData);
+        setIncidents(incidentsData);
+        setTimeline(timelineData);
       } finally {
         setLoading(false);
       }
     }
 
-    if (serviceId) loadService();
+    if (serviceId) {
+      loadServiceHealth();
+    }
   }, [serviceId]);
 
-  const repository = useMemo(() => getLinkedRepository(service), [service]);
-  const branch = repository?.default_branch || "main";
-
-  async function handleTriggerPipeline() {
-    if (!allowedToTrigger) {
-      setError("You do not have permission to trigger pipelines.");
-      return;
-    }
-
-    if (!repository?.repo_url) {
-      setError("No linked repository found for this service");
-      return;
-    }
-
-    setTriggering(true);
-    setError("");
-    setTriggerResultJson("");
-
-    try {
-      const result = await platformApi.triggerPipeline(
-        repository.repo_url,
-        branch
-      );
-
-      setTriggerResultJson(
-        JSON.stringify(result ?? { message: "Pipeline triggered" }, null, 2)
-      );
-    } catch (err) {
-      if (err instanceof ApiError) {
-        if (err.status === 401) {
-          setError("Please login to trigger a pipeline.");
-          router.push("/login");
-          return;
-        }
-
-        if (err.status === 403) {
-          setError("You do not have permission to trigger pipelines.");
-          return;
-        }
-
-        setError(err.message);
-        return;
-      }
-
-      setError(err instanceof Error ? err.message : "Failed to trigger pipeline");
-    } finally {
-      setTriggering(false);
-    }
-  }
-
   if (loading) {
-    return <p className="text-[var(--text-muted)]">Loading service...</p>;
+    return <div className="p-6">Loading service health...</div>;
   }
 
-  if (error && !service) {
+  if (!health) {
     return (
-      <div className="rounded-lg border border-red-800 bg-red-950 p-4 text-red-200">
-        {error}
+      <div className="p-6 space-y-4">
+        <h1 className="text-2xl font-semibold">Service Health</h1>
+        <div className="rounded-xl border border-dashed border-zinc-300 p-6 text-sm text-zinc-500">
+          No health snapshot found for this service.
+        </div>
       </div>
     );
   }
 
-  if (!service) {
-    return <p className="text-[var(--text-muted)]">Service not found.</p>;
-  }
-
   return (
-    <div>
-      <div className="mb-6">
-        <Link href="/services" className="text-sm text-blue-400">
-          ← Back to Services
+    <div className="p-6 space-y-6">
+      <div>
+        <Link
+          href="/observability"
+          className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+        >
+          ← Back to Observability
         </Link>
 
-        <h1 className="mt-3 text-3xl font-bold text-[var(--text-main)]">
-          {service.name}
-        </h1>
+        <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold">{health.service_name}</h1>
+            <p className="text-sm text-zinc-500">
+              {health.environment} · {health.service_id}
+            </p>
+          </div>
 
-        <p className="mt-2 text-[var(--text-muted)]">
-          {service.description || "No description"}
-        </p>
-      </div>
-
-      <div className="mb-6 flex flex-wrap gap-2 border-b border-[var(--card-border)] pb-3">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`rounded-lg px-4 py-2 text-sm transition ${
-              activeTab === tab
-                ? "bg-blue-600 text-white"
-                : "border border-[var(--card-border)] bg-[var(--card-bg)] text-[var(--text-main)] hover:bg-[var(--nav-hover)]"
-            }`}
+          <span
+            className={`w-fit rounded-full border px-3 py-1 text-xs font-medium ${statusClass(
+              health.status
+            )}`}
           >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {error && (
-        <div className="mb-4 rounded-lg border border-red-800 bg-red-950 p-4 text-red-200">
-          {error}
+            {health.status}
+          </span>
         </div>
-      )}
+      </div>
 
-      {activeTab === "Overview" && (
-        <Panel title="Overview">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Info label="Service ID" value={service.id} />
-            <Info label="Project ID" value={service.project_id || "N/A"} />
-            <Info label="Type" value={service.service_type || "N/A"} />
-            <Info label="Owner" value={service.owner || "N/A"} />
-          </div>
-        </Panel>
-      )}
+      <div className="grid gap-4 md:grid-cols-5">
+        <Metric
+          label="Latency"
+          value={
+            health.latency_ms !== null && health.latency_ms !== undefined
+              ? `${health.latency_ms} ms`
+              : "N/A"
+          }
+        />
 
-      {activeTab === "Repository" && (
-        <Panel title="Repository">
-          {repository ? (
-            <div className="space-y-3">
-              <Info label="Provider" value={repository.provider || "N/A"} />
-              <Info label="Repo URL" value={repository.repo_url} />
-              <Info label="Default Branch" value={branch} />
-            </div>
-          ) : (
-            <p className="text-[var(--text-muted)]">
-              No linked repository found for this service.
-            </p>
-          )}
-        </Panel>
-      )}
+        <Metric
+          label="Error Rate"
+          value={
+            health.error_rate !== null && health.error_rate !== undefined
+              ? `${health.error_rate}%`
+              : "N/A"
+          }
+        />
 
-      {activeTab === "Environments" && (
-        <Panel title="Environments">
-          {service.environments?.length ? (
-            <div className="space-y-3">
-              {service.environments.map((env) => (
-                <div
-                  key={env.id || env.name}
-                  className="rounded-lg border border-[var(--card-border)] bg-[var(--page-bg)] p-4"
-                >
-                  <div className="font-medium text-[var(--text-main)]">
-                    {env.name}
+        <Metric
+          label="Pod Restarts"
+          value={String(health.pod_restart_count ?? "N/A")}
+        />
+
+        <Metric
+          label="Available Replicas"
+          value={String(health.available_replicas ?? "N/A")}
+        />
+
+        <Metric
+          label="Desired Replicas"
+          value={String(health.replica_count ?? "N/A")}
+        />
+      </div>
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+        <h2 className="text-lg font-semibold">Related Incidents</h2>
+
+        {incidents.length === 0 ? (
+          <p className="mt-3 text-sm text-zinc-500">
+            No incidents found for this service.
+          </p>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {incidents.map((incident) => (
+              <Link
+                key={incident.id}
+                href={`/incidents/${incident.id}`}
+                className="block rounded-lg border border-zinc-200 p-4 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900"
+              >
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <h3 className="font-medium">{incident.title}</h3>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Started {new Date(incident.started_at).toLocaleString()}
+                    </p>
                   </div>
 
-                  <div className="text-sm text-[var(--text-muted)]">
-                    Active: {env.is_active ? "Yes" : "No"}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-[var(--text-muted)]">No environments found.</p>
-          )}
-        </Panel>
-      )}
+                  <div className="flex gap-2">
+                    <span
+                      className={`rounded-full border px-2.5 py-1 text-xs font-medium ${severityClass(
+                        incident.severity
+                      )}`}
+                    >
+                      {incident.severity}
+                    </span>
 
-      {activeTab === "Pipelines" && (
-        <Panel title="Pipelines">
-          <div className="mb-5 rounded-lg border border-[var(--card-border)] bg-[var(--page-bg)] p-4">
-            <div className="mb-2 text-sm text-[var(--text-muted)]">
-              Linked Repository
-            </div>
-
-            <div className="break-all text-[var(--text-main)]">
-              {repository?.repo_url || "No repository linked"}
-            </div>
-
-            <div className="mt-2 text-sm text-[var(--text-muted)]">
-              Branch: {branch}
-            </div>
-          </div>
-
-          <button
-            onClick={handleTriggerPipeline}
-            disabled={triggering || !repository?.repo_url || !allowedToTrigger}
-            title={
-              !allowedToTrigger
-                ? "Viewers cannot trigger pipelines"
-                : !repository?.repo_url
-                ? "No repository linked"
-                : undefined
-            }
-            className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {!allowedToTrigger
-              ? "Trigger Pipeline Disabled"
-              : triggering
-              ? "Triggering..."
-              : "Trigger Pipeline"}
-          </button>
-
-          {triggerResultJson && (
-            <pre className="mt-5 overflow-auto rounded-lg border border-[var(--card-border)] bg-[var(--page-bg)] p-4 text-sm text-green-400">
-              {triggerResultJson}
-            </pre>
-          )}
-        </Panel>
-      )}
-
-      {activeTab === "Audit" && (
-        <Panel title="Audit">
-          {service.audit_events?.length ? (
-            <div className="space-y-3">
-              {service.audit_events.map((event) => (
-                <div
-                  key={event.id}
-                  className="rounded-lg border border-[var(--card-border)] bg-[var(--page-bg)] p-4"
-                >
-                  <div className="font-medium text-[var(--text-main)]">
-                    {event.action || "Unknown action"}
-                  </div>
-
-                  <div className="text-sm text-[var(--text-muted)]">
-                    {event.created_at || "No timestamp"}
+                    <span
+                      className={`rounded-full border px-2.5 py-1 text-xs font-medium ${statusClass(
+                        incident.status
+                      )}`}
+                    >
+                      {incident.status}
+                    </span>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-[var(--text-muted)]">
-              No audit events found for this service.
-            </p>
-          )}
-        </Panel>
-      )}
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+        <h2 className="text-lg font-semibold">Runtime Timeline</h2>
+
+        {timeline.length === 0 ? (
+          <p className="mt-3 text-sm text-zinc-500">
+            No runtime timeline events found yet.
+          </p>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {timeline.map((item, index) => (
+              <div
+                key={`${item.timestamp}-${item.event_type}-${index}`}
+                className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+              >
+                <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <p className="font-medium">{item.title}</p>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      {item.source} · {item.event_type}
+                    </p>
+                  </div>
+
+                  <p className="text-xs text-zinc-500">
+                    {new Date(item.timestamp).toLocaleString()}
+                  </p>
+                </div>
+
+                {item.details && Object.keys(item.details).length > 0 && (
+                  <pre className="mt-3 overflow-x-auto rounded-lg bg-zinc-100 p-3 text-xs dark:bg-zinc-900">
+                    {JSON.stringify(item.details, null, 2)}
+                  </pre>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
 
-function Panel({ title, children }: { title: string; children: ReactNode }) {
+function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <section className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-5">
-      <h2 className="mb-4 text-xl font-semibold text-[var(--text-main)]">
-        {title}
-      </h2>
-      {children}
-    </section>
-  );
-}
-
-function Info({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div>
-      <div className="text-sm text-[var(--text-muted)]">{label}</div>
-      <div className="break-all text-[var(--text-main)]">{value}</div>
+    <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+      <p className="text-xs text-zinc-500">{label}</p>
+      <p className="mt-1 text-lg font-semibold">{value}</p>
     </div>
   );
 }

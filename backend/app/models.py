@@ -1,10 +1,26 @@
+import enum
 import uuid
-from sqlalchemy import Column, String, Text, DateTime, Float, ForeignKey, Integer, Boolean, JSON, Table
-from sqlalchemy.orm import relationship
-from datetime import datetime
-from sqlalchemy.sql import func
-from sqlalchemy.ext.mutable import MutableList, MutableDict
+from datetime import datetime, timezone
 
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    JSON,
+    String,
+    Table,
+    Text,
+    UniqueConstraint,
+    func,
+)
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.ext.mutable import MutableDict, MutableList
+from sqlalchemy.orm import relationship
 
 from app.database import Base
 
@@ -20,7 +36,7 @@ class Pipeline(Base):
 
     progress = Column(Integer, default=0)
     error_message = Column(Text, nullable=True)
-    
+
     stage = Column(String, default="QUEUED")
     failure_reason = Column(Text, nullable=True)
 
@@ -42,16 +58,14 @@ class Pipeline(Base):
     quality_score = Column(Float, nullable=True)
     coverage = Column(Float, nullable=True)
 
-    # Detailed SonarQube metrics
     bugs = Column(Integer, default=0)
     vulnerabilities = Column(Integer, default=0)
     code_smells = Column(Integer, default=0)
     duplicated_lines_density = Column(Float, nullable=True)
     quality_gate = Column(String, nullable=True)
     sonar_report_url = Column(Text, nullable=True)
-    #sonar_issues_json = Column(Text, nullable=True)
     sonar_issues = Column(JSON, nullable=True)
-    
+
     trivy_critical = Column(Integer, default=0)
     trivy_high = Column(Integer, default=0)
     trivy_medium = Column(Integer, default=0)
@@ -59,25 +73,25 @@ class Pipeline(Base):
     trivy_unknown = Column(Integer, default=0)
     trivy_total = Column(Integer, default=0)
     trivy_report = Column(JSON, nullable=True)
-    
+
     risk_score = Column(Float, nullable=True)
     risk_level = Column(String, nullable=True)
     risk_summary = Column(Text, nullable=True)
-    
+
     ai_summary = Column(Text, nullable=True)
     recommendations = Column(JSON, nullable=True)
 
     logs = relationship(
         "PipelineLog",
         back_populates="pipeline",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
 
     analysis = relationship(
         "Analysis",
         back_populates="pipeline",
         uselist=False,
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
 
 
@@ -102,14 +116,12 @@ class Analysis(Base):
     confidence = Column(Float, nullable=True)
     suggestion = Column(Text, nullable=True)
 
-    # AI summary / final analysis fields
     final_status = Column(String, nullable=True)
     report_json = Column(Text, nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
 
     pipeline = relationship("Pipeline", back_populates="analysis")
-    
 
 
 def generate_uuid():
@@ -176,6 +188,58 @@ class Service(Base):
     environments = relationship("Environment", back_populates="service")
     repositories = relationship("Repository", back_populates="service")
     pipeline_runs = relationship("PipelineRun", back_populates="service")
+    health_snapshots = relationship(
+        "ServiceHealthSnapshot",
+        back_populates="service",
+        cascade="all, delete-orphan",
+    )
+
+
+class ServiceHealthStatus(str, enum.Enum):
+    HEALTHY = "HEALTHY"
+    DEGRADED = "DEGRADED"
+    UNHEALTHY = "UNHEALTHY"
+    UNKNOWN = "UNKNOWN"
+
+
+class ServiceHealthSnapshot(Base):
+    __tablename__ = "service_health_snapshots"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    service_id = Column(
+        String,
+        ForeignKey("services.id"),
+        nullable=False,
+        index=True,
+    )
+    service_name = Column(String, nullable=False, index=True)
+
+    environment = Column(String, nullable=False, default="staging")
+    status = Column(
+        Enum(ServiceHealthStatus),
+        nullable=False,
+        default=ServiceHealthStatus.UNKNOWN,
+    )
+
+    latency_ms = Column(Float, nullable=True)
+    error_rate = Column(Float, nullable=True)
+    cpu_usage = Column(Float, nullable=True)
+    memory_usage = Column(Float, nullable=True)
+
+    pod_restart_count = Column(Integer, nullable=True)
+    replica_count = Column(Integer, nullable=True)
+    available_replicas = Column(Integer, nullable=True)
+
+    source = Column(String, nullable=False, default="prometheus")
+
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    service = relationship("Service", back_populates="health_snapshots")
 
 
 class Environment(Base):
@@ -258,8 +322,94 @@ class PipelineRun(Base):
     started_at = Column(DateTime(timezone=True), nullable=True)
     finished_at = Column(DateTime(timezone=True), nullable=True)
     duration_seconds = Column(Float, nullable=True)
+
     service = relationship("Service", back_populates="pipeline_runs")
     repository = relationship("Repository", back_populates="pipeline_runs")
+
+
+class Deployment(Base):
+    __tablename__ = "deployments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    service_id = Column(String(36), ForeignKey("services.id"), nullable=False)
+    pipeline_run_id = Column(String(36), ForeignKey("pipeline_runs.id"), nullable=True)
+    environment_id = Column(String(36), ForeignKey("environments.id"), nullable=True)
+
+    commit_sha = Column(String(100), nullable=True)
+    image_tag = Column(String(255), nullable=False)
+    deployment_version = Column(String(50), nullable=True)
+
+    argo_sync_status = Column(String(50), nullable=True, default="UNKNOWN")
+    kubernetes_rollout_status = Column(String(50), nullable=True, default="UNKNOWN")
+
+    previous_revision = Column(String(100), nullable=True)
+
+    namespace = Column(String(100), nullable=True)
+    cluster_name = Column(String(100), nullable=True, default="kind-platformiq")
+    service_name = Column(String(150), nullable=True)
+    argo_application_name = Column(String(150), nullable=True)
+
+    pod_count = Column(Integer, nullable=True, default=0)
+    restart_count = Column(Integer, nullable=True, default=0)
+    failure_reason = Column(Text, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    deployed_at = Column(DateTime(timezone=True), nullable=True)
+
+    workloads = relationship(
+        "KubernetesWorkload",
+        back_populates="deployment",
+        cascade="all, delete-orphan",
+    )
+
+    revisions = relationship(
+        "DeploymentRevision",
+        back_populates="deployment",
+        cascade="all, delete-orphan",
+    )
+
+
+class KubernetesWorkload(Base):
+    __tablename__ = "kubernetes_workloads"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+
+    workload_name = Column(String(150), nullable=False)
+    namespace = Column(String(100), nullable=False)
+    kind = Column(String(50), nullable=False)
+
+    desired_replicas = Column(Integer, nullable=True, default=0)
+    available_replicas = Column(Integer, nullable=True, default=0)
+    pod_count = Column(Integer, nullable=True, default=0)
+    restart_count = Column(Integer, nullable=True, default=0)
+
+    status = Column(String(50), nullable=True, default="UNKNOWN")
+    failure_reason = Column(Text, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    deployment = relationship("Deployment", back_populates="workloads")
+
+
+class DeploymentRevision(Base):
+    __tablename__ = "deployment_revisions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+
+    revision = Column(String(100), nullable=True)
+    image_tag = Column(String(255), nullable=True)
+    commit_sha = Column(String(100), nullable=True)
+    status = Column(String(50), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    deployed_at = Column(DateTime(timezone=True), nullable=True)
+
+    deployment = relationship("Deployment", back_populates="revisions")
 
 
 class AuditEvent(Base):
@@ -272,3 +422,229 @@ class AuditEvent(Base):
     entity_id = Column(String, nullable=True)
     details = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class EventRecord(Base):
+    __tablename__ = "event_records"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+
+    event_id = Column(String, nullable=False, unique=True, index=True)
+    event_type = Column(String, nullable=False, index=True)
+    schema_version = Column(String, nullable=True)
+
+    topic = Column(String, nullable=False, index=True)
+    correlation_id = Column(String, nullable=True, index=True)
+    service_id = Column(String, nullable=True, index=True)
+    environment = Column(String, nullable=True, index=True)
+
+    timestamp = Column(DateTime(timezone=True), nullable=True, index=True)
+
+    payload = Column(JSON, nullable=False, default=dict)
+    raw_event = Column(JSON, nullable=False, default=dict)
+
+    processing_status = Column(
+        String,
+        nullable=False,
+        default="PROCESSED",
+        index=True,
+    )
+    processing_error = Column(Text, nullable=True)
+
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    processed_at = Column(DateTime(timezone=True), nullable=True)
+
+
+Index(
+    "ix_event_records_release_timeline",
+    EventRecord.correlation_id,
+    EventRecord.timestamp,
+)
+
+
+class OutboxEvent(Base):
+    __tablename__ = "outbox_events"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+
+    event_id = Column(String, unique=True, index=True, nullable=False)
+    topic = Column(String, index=True, nullable=False)
+    event_type = Column(String, index=True, nullable=False)
+    schema_version = Column(String, nullable=False, default="1.0")
+
+    correlation_id = Column(String, index=True, nullable=True)
+    service_id = Column(String, index=True, nullable=True)
+    environment = Column(String, index=True, nullable=True)
+
+    payload = Column(JSONB, nullable=False, default=dict)
+
+    status = Column(String, index=True, nullable=False, default="PENDING")
+    retry_count = Column(Integer, nullable=False, default=0)
+    last_error = Column(Text, nullable=True)
+
+    published_at = Column(DateTime(timezone=True), nullable=True)
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class ConsumerCheckpoint(Base):
+    __tablename__ = "consumer_checkpoints"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+
+    consumer_name = Column(String, nullable=False)
+    topic = Column(String, nullable=False)
+    partition = Column(Integer, nullable=False)
+    offset = Column(Integer, nullable=False)
+
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "consumer_name",
+            "topic",
+            "partition",
+            name="uq_consumer_topic_partition",
+        ),
+    )
+
+
+class DeadLetterEvent(Base):
+    __tablename__ = "dead_letter_events"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+
+    event_id = Column(String, nullable=False, unique=True, index=True)
+    event_type = Column(String, nullable=True, index=True)
+    topic = Column(String, nullable=True, index=True)
+
+    correlation_id = Column(String, nullable=True, index=True)
+    service_id = Column(String, nullable=True, index=True)
+    environment = Column(String, nullable=True, index=True)
+
+    raw_event = Column(JSON, nullable=True)
+    payload = Column(JSON, nullable=True)
+
+    error_reason = Column(Text, nullable=False)
+    status = Column(String, nullable=False, default="OPEN", index=True)
+
+    retry_count = Column(Integer, nullable=False, default=0)
+
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    last_retry_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class IncidentSeverity(str, enum.Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
+
+
+class IncidentStatus(str, enum.Enum):
+    OPEN = "OPEN"
+    ACKNOWLEDGED = "ACKNOWLEDGED"
+    RESOLVED = "RESOLVED"
+    FALSE_POSITIVE = "FALSE_POSITIVE"
+
+
+class Incident(Base):
+    __tablename__ = "incidents"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+
+    severity = Column(
+        Enum(IncidentSeverity, name="incidentseverity"),
+        nullable=False,
+        index=True,
+    )
+
+    status = Column(
+        Enum(IncidentStatus, name="incidentstatus"),
+        nullable=False,
+        default=IncidentStatus.OPEN,
+        index=True,
+    )
+
+    service_id = Column(String, nullable=False, index=True)
+    environment = Column(String, nullable=False, index=True)
+
+    correlation_id = Column(String, nullable=False, index=True)
+    triggered_by_event_id = Column(String, nullable=True, index=True)
+
+    started_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    resolved_at = Column(DateTime, nullable=True)
+
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    )
+
+    events = relationship(
+        "IncidentEvent",
+        back_populates="incident",
+        cascade="all, delete-orphan",
+    )
+
+
+class IncidentEvent(Base):
+    __tablename__ = "incident_events"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    incident_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("incidents.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    event_type = Column(String, nullable=False, index=True)
+    message = Column(Text, nullable=True)
+
+    # Important: SQLAlchemy reserves the name "metadata".
+    # The Python attribute is event_metadata, but the DB column is metadata.
+    event_metadata = Column("metadata", JSON, nullable=True)
+
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    incident = relationship("Incident", back_populates="events")

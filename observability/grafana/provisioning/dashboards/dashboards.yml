@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: PlatformIQ Dashboards
+    orgId: 1
+    folder: PlatformIQ
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards
