@@ -1,0 +1,9 @@
+frontend/app/incidents/page.tsx:73:        const rawData = await apiFetch("/api/incidents");
+frontend/app/incidents/page.tsx:78:          "Failed to load incidents. Check that the backend is running and /api/incidents is registered."
+frontend/app/incidents/[incidentId]/page.tsx:129:async function fetchIncidentData(incidentId: string) {
+frontend/app/incidents/[incidentId]/page.tsx:131:    apiFetch(`/api/incidents/${incidentId}`),
+frontend/app/incidents/[incidentId]/page.tsx:132:    apiFetch(`/api/incidents/${incidentId}/timeline`),
+frontend/app/incidents/[incidentId]/page.tsx:190:    const data = await fetchIncidentData(incidentId);
+frontend/app/incidents/[incidentId]/page.tsx:202:    fetchIncidentData(incidentId)
+frontend/app/incidents/[incidentId]/page.tsx:235:      await apiFetch(`/api/incidents/${incidentId}/acknowledge`, {
+frontend/app/incidents/[incidentId]/page.tsx:251:      await apiFetch(`/api/incidents/${incidentId}/resolve`, {

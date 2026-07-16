@@ -1,0 +1,153 @@
+frontend/app/releases/[correlationId]/timeline/page.tsx:8:type TimelineEvent = {
+frontend/app/releases/[correlationId]/timeline/page.tsx:17:type TimelineResponse = {
+frontend/app/releases/[correlationId]/timeline/page.tsx:18:  events: TimelineEvent[];
+frontend/app/releases/[correlationId]/timeline/page.tsx:21:export default function ReleaseTimelinePage() {
+frontend/app/releases/[correlationId]/timeline/page.tsx:25:  const [events, setEvents] = useState<TimelineEvent[]>([]);
+frontend/app/releases/[correlationId]/timeline/page.tsx:33:    async function loadTimeline() {
+frontend/app/releases/[correlationId]/timeline/page.tsx:37:        const data = await apiFetch<TimelineResponse>(
+frontend/app/releases/[correlationId]/timeline/page.tsx:38:          `/api/releases/${correlationId}/timeline`
+frontend/app/releases/[correlationId]/timeline/page.tsx:52:      void loadTimeline();
+frontend/app/releases/[correlationId]/timeline/page.tsx:64:        <h1 className="text-2xl font-semibold">Release Timeline</h1>
+frontend/app/releases/[correlationId]/timeline/page.tsx:69:        {loading && <p className="text-sm text-gray-500">Loading timeline...</p>}
+frontend/app/pipelineiq/page.tsx:678:          rel="noopener noreferrer"
+frontend/app/pipeline/[id]/page.tsx:342:            rel="noopener noreferrer"
+frontend/app/pipeline/[id]/page.tsx:345:            Open SonarQube Report →
+frontend/app/events/page.tsx:160:                        href={`/releases/${event.correlation_id}/timeline`}
+frontend/app/incidents/page.tsx:15:  resolved_at?: string | null;
+frontend/app/incidents/page.tsx:35:    case "OPEN":
+frontend/app/incidents/page.tsx:37:    case "ACKNOWLEDGED":
+frontend/app/incidents/page.tsx:39:    case "RESOLVED":
+frontend/app/incidents/page.tsx:41:    case "FALSE_POSITIVE":
+frontend/app/incidents/[incidentId]/page.tsx:9:type IncidentStatus = "OPEN" | "ACKNOWLEDGED" | "RESOLVED";
+frontend/app/incidents/[incidentId]/page.tsx:22:  resolved_at?: string | null;
+frontend/app/incidents/[incidentId]/page.tsx:25:type TimelinePayload = Record<string, unknown> & {
+frontend/app/incidents/[incidentId]/page.tsx:29:type TimelineItem = {
+frontend/app/incidents/[incidentId]/page.tsx:41:  metadata?: TimelinePayload | null;
+frontend/app/incidents/[incidentId]/page.tsx:42:  payload?: TimelinePayload | null;
+frontend/app/incidents/[incidentId]/page.tsx:54:  INCIDENT_ACKNOWLEDGED: "Incident acknowledged",
+frontend/app/incidents/[incidentId]/page.tsx:55:  INCIDENT_RESOLVED: "Incident resolved",
+frontend/app/incidents/[incidentId]/page.tsx:61:    case "OPEN":
+frontend/app/incidents/[incidentId]/page.tsx:64:    case "ACKNOWLEDGED":
+frontend/app/incidents/[incidentId]/page.tsx:67:    case "RESOLVED":
+frontend/app/incidents/[incidentId]/page.tsx:91:const getTimelineEventType = (event: TimelineItem) => {
+frontend/app/incidents/[incidentId]/page.tsx:103:const getTimelineTimestamp = (event: TimelineItem) => {
+frontend/app/incidents/[incidentId]/page.tsx:107:const getTimelineDetails = (event: TimelineItem) => {
+frontend/app/incidents/[incidentId]/page.tsx:119:    if (Array.isArray(record.timeline)) return record.timeline as T[];
+frontend/app/incidents/[incidentId]/page.tsx:130:  const [rawIncidentData, rawTimelineData] = await Promise.all([
+frontend/app/incidents/[incidentId]/page.tsx:132:    apiFetch(`/api/incidents/${incidentId}/timeline`),
+frontend/app/incidents/[incidentId]/page.tsx:137:    timeline: normalizeArray<TimelineItem>(rawTimelineData),
+frontend/app/incidents/[incidentId]/page.tsx:141:function timelineIcon(item: TimelineItem) {
+frontend/app/incidents/[incidentId]/page.tsx:142:  const eventType = getTimelineEventType(item)?.toUpperCase();
+frontend/app/incidents/[incidentId]/page.tsx:145:  if (eventType === "INCIDENT_RESOLVED") return "✅";
+frontend/app/incidents/[incidentId]/page.tsx:146:  if (eventType === "INCIDENT_ACKNOWLEDGED") return "👀";
+frontend/app/incidents/[incidentId]/page.tsx:181:  const [timeline, setTimeline] = useState<TimelineItem[]>([]);
+frontend/app/incidents/[incidentId]/page.tsx:193:    setTimeline(data.timeline);
+frontend/app/incidents/[incidentId]/page.tsx:207:        setTimeline(data.timeline);
+frontend/app/incidents/[incidentId]/page.tsx:229:  async function acknowledgeIncident() {
+frontend/app/incidents/[incidentId]/page.tsx:235:      await apiFetch(`/api/incidents/${incidentId}/acknowledge`, {
+frontend/app/incidents/[incidentId]/page.tsx:245:  async function resolveIncident() {
+frontend/app/incidents/[incidentId]/page.tsx:251:      await apiFetch(`/api/incidents/${incidentId}/resolve`, {
+frontend/app/incidents/[incidentId]/page.tsx:301:  const acknowledgeDisabled =
+frontend/app/incidents/[incidentId]/page.tsx:302:    normalizedStatus === "ACKNOWLEDGED" || normalizedStatus === "RESOLVED";
+frontend/app/incidents/[incidentId]/page.tsx:304:  const resolveDisabled = normalizedStatus === "RESOLVED";
+frontend/app/incidents/[incidentId]/page.tsx:359:            label="Resolved At"
+frontend/app/incidents/[incidentId]/page.tsx:361:              incident.resolved_at
+frontend/app/incidents/[incidentId]/page.tsx:362:                ? new Date(incident.resolved_at).toLocaleString()
+frontend/app/incidents/[incidentId]/page.tsx:371:            onClick={acknowledgeIncident}
+frontend/app/incidents/[incidentId]/page.tsx:372:            disabled={acknowledgeDisabled || isAcknowledging || isResolving}
+frontend/app/incidents/[incidentId]/page.tsx:376:                acknowledgeDisabled || isResolving
+frontend/app/incidents/[incidentId]/page.tsx:382:            {isAcknowledging ? "Acknowledging..." : "Acknowledge"}
+frontend/app/incidents/[incidentId]/page.tsx:387:            onClick={resolveIncident}
+frontend/app/incidents/[incidentId]/page.tsx:388:            disabled={resolveDisabled || isResolving || isAcknowledging}
+frontend/app/incidents/[incidentId]/page.tsx:392:                resolveDisabled || isAcknowledging
+frontend/app/incidents/[incidentId]/page.tsx:398:            {isResolving ? "Resolving..." : "Resolve"}
+frontend/app/incidents/[incidentId]/page.tsx:404:        <h2 className="text-lg font-semibold">Incident Timeline</h2>
+frontend/app/incidents/[incidentId]/page.tsx:406:        {timeline.length === 0 ? (
+frontend/app/incidents/[incidentId]/page.tsx:408:            No timeline events found for this incident.
+frontend/app/incidents/[incidentId]/page.tsx:412:            {timeline.map((item, index) => {
+frontend/app/incidents/[incidentId]/page.tsx:413:              const eventType = getTimelineEventType(item);
+frontend/app/incidents/[incidentId]/page.tsx:415:              const eventTimestamp = getTimelineTimestamp(item);
+frontend/app/incidents/[incidentId]/page.tsx:416:              const eventDetails = getTimelineDetails(item);
+frontend/app/incidents/[incidentId]/page.tsx:432:                        {timelineIcon(item)}
+frontend/app/services/[serviceId]/page.tsx:29:  resolved_at?: string | null;
+frontend/app/services/[serviceId]/page.tsx:32:type TimelineItem = {
+frontend/app/services/[serviceId]/page.tsx:48:    case "OPEN":
+frontend/app/services/[serviceId]/page.tsx:50:    case "ACKNOWLEDGED":
+frontend/app/services/[serviceId]/page.tsx:52:    case "RESOLVED":
+frontend/app/services/[serviceId]/page.tsx:80:  const [timeline, setTimeline] = useState<TimelineItem[]>([]);
+frontend/app/services/[serviceId]/page.tsx:86:        const [rawHealthData, rawIncidentsData, rawTimelineData] =
+frontend/app/services/[serviceId]/page.tsx:90:            apiFetch(`/api/services/${serviceId}/runtime-timeline`),
+frontend/app/services/[serviceId]/page.tsx:95:        const timelineData = rawTimelineData as TimelineItem[];
+frontend/app/services/[serviceId]/page.tsx:99:        setTimeline(timelineData);
+frontend/app/services/[serviceId]/page.tsx:248:        <h2 className="text-lg font-semibold">Runtime Timeline</h2>
+frontend/app/services/[serviceId]/page.tsx:250:        {timeline.length === 0 ? (
+frontend/app/services/[serviceId]/page.tsx:252:            No runtime timeline events found yet.
+frontend/app/services/[serviceId]/page.tsx:256:            {timeline.map((item, index) => (
+frontend/app/services/[serviceId]/health/page.tsx:32:  resolved_at?: string | null;
+frontend/app/services/[serviceId]/health/page.tsx:35:type TimelineItem = {
+frontend/app/services/[serviceId]/health/page.tsx:51:    if (Array.isArray(record.timeline)) return record.timeline as T[];
+frontend/app/services/[serviceId]/health/page.tsx:72:function timelineTitle(item: TimelineItem) {
+frontend/app/services/[serviceId]/health/page.tsx:79:    case "INCIDENT_ACKNOWLEDGED":
+frontend/app/services/[serviceId]/health/page.tsx:80:      return "Incident acknowledged";
+frontend/app/services/[serviceId]/health/page.tsx:81:    case "INCIDENT_RESOLVED":
+frontend/app/services/[serviceId]/health/page.tsx:82:      return "Incident resolved";
+frontend/app/services/[serviceId]/health/page.tsx:106:function timelineSubtitle(item: TimelineItem) {
+frontend/app/services/[serviceId]/health/page.tsx:113:function timelineIcon(item: TimelineItem) {
+frontend/app/services/[serviceId]/health/page.tsx:117:  if (eventType === "INCIDENT_RESOLVED") return "✅";
+frontend/app/services/[serviceId]/health/page.tsx:118:  if (eventType === "INCIDENT_ACKNOWLEDGED") return "👀";
+frontend/app/services/[serviceId]/health/page.tsx:137:    case "OPEN":
+frontend/app/services/[serviceId]/health/page.tsx:139:    case "ACKNOWLEDGED":
+frontend/app/services/[serviceId]/health/page.tsx:141:    case "RESOLVED":
+frontend/app/services/[serviceId]/health/page.tsx:169:  const [timeline, setTimeline] = useState<TimelineItem[]>([]);
+frontend/app/services/[serviceId]/health/page.tsx:178:        const [rawHealthData, rawIncidentsData, rawTimelineData] =
+frontend/app/services/[serviceId]/health/page.tsx:182:            apiFetch(`/api/services/${serviceId}/runtime-timeline`),
+frontend/app/services/[serviceId]/health/page.tsx:187:        setTimeline(normalizeArray<TimelineItem>(rawTimelineData));
+frontend/app/services/[serviceId]/health/page.tsx:191:          "Failed to load service health. Check that the backend is running and the runtime timeline routes are registered."
+frontend/app/services/[serviceId]/health/page.tsx:276:              Open deep metrics dashboards for service health, backend metrics,
+frontend/app/services/[serviceId]/health/page.tsx:395:        <h2 className="text-lg font-semibold">Runtime Timeline</h2>
+frontend/app/services/[serviceId]/health/page.tsx:397:        {timeline.length === 0 ? (
+frontend/app/services/[serviceId]/health/page.tsx:399:            No runtime timeline events found yet.
+frontend/app/services/[serviceId]/health/page.tsx:403:            {timeline.map((item, index) => (
+frontend/app/services/[serviceId]/health/page.tsx:411:                      {timelineIcon(item)}
+frontend/app/services/[serviceId]/health/page.tsx:415:                      <p className="font-medium">{timelineTitle(item)}</p>
+frontend/app/services/[serviceId]/health/page.tsx:417:                        {timelineSubtitle(item)}
+frontend/app/services/[serviceId]/reliability/page.tsx:70:      ["OPEN", "ACKNOWLEDGED"].includes(
+frontend/app/services/[serviceId]/reliability/page.tsx:76:        normalizeState(left.status) === "OPEN" ? 0 : 1;
+frontend/app/services/[serviceId]/reliability/page.tsx:78:        normalizeState(right.status) === "OPEN" ? 0 : 1;
+frontend/app/services/[serviceId]/reliability/page.tsx:206:      (reliability?.open_alerts ?? []).filter((alert) =>
+frontend/app/services/[serviceId]/reliability/page.tsx:207:        ["OPEN", "ACKNOWLEDGED"].includes(
+frontend/app/services/[serviceId]/reliability/page.tsx:515:            title="Open Reliability Alerts"
+frontend/app/services/[serviceId]/reliability/page.tsx:516:            description="OPEN alerts are shown first, followed by ACKNOWLEDGED alerts."
+frontend/app/reliability/page.tsx:49:  openAlertCount: number;
+frontend/app/reliability/page.tsx:186:            openAlertCount:
+frontend/app/reliability/page.tsx:187:              reliability.open_alert_count ??
+frontend/app/reliability/page.tsx:188:              reliability.open_alerts.length,
+frontend/app/reliability/page.tsx:234:    const openAlerts = rows.reduce(
+frontend/app/reliability/page.tsx:235:      (total, row) => total + row.openAlertCount,
+frontend/app/reliability/page.tsx:243:      openAlerts,
+frontend/app/reliability/page.tsx:290:            label="Open alerts"
+frontend/app/reliability/page.tsx:291:            value={summary.openAlerts}
+frontend/app/reliability/page.tsx:293:              summary.openAlerts > 0 ? "danger" : "default"
+frontend/app/reliability/page.tsx:457:                          {row.openAlertCount > 0 ? (
+frontend/app/reliability/page.tsx:459:                              {row.openAlertCount}
+frontend/components/theme-toggle.tsx:20:  const { resolvedTheme, setTheme } = useTheme();
+frontend/components/theme-toggle.tsx:34:  const isDark = resolvedTheme === "dark";
+frontend/components/reliability/ReliabilityAlertsTable.tsx:21:  OPEN: 0,
+frontend/components/reliability/ReliabilityAlertsTable.tsx:22:  ACKNOWLEDGED: 1,
+frontend/components/reliability/ReliabilityAlertsTable.tsx:23:  RESOLVED: 2,
+frontend/components/reliability/ReliabilityAlertsTable.tsx:68:          Open and acknowledged alerts will appear here.
+frontend/components/reliability/ReliabilityStatusBadge.tsx:13:  ACKNOWLEDGED:
+frontend/components/reliability/ReliabilityStatusBadge.tsx:19:  OPEN:
+frontend/components/reliability/ReliabilityStatusBadge.tsx:21:  RESOLVED:
+frontend/components/reliability/StatusBadge.tsx:14:  RESOLVED:
+frontend/components/reliability/StatusBadge.tsx:18:  ACKNOWLEDGED:
+frontend/components/reliability/StatusBadge.tsx:22:  OPEN: "border-red-200 bg-red-50 text-red-700",
+frontend/lib/reliability-api.ts:218:  const openAlerts = reliability.open_alerts ?? [];
+frontend/lib/reliability-api.ts:221:    openAlerts.map(async (alert) => {
+frontend/lib/reliability-api.ts:240:      open_alerts: enrichedAlerts,
+frontend/types/reliability.ts:16:  | "OPEN"
+frontend/types/reliability.ts:17:  | "ACKNOWLEDGED"
+frontend/types/reliability.ts:18:  | "RESOLVED"
+frontend/types/reliability.ts:85:  resolved_at?: string | null;
+frontend/types/reliability.ts:93:  open_alerts: ReliabilityAlert[];
+frontend/types/reliability.ts:94:  open_alert_count?: number;

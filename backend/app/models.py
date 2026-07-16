@@ -778,25 +778,30 @@ class Incident(Base):
     # old incident service still use these names.
     # --------------------------------------------------------
 
+    # Legacy Sprint 5 compatibility fields.
+    # New Sprint 7 code must use primary_service_id, deduplication_key,
+    # detected_at, and the incident-alert relationship instead.
     service_id = Column(
         String,
-        nullable=False,
+        nullable=True,
+        index=True,
     )
 
     correlation_id = Column(
         String,
-        nullable=False,
+        nullable=True,
+        index=True,
     )
 
     triggered_by_event_id = Column(
         String,
         nullable=True,
+        index=True,
     )
 
     started_at = Column(
         DateTime,
-        nullable=False,
-        default=datetime.utcnow,
+        nullable=True,
     )
 
     # --------------------------------------------------------
@@ -1305,6 +1310,10 @@ class IncidentAlertLink(Base):
             "incident_id",
             "reliability_alert_id",
             name="uq_incident_alert_link",
+        ),
+        UniqueConstraint(
+            "reliability_alert_id",
+            name="uq_incident_alert_links_reliability_alert_id",
         ),
     )
 

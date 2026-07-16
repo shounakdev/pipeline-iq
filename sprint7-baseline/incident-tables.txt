@@ -1,0 +1,3 @@
+backend/app/models.py:585:    __tablename__ = "incidents"
+backend/app/models.py:630:    __tablename__ = "incident_events"
+backend/app/models.py:636:        ForeignKey("incidents.id", ondelete="CASCADE"),

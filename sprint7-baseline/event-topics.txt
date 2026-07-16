@@ -1,0 +1,82 @@
+backend/app/models.py:726:            name="reliability_severity",
+backend/app/models.py:913:    __tablename__ = "reliability_alerts"
+backend/app/models.py:938:            name="reliability_alert_type",
+backend/app/models.py:946:            name="reliability_severity",
+backend/app/models.py:964:            name="reliability_alert_status",
+backend/app/observability/alert_service.py:9:TELEMETRY_ALERTS_TOPIC = "telemetry.alerts"
+backend/app/observability/alert_service.py:17:    1. Publishing to Kafka topic: telemetry.alerts
+backend/app/celery_app.py:42:        "app.reliability.tasks",
+backend/app/celery_app.py:61:    "app.reliability.tasks.evaluate_all_slos": {
+backend/app/celery_app.py:88:            "app.reliability.tasks.evaluate_all_slos"
+backend/app/main.py:29:from app.reliability.router import router as reliability_router
+backend/app/main.py:66:app.include_router(reliability_router)
+backend/app/events/consumer.py:31:    "pipeline.events,deployment.events,kubernetes.events,audit.events,telemetry.alerts",
+backend/app/events/handlers.py:23:    - telemetry.alerts events create incidents.
+backend/app/events/handlers.py:89:    Convert telemetry and reliability alerts into incidents.
+backend/app/events/constants.py:4:TOPIC_PIPELINE_EVENTS = "pipeline.events"
+backend/app/events/constants.py:7:TOPIC_TELEMETRY_ALERTS = "telemetry.alerts"
+backend/app/events/constants.py:8:TOPIC_INCIDENT_EVENTS = "incident.events"
+backend/app/incidents/incident_service.py:171:    data["events"] = [_event_to_out(event) for event in incident.events]
+backend/app/incidents/incident_service.py:180:        incident.events
+backend/app/incidents/incident_service.py:185:        # publish_event(topic="incident.events", event_type=event_type, payload=payload)
+backend/app/incidents/incident_service.py:414:    for event in incident.events:
+backend/app/incidents/incident_service.py:418:                "source": "incident.events",
+backend/app/incidents/incident_service.py:449:                    "source": "telemetry.alerts",
+backend/app/incidents/incident_service.py:490:                        "source": "pipeline.events",
+backend/app/reliability/alert_service.py:147:def resolve_active_reliability_alerts(
+backend/app/reliability/alert_service.py:231:            resolve_active_reliability_alerts(
+backend/app/reliability/alert_service.py:278:def create_reliability_alert_and_event(
+backend/app/reliability/alert_service.py:402:        "source": "platformiq-reliability",
+backend/app/reliability/alert_service.py:403:        "reliability_alert_id": str(alert.id),
+backend/app/reliability/query_service.py:16:from app.reliability.schemas import (
+backend/app/reliability/query_service.py:41:    The reliability router can translate LookupError into HTTP 404.
+backend/app/reliability/query_service.py:126:def calculate_overall_reliability_status(
+backend/app/reliability/query_service.py:131:    Calculate service-level reliability from evaluated SLOs only.
+backend/app/reliability/query_service.py:336:def get_service_reliability(
+backend/app/reliability/query_service.py:341:    Return the reliability overview for a service.
+backend/app/reliability/query_service.py:392:            reliability_status = "NO_DATA"
+backend/app/reliability/query_service.py:396:            reliability_status = (
+backend/app/reliability/query_service.py:425:                status=reliability_status,
+backend/app/reliability/query_service.py:436:        calculate_overall_reliability_status(
+backend/app/reliability/query_service.py:560:def list_reliability_alerts(
+backend/app/reliability/query_service.py:564:    Return the complete reliability-alert history, newest first.
+backend/app/reliability/query_service.py:567:    reliability overview's open_alerts field, not to this history list.
+backend/app/reliability/query_service.py:583:def get_reliability_alert(
+backend/app/reliability/router.py:9:from app.reliability.query_service import (
+backend/app/reliability/router.py:10:    get_reliability_alert,
+backend/app/reliability/router.py:12:    get_service_reliability,
+backend/app/reliability/router.py:13:    list_reliability_alerts,
+backend/app/reliability/router.py:15:from app.reliability.schemas import (
+backend/app/reliability/router.py:23:from app.reliability import slo_service
+backend/app/reliability/router.py:24:from app.reliability.prometheus_client import (
+backend/app/reliability/router.py:28:from app.reliability.schemas import (
+backend/app/reliability/router.py:33:from app.reliability.slo_engine import evaluate_slo
+backend/app/reliability/router.py:96:    "/services/{service_id}/reliability",
+backend/app/reliability/router.py:99:def read_service_reliability(
+backend/app/reliability/router.py:104:        return get_service_reliability(
+backend/app/reliability/router.py:139:def read_reliability_alerts(
+backend/app/reliability/router.py:142:    return list_reliability_alerts(db=db)
+backend/app/reliability/router.py:149:def read_reliability_alert(
+backend/app/reliability/router.py:153:    alert = get_reliability_alert(
+backend/app/reliability/slo_service.py:4:from app.reliability.schemas import SLOCreate
+backend/app/reliability/tasks.py:9:from app.reliability.prometheus_client import (
+backend/app/reliability/tasks.py:13:from app.reliability.slo_engine import (
+backend/app/reliability/tasks.py:30:    name="app.reliability.tasks.evaluate_all_slos",
+backend/app/reliability/tasks.py:128:                    result.get("reliability_alert_id"),
+backend/app/reliability/tasks.py:130:                        result.get("reliability_alert_type")
+backend/app/reliability/slo_engine.py:12:from app.reliability.alert_service import (
+backend/app/reliability/slo_engine.py:13:    create_reliability_alert_and_event,
+backend/app/reliability/slo_engine.py:15:from app.reliability.error_budget import (
+backend/app/reliability/slo_engine.py:18:from app.reliability.prometheus_client import (
+backend/app/reliability/slo_engine.py:65:    by the scheduled reliability task.
+backend/app/reliability/slo_engine.py:141:    reliability_alert = None
+backend/app/reliability/slo_engine.py:160:            reliability_alert,
+backend/app/reliability/slo_engine.py:163:        ) = create_reliability_alert_and_event(
+backend/app/reliability/slo_engine.py:180:        if reliability_alert is not None:
+backend/app/reliability/slo_engine.py:181:            db.refresh(reliability_alert)
+backend/app/reliability/slo_engine.py:239:        "reliability_alert_id": (
+backend/app/reliability/slo_engine.py:240:            reliability_alert.id
+backend/app/reliability/slo_engine.py:241:            if reliability_alert is not None
+backend/app/reliability/slo_engine.py:244:        "reliability_alert_type": (
+backend/app/reliability/slo_engine.py:245:            reliability_alert.alert_type
+backend/app/reliability/slo_engine.py:246:            if reliability_alert is not None

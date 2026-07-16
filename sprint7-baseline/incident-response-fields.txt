@@ -1,0 +1,88 @@
+backend/app/incidents/incident_router.py:61:            "id": str(uuid.uuid4()),
+backend/app/incidents/incident_router.py:62:            "incident_id": incident_id,
+backend/app/incidents/incident_router.py:66:            "created_at": utc_now(),
+backend/app/incidents/incident_router.py:122:        {"incident_id": incident_id},
+backend/app/incidents/incident_router.py:141:        {"incident_id": incident_id},
+backend/app/incidents/incident_router.py:164:        {"incident_id": incident_id},
+backend/app/incidents/incident_router.py:177:                "timestamp": item["created_at"],
+backend/app/incidents/incident_router.py:204:            "service_id": incident_data["service_id"],
+backend/app/incidents/incident_router.py:217:                "timestamp": item["created_at"],
+backend/app/incidents/incident_router.py:227:        "incident_id": incident_id,
+backend/app/incidents/incident_router.py:242:        {"incident_id": incident_id},
+backend/app/incidents/incident_router.py:250:    if incident_data["status"] == "RESOLVED":
+backend/app/incidents/incident_router.py:268:            "incident_id": incident_id,
+backend/app/incidents/incident_router.py:269:            "updated_at": now,
+backend/app/incidents/incident_router.py:284:        "incident_id": incident_id,
+backend/app/incidents/incident_router.py:285:        "status": "ACKNOWLEDGED",
+backend/app/incidents/incident_router.py:300:        {"incident_id": incident_id},
+backend/app/incidents/incident_router.py:319:            "incident_id": incident_id,
+backend/app/incidents/incident_router.py:320:            "resolved_at": now,
+backend/app/incidents/incident_router.py:321:            "updated_at": now,
+backend/app/incidents/incident_router.py:336:        "incident_id": incident_id,
+backend/app/incidents/incident_router.py:337:        "status": "RESOLVED",
+backend/app/incidents/incident_router.py:366:        {"service_id": service_id},
+backend/app/incidents/incident_router.py:393:        {"service_id": service_id},
+backend/app/incidents/incident_router.py:404:                "timestamp": item["created_at"],
+backend/app/incidents/incident_router.py:429:        {"service_id": service_id},
+backend/app/incidents/incident_router.py:440:                "timestamp": item["created_at"],
+backend/app/incidents/incident_router.py:450:        "service_id": service_id,
+backend/app/incidents/incident_service.py:48:        alert_event.get("service_id")
+backend/app/incidents/incident_service.py:49:        or payload.get("service_id")
+backend/app/incidents/incident_service.py:79:        or alert_event.get("service_name")
+backend/app/incidents/incident_service.py:80:        or payload.get("service_name")
+backend/app/incidents/incident_service.py:81:        or alert_event.get("service_id")
+backend/app/incidents/incident_service.py:82:        or payload.get("service_id")
+backend/app/incidents/incident_service.py:112:        or alert_event.get("service_name")
+backend/app/incidents/incident_service.py:113:        or payload.get("service_name")
+backend/app/incidents/incident_service.py:114:        or alert_event.get("service_id")
+backend/app/incidents/incident_service.py:115:        or payload.get("service_id")
+backend/app/incidents/incident_service.py:142:        "id": event.id,
+backend/app/incidents/incident_service.py:143:        "incident_id": event.incident_id,
+backend/app/incidents/incident_service.py:147:        "created_at": event.created_at,
+backend/app/incidents/incident_service.py:153:        "id": incident.id,
+backend/app/incidents/incident_service.py:154:        "title": incident.title,
+backend/app/incidents/incident_service.py:155:        "description": incident.description,
+backend/app/incidents/incident_service.py:156:        "severity": incident.severity.value if hasattr(incident.severity, "value") else incident.severity,
+backend/app/incidents/incident_service.py:157:        "status": incident.status.value if hasattr(incident.status, "value") else incident.status,
+backend/app/incidents/incident_service.py:158:        "service_id": incident.service_id,
+backend/app/incidents/incident_service.py:162:        "started_at": incident.started_at,
+backend/app/incidents/incident_service.py:163:        "resolved_at": incident.resolved_at,
+backend/app/incidents/incident_service.py:164:        "created_at": incident.created_at,
+backend/app/incidents/incident_service.py:165:        "updated_at": incident.updated_at,
+backend/app/incidents/incident_service.py:205:        alert_event.get("severity")
+backend/app/incidents/incident_service.py:206:        or payload.get("severity")
+backend/app/incidents/incident_service.py:211:        alert_event.get("service_id")
+backend/app/incidents/incident_service.py:212:        or payload.get("service_id")
+backend/app/incidents/incident_service.py:217:        alert_event.get("service_name")
+backend/app/incidents/incident_service.py:218:        or payload.get("service_name")
+backend/app/incidents/incident_service.py:219:        or alert_event.get("service_id")
+backend/app/incidents/incident_service.py:220:        or payload.get("service_id")
+backend/app/incidents/incident_service.py:233:        or alert_event.get("id")
+backend/app/incidents/incident_service.py:267:                "incident_id": str(incident.id),
+backend/app/incidents/incident_service.py:269:                "service_id": incident.service_id,
+backend/app/incidents/incident_service.py:309:            "incident_id": str(incident.id),
+backend/app/incidents/incident_service.py:310:            "title": incident.title,
+backend/app/incidents/incident_service.py:311:            "severity": incident.severity.value,
+backend/app/incidents/incident_service.py:312:            "status": incident.status.value,
+backend/app/incidents/incident_service.py:313:            "service_id": incident.service_id,
+backend/app/incidents/incident_service.py:352:            "incident_id": str(incident.id),
+backend/app/incidents/incident_service.py:353:            "service_id": incident.service_id,
+backend/app/incidents/incident_service.py:355:            "status": incident.status.value,
+backend/app/incidents/incident_service.py:389:            "incident_id": str(incident.id),
+backend/app/incidents/incident_service.py:390:            "service_id": incident.service_id,
+backend/app/incidents/incident_service.py:392:            "status": incident.status.value,
+backend/app/incidents/incident_service.py:393:            "resolved_at": incident.resolved_at.isoformat(),
+backend/app/incidents/incident_service.py:420:                "title": event.message or event.event_type,
+backend/app/incidents/incident_service.py:451:                    "title": f"Service health status: {snapshot.status}",
+backend/app/incidents/incident_service.py:453:                        "status": str(snapshot.status),
+backend/app/incidents/incident_service.py:471:        if PipelineRun is not None and hasattr(PipelineRun, "service_id"):
+backend/app/incidents/incident_service.py:483:                    or getattr(run, "updated_at", None)
+backend/app/incidents/incident_service.py:484:                    or getattr(run, "created_at", None)
+backend/app/incidents/incident_service.py:492:                        "title": f"Pipeline run {getattr(run, 'status', 'UNKNOWN')}",
+backend/app/incidents/incident_service.py:495:                            "status": str(getattr(run, "status", None)),
+backend/app/incidents/incident_service.py:511:        if DeploymentRun is not None and hasattr(DeploymentRun, "service_id"):
+backend/app/incidents/incident_service.py:523:                    or getattr(deployment, "updated_at", None)
+backend/app/incidents/incident_service.py:524:                    or getattr(deployment, "created_at", None)
+backend/app/incidents/incident_service.py:532:                        "title": f"Deployment {getattr(deployment, 'status', 'UNKNOWN')}",
+backend/app/incidents/incident_service.py:534:                            "deployment_id": str(deployment.id),
+backend/app/incidents/incident_service.py:535:                            "status": str(getattr(deployment, "status", None)),

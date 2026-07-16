@@ -154,7 +154,12 @@ services:
     env_file:
       - .env
     container_name: cicd_worker
-    command: celery -A app.celery_app.celery_app worker --loglevel=info -Q pipeline_queue
+    command: >
+      celery
+      -A app.celery_app:celery_app
+      worker
+      --loglevel=INFO
+      --queues=pipeline_queue
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/cicd_db
       REDIS_URL: redis://redis:6379/0
@@ -202,7 +207,11 @@ services:
     env_file:
       - .env
     container_name: platformiq-celery-beat
-    command: celery -A app.celery_app.celery_app beat --loglevel=info
+    command: >
+      celery
+      -A app.celery_app:celery_app
+      beat
+      --loglevel=INFO
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/cicd_db
       REDIS_URL: redis://redis:6379/0

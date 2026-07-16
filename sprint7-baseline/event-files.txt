@@ -1,0 +1,4 @@
+backend/app/events/consumer.py
+backend/app/events/kafka_producer.py
+backend/app/events/outbox_publisher.py
+backend/app/events/outbox.py

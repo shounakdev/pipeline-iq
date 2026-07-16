@@ -1,0 +1,24 @@
+210:    service_id = Column(
+249:    service_id = Column(String, ForeignKey("services.id"), nullable=False)
+261:    service_id = Column(String, ForeignKey("services.id"), nullable=False)
+276:    service_id = Column(String, ForeignKey("services.id"), nullable=True)
+335:    service_id = Column(String(36), ForeignKey("services.id"), nullable=False)
+378:    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+402:    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+438:    service_id = Column(String, nullable=True, index=True)
+481:    service_id = Column(String, index=True, nullable=True)
+543:    service_id = Column(String, nullable=True, index=True)
+585:    __tablename__ = "incidents"
+593:        SQLEnum(IncidentSeverity, name="incidentseverity"),
+599:        SQLEnum(IncidentStatus, name="incidentstatus"),
+605:    service_id = Column(String, nullable=False, index=True)
+634:    incident_id = Column(
+636:        ForeignKey("incidents.id", ondelete="CASCADE"),
+702:    service_id = Column(
+790:    service_id = Column(
+851:    service_id = Column(
+913:    __tablename__ = "reliability_alerts"
+921:    service_id = Column(
+938:            name="reliability_alert_type",
+954:    deployment_id = Column(
+964:            name="reliability_alert_status",

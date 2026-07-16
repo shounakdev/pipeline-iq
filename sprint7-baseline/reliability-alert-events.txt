@@ -1,0 +1,125 @@
+backend/app/reliability/alert_service.py:12:    ReliabilityAlert,
+backend/app/reliability/alert_service.py:13:    ReliabilityAlertStatus,
+backend/app/reliability/alert_service.py:14:    ReliabilityAlertType,
+backend/app/reliability/alert_service.py:26:    ReliabilityAlertStatus.OPEN,
+backend/app/reliability/alert_service.py:27:    ReliabilityAlertStatus.ACKNOWLEDGED,
+backend/app/reliability/alert_service.py:86:) -> ReliabilityAlertType:
+backend/app/reliability/alert_service.py:89:            ReliabilityAlertType.AVAILABILITY_BREACH
+backend/app/reliability/alert_service.py:92:            ReliabilityAlertType.LATENCY_BREACH
+backend/app/reliability/alert_service.py:95:            ReliabilityAlertType.ERROR_RATE_BREACH
+backend/app/reliability/alert_service.py:101:        ReliabilityAlertType.SLO_BREACH,
+backend/app/reliability/alert_service.py:109:) -> ReliabilityAlertType | None:
+backend/app/reliability/alert_service.py:116:    3. Direct SLO breach
+backend/app/reliability/alert_service.py:125:                ReliabilityAlertType
+backend/app/reliability/alert_service.py:126:                .ERROR_BUDGET_EXHAUSTED
+backend/app/reliability/alert_service.py:135:                ReliabilityAlertType
+backend/app/reliability/alert_service.py:147:def resolve_active_reliability_alerts(
+backend/app/reliability/alert_service.py:152:    alert_type: ReliabilityAlertType,
+backend/app/reliability/alert_service.py:162:        db.query(ReliabilityAlert)
+backend/app/reliability/alert_service.py:164:            ReliabilityAlert.service_id
+backend/app/reliability/alert_service.py:166:            ReliabilityAlert.slo_definition_id
+backend/app/reliability/alert_service.py:168:            ReliabilityAlert.alert_type
+backend/app/reliability/alert_service.py:170:            ReliabilityAlert.status.in_(
+backend/app/reliability/alert_service.py:184:            ReliabilityAlertStatus.RESOLVED
+backend/app/reliability/alert_service.py:200:        ReliabilityAlertType | None
+backend/app/reliability/alert_service.py:209:    ERROR_BUDGET_EXHAUSTED -> healthy
+backend/app/reliability/alert_service.py:210:    ERROR_BUDGET_EXHAUSTED -> ERROR_BUDGET_BURN
+backend/app/reliability/alert_service.py:219:        ReliabilityAlertType.ERROR_BUDGET_EXHAUSTED,
+backend/app/reliability/alert_service.py:220:        ReliabilityAlertType.ERROR_BUDGET_BURN,
+backend/app/reliability/alert_service.py:231:            resolve_active_reliability_alerts(
+backend/app/reliability/alert_service.py:249:    alert_type: ReliabilityAlertType,
+backend/app/reliability/alert_service.py:250:) -> ReliabilityAlert | None:
+backend/app/reliability/alert_service.py:259:        db.query(ReliabilityAlert)
+backend/app/reliability/alert_service.py:261:            ReliabilityAlert.service_id
+backend/app/reliability/alert_service.py:263:            ReliabilityAlert.slo_definition_id
+backend/app/reliability/alert_service.py:265:            ReliabilityAlert.alert_type
+backend/app/reliability/alert_service.py:267:            ReliabilityAlert.status.in_(
+backend/app/reliability/alert_service.py:272:            ReliabilityAlert.created_at.desc()
+backend/app/reliability/alert_service.py:278:def create_reliability_alert_and_event(
+backend/app/reliability/alert_service.py:286:    ReliabilityAlert | None,
+backend/app/reliability/alert_service.py:317:        slo_definition.severity_on_breach
+backend/app/reliability/alert_service.py:349:    alert_created_at = datetime.now(timezone.utc)
+backend/app/reliability/alert_service.py:354:        occurred_at=alert_created_at,
+backend/app/reliability/alert_service.py:367:    alert = ReliabilityAlert(
+backend/app/reliability/alert_service.py:379:        status=ReliabilityAlertStatus.OPEN,
+backend/app/reliability/alert_service.py:380:        created_at=alert_created_at,
+backend/app/reliability/alert_service.py:403:        "reliability_alert_id": str(alert.id),
+backend/app/reliability/query_service.py:10:    ReliabilityAlert,
+backend/app/reliability/query_service.py:11:    ReliabilityAlertStatus,
+backend/app/reliability/query_service.py:18:    ReliabilityAlertDetailResponse,
+backend/app/reliability/query_service.py:19:    ReliabilityAlertResponse,
+backend/app/reliability/query_service.py:29:    ReliabilityAlertStatus.OPEN,
+backend/app/reliability/query_service.py:30:    ReliabilityAlertStatus.ACKNOWLEDGED,
+backend/app/reliability/query_service.py:296:    alert: ReliabilityAlert,
+backend/app/reliability/query_service.py:323:        "created_at": alert.created_at,
+backend/app/reliability/query_service.py:329:    alert: ReliabilityAlert,
+backend/app/reliability/query_service.py:330:) -> ReliabilityAlertResponse:
+backend/app/reliability/query_service.py:331:    return ReliabilityAlertResponse(
+backend/app/reliability/query_service.py:348:    - Breached measurement means that individual SLO is BREACHED.
+backend/app/reliability/query_service.py:443:        db.query(ReliabilityAlert)
+backend/app/reliability/query_service.py:445:            ReliabilityAlert.service_id
+backend/app/reliability/query_service.py:447:            ReliabilityAlert.status.in_(
+backend/app/reliability/query_service.py:452:            ReliabilityAlert.created_at.desc()
+backend/app/reliability/query_service.py:560:def list_reliability_alerts(
+backend/app/reliability/query_service.py:562:) -> list[ReliabilityAlertResponse]:
+backend/app/reliability/query_service.py:564:    Return the complete reliability-alert history, newest first.
+backend/app/reliability/query_service.py:567:    reliability overview's open_alerts field, not to this history list.
+backend/app/reliability/query_service.py:570:        db.query(ReliabilityAlert)
+backend/app/reliability/query_service.py:572:            ReliabilityAlert.created_at.desc()
+backend/app/reliability/query_service.py:583:def get_reliability_alert(
+backend/app/reliability/query_service.py:586:) -> ReliabilityAlertDetailResponse | None:
+backend/app/reliability/query_service.py:592:        db.query(ReliabilityAlert)
+backend/app/reliability/query_service.py:594:            ReliabilityAlert.id == alert_id
+backend/app/reliability/query_service.py:648:    return ReliabilityAlertDetailResponse(
+backend/app/reliability/schemas.py:13:    ReliabilityAlertStatus,
+backend/app/reliability/schemas.py:14:    ReliabilityAlertType,
+backend/app/reliability/schemas.py:108:class ReliabilityAlertResponse(BaseModel):
+backend/app/reliability/schemas.py:112:    alert_type: ReliabilityAlertType
+backend/app/reliability/schemas.py:117:    status: ReliabilityAlertStatus
+backend/app/reliability/schemas.py:126:    open_alerts: list[ReliabilityAlertResponse]
+backend/app/reliability/schemas.py:157:class ReliabilityAlertDetailResponse(
+backend/app/reliability/schemas.py:158:    ReliabilityAlertResponse
+backend/app/reliability/router.py:10:    get_reliability_alert,
+backend/app/reliability/router.py:13:    list_reliability_alerts,
+backend/app/reliability/router.py:16:    ReliabilityAlertDetailResponse,
+backend/app/reliability/router.py:17:    ReliabilityAlertResponse,
+backend/app/reliability/router.py:137:    response_model=list[ReliabilityAlertResponse],
+backend/app/reliability/router.py:139:def read_reliability_alerts(
+backend/app/reliability/router.py:142:    return list_reliability_alerts(db=db)
+backend/app/reliability/router.py:147:    response_model=ReliabilityAlertDetailResponse,
+backend/app/reliability/router.py:149:def read_reliability_alert(
+backend/app/reliability/router.py:153:    alert = get_reliability_alert(
+backend/app/reliability/router.py:161:            detail="Reliability alert was not found.",
+backend/app/reliability/tasks.py:46:        "alerts_created": 0,
+backend/app/reliability/tasks.py:109:            if result.get("alert_created", False):
+backend/app/reliability/tasks.py:110:                summary["alerts_created"] += 1
+backend/app/reliability/tasks.py:122:            if result.get("alert_created", False):
+backend/app/reliability/tasks.py:124:                    "Reliability alert created "
+backend/app/reliability/tasks.py:128:                    result.get("reliability_alert_id"),
+backend/app/reliability/tasks.py:130:                        result.get("reliability_alert_type")
+backend/app/reliability/tasks.py:138:            "alerts_created=%s failed=%s",
+backend/app/reliability/tasks.py:142:            summary["alerts_created"],
+backend/app/reliability/slo_engine.py:12:from app.reliability.alert_service import (
+backend/app/reliability/slo_engine.py:13:    create_reliability_alert_and_event,
+backend/app/reliability/slo_engine.py:41:def is_slo_breached(
+backend/app/reliability/slo_engine.py:117:    breached = is_slo_breached(
+backend/app/reliability/slo_engine.py:141:    reliability_alert = None
+backend/app/reliability/slo_engine.py:143:    alert_created = False
+backend/app/reliability/slo_engine.py:160:            reliability_alert,
+backend/app/reliability/slo_engine.py:162:            alert_created,
+backend/app/reliability/slo_engine.py:163:        ) = create_reliability_alert_and_event(
+backend/app/reliability/slo_engine.py:180:        if reliability_alert is not None:
+backend/app/reliability/slo_engine.py:181:            db.refresh(reliability_alert)
+backend/app/reliability/slo_engine.py:239:        "reliability_alert_id": (
+backend/app/reliability/slo_engine.py:240:            reliability_alert.id
+backend/app/reliability/slo_engine.py:241:            if reliability_alert is not None
+backend/app/reliability/slo_engine.py:244:        "reliability_alert_type": (
+backend/app/reliability/slo_engine.py:245:            reliability_alert.alert_type
+backend/app/reliability/slo_engine.py:246:            if reliability_alert is not None
+backend/app/reliability/slo_engine.py:249:        "alert_created": alert_created,
+backend/app/events/handlers.py:89:    Convert telemetry and reliability alerts into incidents.
+backend/app/events/constants.py:47:# Reliability alert events
+backend/app/events/constants.py:48:SLO_BREACH = "SLO_BREACH"
+backend/app/events/constants.py:53:ERROR_BUDGET_EXHAUSTED = "ERROR_BUDGET_EXHAUSTED"
+backend/app/events/constants.py:102:        SLO_BREACH: TOPIC_TELEMETRY_ALERTS,
+backend/app/events/constants.py:104:        ERROR_BUDGET_EXHAUSTED: TOPIC_TELEMETRY_ALERTS,

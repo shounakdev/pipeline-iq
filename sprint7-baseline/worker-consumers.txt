@@ -1,0 +1,44 @@
+backend/app/models.py:507:    __tablename__ = "consumer_checkpoints"
+backend/app/models.py:511:    consumer_name = Column(String, nullable=False)
+backend/app/models.py:525:            "consumer_name",
+backend/app/models.py:528:            name="uq_consumer_topic_partition",
+backend/app/models.py:861:    consumed_percentage = Column(
+backend/app/celery_app.py:7:from app.events.consumer import run_event_consumer_once
+backend/app/celery_app.py:58:    "events.consume_kafka_events": {
+backend/app/celery_app.py:79:    "consume-kafka-events-every-10-seconds": {
+backend/app/celery_app.py:80:        "task": "events.consume_kafka_events",
+backend/app/celery_app.py:125:@celery_app.task(name="events.publish_outbox_events")
+backend/app/celery_app.py:130:@celery_app.task(name="events.consume_kafka_events")
+backend/app/celery_app.py:131:def consume_kafka_events_task():
+backend/app/celery_app.py:132:    return run_event_consumer_once()
+backend/app/events/consumer.py:22:    "platformiq-event-consumers",
+backend/app/events/consumer.py:90:            "source": "platformiq-event-consumer",
+backend/app/events/consumer.py:216:def get_kafka_consumer() -> Consumer:
+backend/app/events/consumer.py:221:            "client.id": "platformiq-event-consumer",
+backend/app/events/consumer.py:228:def run_event_consumer_once(batch_size: int | None = None) -> int:
+backend/app/events/consumer.py:229:    consumer = get_kafka_consumer()
+backend/app/events/consumer.py:234:        consumer.subscribe(topics)
+backend/app/events/consumer.py:236:        messages = consumer.consume(
+backend/app/events/consumer.py:253:            consumer.commit(message=message, asynchronous=False)
+backend/app/events/consumer.py:259:        consumer.close()
+backend/app/events/service.py:7:from app.events.consumer import validate_envelope
+backend/app/events/handlers.py:20:    Handles side effects after an event has been consumed.
+backend/app/events/idempotency.py:73:        # Re-raise so the consumer can dead-letter it instead of pretending
+backend/app/tasks.py:653:@celery_app.task(
+backend/app/reliability/alert_service.py:427:        "error_budget_consumed": (
+backend/app/reliability/alert_service.py:429:                error_budget.consumed_percentage
+backend/app/reliability/query_service.py:541:                consumed_percentage=float(
+backend/app/reliability/query_service.py:542:                    error_budget.consumed_percentage
+backend/app/reliability/schemas.py:137:    consumed_percentage: float
+backend/app/reliability/tasks.py:6:from celery import shared_task
+backend/app/reliability/tasks.py:29:@shared_task(
+backend/app/reliability/slo_engine.py:222:        "error_budget_consumed": (
+backend/app/reliability/slo_engine.py:223:            error_budget.consumed_percentage
+backend/app/reliability/error_budget.py:22:    consumed_percentage: float
+backend/app/reliability/error_budget.py:79:    consumed_percentage = (
+backend/app/reliability/error_budget.py:86:        100.0 - consumed_percentage
+backend/app/reliability/error_budget.py:93:            100.0 - consumed_percentage,
+backend/app/reliability/error_budget.py:98:    burn_rate = consumed_percentage / 100.0
+backend/app/reliability/error_budget.py:112:        consumed_percentage=consumed_percentage,
+backend/app/reliability/error_budget.py:162:        consumed_percentage=(
+backend/app/reliability/error_budget.py:163:            calculation.consumed_percentage

@@ -1,0 +1,79 @@
+44:def _build_correlation_id(alert_event: dict[str, Any]) -> str:
+47:    service_id = (
+48:        alert_event.get("service_id")
+49:        or payload.get("service_id")
+52:    environment = (
+53:        alert_event.get("environment")
+54:        or payload.get("environment")
+63:    correlation_id = (
+64:        alert_event.get("correlation_id")
+65:        or payload.get("correlation_id")
+68:    return correlation_id or f"{service_id}:{environment}:{event_type}"
+81:        or alert_event.get("service_id")
+82:        or payload.get("service_id")
+85:    environment = (
+86:        alert_event.get("environment")
+87:        or payload.get("environment")
+101:    return f"{resolved_service_name} {alert_label} in {environment}"
+114:        or alert_event.get("service_id")
+115:        or payload.get("service_id")
+118:    environment = (
+119:        alert_event.get("environment")
+120:        or payload.get("environment")
+136:        f"for {resolved_service_name} in {environment}."
+147:        "created_at": event.created_at,
+158:        "service_id": incident.service_id,
+159:        "environment": incident.environment,
+160:        "correlation_id": incident.correlation_id,
+164:        "created_at": incident.created_at,
+198:    If an active incident already exists for the same service/environment/alert type,
+210:    service_id_value = (
+211:        alert_event.get("service_id")
+212:        or payload.get("service_id")
+219:        or alert_event.get("service_id")
+220:        or payload.get("service_id")
+224:    environment = (
+225:        alert_event.get("environment")
+226:        or payload.get("environment")
+236:    correlation_id = _build_correlation_id(alert_event)
+241:            Incident.correlation_id == correlation_id,
+257:            created_at=now,
+268:                "correlation_id": incident.correlation_id,
+269:                "service_id": incident.service_id,
+270:                "environment": incident.environment,
+282:        service_id=str(service_id_value),
+283:        environment=str(environment),
+284:        correlation_id=correlation_id,
+287:        created_at=now,
+299:        created_at=now,
+313:            "service_id": incident.service_id,
+314:            "environment": incident.environment,
+315:            "correlation_id": incident.correlation_id,
+342:        created_at=now,
+353:            "service_id": incident.service_id,
+354:            "environment": incident.environment,
+379:        created_at=now,
+390:            "service_id": incident.service_id,
+391:            "environment": incident.environment,
+417:                "timestamp": event.created_at,
+435:                ServiceHealthSnapshot.service_id == incident.service_id,
+436:                ServiceHealthSnapshot.environment == incident.environment,
+437:                ServiceHealthSnapshot.created_at >= start_time,
+438:                ServiceHealthSnapshot.created_at <= end_time,
+440:            .order_by(ServiceHealthSnapshot.created_at.asc())
+448:                    "timestamp": snapshot.created_at,
+465:    # Add latest pipeline history if PipelineRun has service_id.
+471:        if PipelineRun is not None and hasattr(PipelineRun, "service_id"):
+474:                .filter(PipelineRun.service_id == incident.service_id)
+475:                .order_by(PipelineRun.created_at.desc())
+484:                    or getattr(run, "created_at", None)
+505:    # Add latest deployment history if DeploymentRun exists.
+509:        DeploymentRun = getattr(models, "DeploymentRun", None)
+511:        if DeploymentRun is not None and hasattr(DeploymentRun, "service_id"):
+513:                db.query(DeploymentRun)
+514:                .filter(DeploymentRun.service_id == incident.service_id)
+515:                .order_by(DeploymentRun.created_at.desc())
+524:                    or getattr(deployment, "created_at", None)
+532:                        "title": f"Deployment {getattr(deployment, 'status', 'UNKNOWN')}",
+534:                            "deployment_id": str(deployment.id),
+536:                            "environment": getattr(deployment, "environment", None),

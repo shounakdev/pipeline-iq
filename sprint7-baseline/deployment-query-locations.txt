@@ -1,0 +1,17 @@
+backend/app/deployments/router.py:164:    query = db.query(Deployment)
+backend/app/deployments/router.py:167:        query = query.filter(Deployment.service_id == service_id)
+backend/app/deployments/router.py:169:    return query.order_by(Deployment.created_at.desc()).all()
+backend/app/deployments/router.py:178:        db.query(Deployment)
+backend/app/deployments/router.py:179:        .filter(Deployment.service_id == service_id)
+backend/app/deployments/router.py:180:        .order_by(Deployment.created_at.desc())
+backend/app/deployments/router.py:193:        db.query(Deployment)
+backend/app/deployments/router.py:213:        db.query(Deployment)
+backend/app/deployments/router.py:241:        db.query(Deployment)
+backend/app/reliability/alert_service.py:42:    query = db.query(Deployment).filter(
+backend/app/reliability/alert_service.py:43:        Deployment.service_id == service_id,
+backend/app/reliability/alert_service.py:44:        Deployment.created_at <= correlation_time,
+backend/app/reliability/alert_service.py:54:            Deployment.created_at.desc()
+backend/app/reliability/query_service.py:458:        db.query(Deployment)
+backend/app/reliability/query_service.py:460:            Deployment.service_id == service_id
+backend/app/reliability/query_service.py:463:            Deployment.created_at.desc()
+backend/app/reliability/query_service.py:618:            db.query(Deployment)

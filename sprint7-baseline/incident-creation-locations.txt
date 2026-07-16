@@ -1,0 +1,3 @@
+backend/app/models.py:584:class Incident(Base):
+backend/app/events/handlers.py:160:    incident = Incident(
+backend/app/incidents/incident_service.py:277:    incident = Incident(

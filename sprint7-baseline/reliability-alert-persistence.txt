@@ -1,0 +1,19 @@
+backend/app/reliability/alert_service.py:188:    db.flush()
+backend/app/reliability/alert_service.py:345:        db.flush()
+backend/app/reliability/alert_service.py:383:    db.add(alert)
+backend/app/reliability/alert_service.py:384:    db.flush()
+backend/app/reliability/alert_service.py:398:        # transactional outbox envelope may not place
+backend/app/reliability/alert_service.py:456:    outbox_event = record_platform_event(
+backend/app/reliability/alert_service.py:465:    return alert, outbox_event, True
+backend/app/reliability/slo_service.py:34:        db.commit()
+backend/app/reliability/slo_engine.py:142:    outbox_event = None
+backend/app/reliability/slo_engine.py:149:        db.flush()
+backend/app/reliability/slo_engine.py:161:            outbox_event,
+backend/app/reliability/slo_engine.py:171:        # Measurement, error budget, alert and outbox
+backend/app/reliability/slo_engine.py:173:        db.commit()
+backend/app/reliability/slo_engine.py:183:        if outbox_event is not None:
+backend/app/reliability/slo_engine.py:184:            db.refresh(outbox_event)
+backend/app/reliability/slo_engine.py:251:            outbox_event.event_id
+backend/app/reliability/slo_engine.py:252:            if outbox_event is not None
+backend/app/reliability/error_budget.py:176:    db.flush()
+backend/app/observability/collector.py:45:    db.commit()

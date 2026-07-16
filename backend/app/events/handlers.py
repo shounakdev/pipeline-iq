@@ -2,7 +2,14 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
-from app.events.constants import EVENT_TOPIC_MAP
+from app.events.constants import (
+    EVENT_TOPIC_MAP,
+    RELIABILITY_ALERT_CREATED,
+    TOPIC_TELEMETRY_ALERTS,
+)
+from app.incidents.consumer import (
+    process_reliability_alert_event,
+)
 from app.models import EventRecord, Incident
 
 
@@ -29,8 +36,10 @@ def handle_event(db: Session, record: EventRecord) -> None:
     elif record.topic == "audit.events":
         handle_audit_event(db, record)
 
-    elif record.topic == "telemetry.alerts":
-        handle_telemetry_alert_event(db, record)
+    elif record.topic == TOPIC_TELEMETRY_ALERTS:
+        handle_telemetry_alert(db, record)
+
+
 
     record.processing_status = "PROCESSED"
     record.processing_error = None
@@ -70,6 +79,46 @@ def handle_deployment_event(db: Session, record: EventRecord) -> None:
         raise
     except Exception:
         return
+
+
+
+def handle_telemetry_alert(
+    db: Session,
+    record: EventRecord,
+) -> None:
+    """
+    Route telemetry-topic events to the appropriate incident flow.
+
+    Sprint 6 reliability events use the Sprint 7 incident service.
+    Legacy Sprint 5 observability events temporarily retain their
+    compatibility handler.
+    """
+
+    payload = (
+        record.payload
+        if isinstance(record.payload, dict)
+        else {}
+    )
+
+    is_reliability_alert = (
+        record.event_type == RELIABILITY_ALERT_CREATED
+        or bool(payload.get("alert_id"))
+        or bool(payload.get("reliability_alert_id"))
+    )
+
+    if is_reliability_alert:
+        process_reliability_alert_event(
+            db,
+            record,
+        )
+        return
+
+    # Temporary compatibility for legacy Sprint 5 observability
+    # alerts such as HIGH_LATENCY and SERVICE_DOWN.
+    handle_telemetry_alert_event(
+        db,
+        record,
+    )
 
 
 def handle_kubernetes_event(db: Session, record: EventRecord) -> None:

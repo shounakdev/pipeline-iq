@@ -1,0 +1,77 @@
+                                                          Table "public.incidents"
+        Column         |            Type             | Collation | Nullable | Default | Storage  | Compression | Stats target | Description 
+-----------------------+-----------------------------+-----------+----------+---------+----------+-------------+--------------+-------------
+ id                    | uuid                        |           | not null |         | plain    |             |              | 
+ title                 | character varying           |           | not null |         | extended |             |              | 
+ description           | text                        |           |          |         | extended |             |              | 
+ severity              | incidentseverity            |           | not null |         | plain    |             |              | 
+ status                | incidentstatus              |           | not null |         | plain    |             |              | 
+ service_id            | character varying           |           | not null |         | extended |             |              | 
+ environment           | character varying           |           | not null |         | extended |             |              | 
+ correlation_id        | character varying           |           | not null |         | extended |             |              | 
+ triggered_by_event_id | character varying           |           |          |         | extended |             |              | 
+ started_at            | timestamp without time zone |           | not null |         | plain    |             |              | 
+ resolved_at           | timestamp without time zone |           |          |         | plain    |             |              | 
+ created_at            | timestamp without time zone |           | not null |         | plain    |             |              | 
+ updated_at            | timestamp without time zone |           | not null |         | plain    |             |              | 
+Indexes:
+    "incidents_pkey" PRIMARY KEY, btree (id)
+    "ix_incidents_correlation_id" btree (correlation_id)
+    "ix_incidents_environment" btree (environment)
+    "ix_incidents_service_id" btree (service_id)
+    "ix_incidents_severity" btree (severity)
+    "ix_incidents_status" btree (status)
+    "ix_incidents_triggered_by_event_id" btree (triggered_by_event_id)
+Referenced by:
+    TABLE "incident_events" CONSTRAINT "incident_events_incident_id_fkey" FOREIGN KEY (incident_id) REFERENCES incidents(id) ON DELETE CASCADE
+Access method: heap
+
+      column_name      |          data_type          |     udt_name     | is_nullable | column_default 
+-----------------------+-----------------------------+------------------+-------------+----------------
+ id                    | uuid                        | uuid             | NO          | 
+ title                 | character varying           | varchar          | NO          | 
+ description           | text                        | text             | YES         | 
+ severity              | USER-DEFINED                | incidentseverity | NO          | 
+ status                | USER-DEFINED                | incidentstatus   | NO          | 
+ service_id            | character varying           | varchar          | NO          | 
+ environment           | character varying           | varchar          | NO          | 
+ correlation_id        | character varying           | varchar          | NO          | 
+ triggered_by_event_id | character varying           | varchar          | YES         | 
+ started_at            | timestamp without time zone | timestamp        | NO          | 
+ resolved_at           | timestamp without time zone | timestamp        | YES         | 
+ created_at            | timestamp without time zone | timestamp        | NO          | 
+ updated_at            | timestamp without time zone | timestamp        | NO          | 
+(13 rows)
+
+  status  | incident_count 
+----------+----------------
+ OPEN     |              2
+ RESOLVED |              6
+(2 rows)
+
+ severity | incident_count 
+----------+----------------
+ HIGH     |              8
+(1 row)
+
+                  id                  |                     title                      | severity |  status  |              service_id              | environment |                      correlation_id                       |          triggered_by_event_id           |         started_at         |        resolved_at         |         created_at         |         updated_at         
+--------------------------------------+------------------------------------------------+----------+----------+--------------------------------------+-------------+-----------------------------------------------------------+------------------------------------------+----------------------------+----------------------------+----------------------------+----------------------------
+ c96510c1-4c91-4c0d-bbab-c8eb19dc5f8b | demo-service error budget exhausted in staging | HIGH     | OPEN     | 79a28492-b0d4-4098-94ce-70c4df2785cd | staging     | 79a28492-b0d4-4098-94ce-70c4df2785cd:staging:AVAILABILITY | evt_f5ec3291-c1c5-426f-b2e1-b60de99d7074 | 2026-07-11 21:29:10.350774 |                            | 2026-07-11 21:29:10.350774 | 2026-07-11 21:29:10.350774
+ 46ec3341-d948-4749-8bae-1e7f989d2f50 | payment-service pod restart spike in staging   | HIGH     | RESOLVED | 79a28492-b0d4-4098-94ce-70c4df2785cd | staging     | ef569b8b-3352-4a87-9f07-87249758ff99                      | evt_0b9473db-d411-40e5-b9be-3ff68c1607b5 | 2026-07-05 17:17:10.197243 | 2026-07-05 18:23:16.269775 | 2026-07-05 17:17:10.197243 | 2026-07-05 18:23:16.269775
+ f0fff6a0-aa8e-4bd4-be53-4af20d913a8d | payment-service high error rate in staging     | HIGH     | OPEN     | 79a28492-b0d4-4098-94ce-70c4df2785cd | staging     | a6522068-03c8-46cd-93a4-741b1db36b7f                      | evt_893dc7b6-a556-4997-950a-2072f849eea8 | 2026-07-05 17:07:35.279875 |                            | 2026-07-05 17:07:35.279875 | 2026-07-05 17:07:35.287609
+ f39c9a20-6fe5-46f8-af80-220082025abf | payment-service high latency in staging        | HIGH     | RESOLVED | 79a28492-b0d4-4098-94ce-70c4df2785cd | staging     | 2ae251be-c681-4f94-82d7-ba1919f31981                      | evt_eb37f920-f5b0-4bc1-aef2-3dfcc17cfeae | 2026-07-05 17:06:29.709137 | 2026-07-05 18:24:13.21474  | 2026-07-05 17:06:29.709137 | 2026-07-05 18:24:13.21474
+ caef74be-7b67-4764-9b93-71a6aea5edeb | payment-service pod restart spike in staging   | HIGH     | RESOLVED | 79a28492-b0d4-4098-94ce-70c4df2785cd | staging     | a0a4d25b-012f-40dd-801a-9e059380cac1                      | evt_9f705e94-54f7-4eed-b990-301dcf61e477 | 2026-07-05 16:40:43.335865 | 2026-07-05 18:23:37.485538 | 2026-07-05 16:40:43.335865 | 2026-07-05 18:23:37.485538
+(5 rows)
+
+    enum_type     |   enum_value   | enumsortorder 
+------------------+----------------+---------------
+ incidentseverity | LOW            |             1
+ incidentseverity | MEDIUM         |             2
+ incidentseverity | HIGH           |             3
+ incidentseverity | CRITICAL       |             4
+ incidentstatus   | OPEN           |             1
+ incidentstatus   | ACKNOWLEDGED   |             2
+ incidentstatus   | RESOLVED       |             3
+ incidentstatus   | FALSE_POSITIVE |             4
+(8 rows)
+

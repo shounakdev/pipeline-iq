@@ -1,0 +1,5 @@
+backend/app/incidents/incident_router.py:14:    prefix="/api/incidents",
+backend/app/incidents/incident_router.py:342:@service_runtime_router.get("/{service_id}/incidents")
+backend/app/incidents/router.py:17:router = APIRouter(prefix="/api/incidents", tags=["incidents"])
+backend/app/incidents/router.py:18:service_router = APIRouter(prefix="/api/services", tags=["service-incidents"])
+backend/app/incidents/router.py:98:@service_router.get("/{service_id}/incidents", response_model=list[IncidentOut])

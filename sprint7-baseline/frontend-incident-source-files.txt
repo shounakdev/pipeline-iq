@@ -1,0 +1,2 @@
+frontend/app/incidents/[incidentId]/page.tsx
+frontend/app/incidents/page.tsx

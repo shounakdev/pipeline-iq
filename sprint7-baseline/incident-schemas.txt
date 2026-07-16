@@ -1,0 +1,13 @@
+backend/app/incidents/schemas.py:8:class IncidentEventOut(BaseModel):
+backend/app/incidents/schemas.py:17:class IncidentOut(BaseModel):
+backend/app/incidents/schemas.py:33:class IncidentDetailOut(IncidentOut):
+backend/app/incidents/schemas.py:34:    events: list[IncidentEventOut] = []
+backend/app/incidents/schemas.py:37:class TimelineItemOut(BaseModel):
+backend/app/incidents/router.py:8:from app.incidents.schemas import IncidentOut, IncidentDetailOut, TimelineItemOut
+backend/app/incidents/router.py:21:@router.get("", response_model=list[IncidentOut])
+backend/app/incidents/router.py:48:@router.get("/{incident_id}", response_model=IncidentDetailOut)
+backend/app/incidents/router.py:61:@router.post("/{incident_id}/acknowledge", response_model=IncidentOut)
+backend/app/incidents/router.py:73:@router.post("/{incident_id}/resolve", response_model=IncidentOut)
+backend/app/incidents/router.py:85:@router.get("/{incident_id}/timeline", response_model=list[TimelineItemOut])
+backend/app/incidents/router.py:98:@service_router.get("/{service_id}/incidents", response_model=list[IncidentOut])
+backend/app/incidents/router.py:114:@service_router.get("/{service_id}/runtime-timeline", response_model=list[TimelineItemOut])

@@ -1,0 +1,50 @@
+On branch sprint-5
+Your branch is up to date with 'origin/sprint-5'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   backend/app/celery_app.py
+	modified:   backend/app/events/constants.py
+	modified:   backend/app/events/handlers.py
+	modified:   backend/app/incidents/incident_service.py
+	modified:   backend/app/main.py
+	modified:   backend/app/models.py
+	modified:   backend/app/schemas.py
+	modified:   backend/requirements.txt
+	modified:   backend/tests/conftest.py
+	modified:   demo-services/inventory-service/target/classes/application.yml
+	modified:   demo-services/order-service/target/classes/application.yml
+	modified:   demo-services/payment-service/target/classes/application.yml
+	modified:   docker-compose.yml
+	modified:   frontend/app/events/[eventId]/page.tsx
+	modified:   frontend/app/globals.css
+	modified:   frontend/app/incidents/[incidentId]/page.tsx
+	modified:   frontend/app/layout.tsx
+	modified:   frontend/app/services/[serviceId]/page.tsx
+	modified:   frontend/components/AppShell.tsx
+	modified:   frontend/package-lock.json
+	modified:   frontend/package.json
+	modified:   frontend/tsconfig.json
+	modified:   observability/prometheus/prometheus.yml
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	backend/.dockerignore
+	backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py
+	backend/app/reliability/
+	backend/tests/test_error_budget.py
+	backend/tests/test_reliability_alerts.py
+	backend/tests/test_reliability_api.py
+	backend/tests/test_slo_engine.py
+	frontend/app/reliability/
+	frontend/app/services/[serviceId]/reliability/
+	frontend/components/reliability/
+	frontend/components/theme-provider.tsx
+	frontend/components/theme-toggle.tsx
+	frontend/lib/reliability-api.ts
+	frontend/lib/reliability-format.ts
+	frontend/types/
+	sprint7-baseline/
+
+no changes added to commit (use "git add" and/or "git commit -a")

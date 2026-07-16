@@ -1,0 +1,12 @@
+backend/app/incidents/consumer.py
+backend/app/incidents/incident_router.py
+backend/app/incidents/incident_service.py
+backend/app/incidents/__init__.py
+backend/app/incidents/metrics.py
+backend/app/incidents/repository.py
+backend/app/incidents/router.py
+backend/app/incidents/rules.py
+backend/app/incidents/schemas.py
+backend/app/incidents/service.py
+backend/app/incidents/timeline.py
+backend/app/incidents/transitions.py

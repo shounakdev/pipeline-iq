@@ -1,0 +1,95 @@
+Sprint 7A Baseline Findings
+
+1. Existing architecture
+- No new Sprint 7 container is required.
+- Reliability and observability alerts are published to telemetry.alerts.
+- The existing Kafka consumer converts telemetry.alerts events into incidents.
+- Incident creation is handled by create_or_update_incident_from_alert().
+
+2. Incident model
+- Table: incidents
+- Primary key: UUID
+- service_id is a String and not a Service foreign key.
+- No direct reliability_alert_id relationship exists.
+- No direct deployment_id relationship exists.
+- triggered_by_event_id stores the source event identifier.
+- Incident timeline records use incident_events.
+
+3. Existing severity
+- LOW
+- MEDIUM
+- HIGH
+- CRITICAL
+
+4. Existing status
+- OPEN
+- ACKNOWLEDGED
+- RESOLVED
+- FALSE_POSITIVE
+
+5. Active router
+- backend/app/incidents/incident_router.py
+- backend/app/incidents/router.py exists but is not registered in main.py.
+
+6. Existing endpoints
+- GET /api/incidents
+- GET /api/incidents/{incident_id}
+- GET /api/incidents/{incident_id}/timeline
+- POST /api/incidents/{incident_id}/acknowledge
+- POST /api/incidents/{incident_id}/resolve
+
+7. Incident creation
+- Existing incidents are correlated using service/environment/event type.
+- Additional related alerts are attached using INCIDENT_ALERT_ATTACHED.
+- Duplicate active incidents are prevented by correlation_id and active status.
+
+8. Reliability flow
+- ReliabilityAlert and OutboxEvent are created transactionally.
+- Reliability alerts already contain deployment correlation.
+- deployment_id is included in the reliability-event payload.
+
+9. Event infrastructure
+- Existing transactional outbox must be reused.
+- Existing consumer includes idempotency and dead-letter handling.
+- Celery publishes outbox events and consumes Kafka events every 10 seconds.
+
+10. Identified gaps
+- publish_incident_event() only logs and does not create an outbox event.
+- The Incident model does not directly store reliability_alert_id or deployment_id.
+- The incident lifecycle and severity enums do not match Sprint 7 requirements.
+- handlers.py contains a stale unused handle_telemetry_alert_event() function.
+- The platform consumer does not subscribe to incident.events.
+
+11. API schema and active-router mismatch
+- backend/app/incidents/schemas.py is used by the currently unregistered router.py.
+- The active incident_router.py constructs responses directly using SQL.
+- Active list and detail responses preserve the id field.
+- Active acknowledge and resolve responses return incident_id, status and message.
+- Active timeline returns an object containing incident_id and timeline.
+- The active timeline item structure does not currently match TimelineItemOut.
+
+12. Database baseline
+- Existing incident count: 8.
+- Existing OPEN incidents: 2.
+- Existing RESOLVED incidents: 6.
+- Existing incidents currently all use HIGH severity.
+- Existing incident rows must be preserved by the Sprint 7 migration.
+
+13. Migration baseline
+- Current revision: fbe13f728ba0.
+- Exactly one Alembic head exists.
+- The Sprint 7 migration should revise fbe13f728ba0.
+- The new migration must not drop or recreate the incidents table destructively.
+
+14. Test baseline
+- Targeted tests: 4 passed.
+- Complete suite: 30 passed.
+- No direct acknowledge, resolve, timeline or incident lifecycle tests currently exist.
+
+15. Frontend compatibility
+- Incident list uses GET /api/incidents.
+- Incident detail uses GET /api/incidents/{incident_id}.
+- Timeline uses GET /api/incidents/{incident_id}/timeline.
+- Existing operator actions use acknowledge and resolve POST endpoints.
+- The frontend depends on id, title, severity, status, service_id,
+  environment, started_at and resolved_at.

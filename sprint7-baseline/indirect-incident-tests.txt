@@ -1,0 +1,63 @@
+backend/tests/test_reliability_alerts.py:7:    ReliabilityAlertStatus,
+backend/tests/test_reliability_alerts.py:8:    ReliabilityAlertType,
+backend/tests/test_reliability_alerts.py:10:    SLOMetricType,
+backend/tests/test_reliability_alerts.py:12:from app.reliability import alert_service
+backend/tests/test_reliability_alerts.py:21:    slo_definition = SimpleNamespace(
+backend/tests/test_reliability_alerts.py:22:        id="slo-availability-1",
+backend/tests/test_reliability_alerts.py:24:        metric_type=SLOMetricType.AVAILABILITY,
+backend/tests/test_reliability_alerts.py:33:        slo_definition_id=slo_definition.id,
+backend/tests/test_reliability_alerts.py:35:        metric_type=SLOMetricType.AVAILABILITY,
+backend/tests/test_reliability_alerts.py:54:        slo_definition,
+backend/tests/test_reliability_alerts.py:60:def install_alert_dependencies(
+backend/tests/test_reliability_alerts.py:71:        alert_service,
+backend/tests/test_reliability_alerts.py:72:        "find_existing_open_alert",
+backend/tests/test_reliability_alerts.py:77:        alert_service,
+backend/tests/test_reliability_alerts.py:83:        alert_service,
+backend/tests/test_reliability_alerts.py:93:        alert_service,
+backend/tests/test_reliability_alerts.py:101:def test_alert_and_event_are_generated_for_slo_breach(
+backend/tests/test_reliability_alerts.py:113:        slo_definition,
+backend/tests/test_reliability_alerts.py:121:    ) = install_alert_dependencies(
+backend/tests/test_reliability_alerts.py:127:        alert,
+backend/tests/test_reliability_alerts.py:129:        alert_created,
+backend/tests/test_reliability_alerts.py:130:    ) = alert_service.create_reliability_alert_and_event(
+backend/tests/test_reliability_alerts.py:133:        slo_definition=slo_definition,
+backend/tests/test_reliability_alerts.py:138:    assert alert_created is True
+backend/tests/test_reliability_alerts.py:139:    assert alert is not None
+backend/tests/test_reliability_alerts.py:143:        alert.alert_type
+backend/tests/test_reliability_alerts.py:144:        == ReliabilityAlertType.ERROR_BUDGET_EXHAUSTED
+backend/tests/test_reliability_alerts.py:146:    assert alert.severity == ReliabilitySeverity.HIGH
+backend/tests/test_reliability_alerts.py:147:    assert alert.status == ReliabilityAlertStatus.OPEN
+backend/tests/test_reliability_alerts.py:149:    assert alert.triggered_value == 99.5
+backend/tests/test_reliability_alerts.py:150:    assert alert.threshold_value == 99.9
+backend/tests/test_reliability_alerts.py:152:    db.add.assert_called_once_with(alert)
+backend/tests/test_reliability_alerts.py:175:def test_alert_is_linked_to_latest_deployment(
+backend/tests/test_reliability_alerts.py:187:        slo_definition,
+backend/tests/test_reliability_alerts.py:196:        alert_service,
+backend/tests/test_reliability_alerts.py:197:        "find_existing_open_alert",
+backend/tests/test_reliability_alerts.py:209:        alert_service,
+backend/tests/test_reliability_alerts.py:215:        alert_service,
+backend/tests/test_reliability_alerts.py:228:        alert_service,
+backend/tests/test_reliability_alerts.py:234:        alert,
+backend/tests/test_reliability_alerts.py:236:        alert_created,
+backend/tests/test_reliability_alerts.py:237:    ) = alert_service.create_reliability_alert_and_event(
+backend/tests/test_reliability_alerts.py:240:        slo_definition=slo_definition,
+backend/tests/test_reliability_alerts.py:245:    assert alert_created is True
+backend/tests/test_reliability_alerts.py:246:    assert alert.deployment_id == latest_deployment.id
+backend/tests/test_reliability_api.py:32:        "/api/alerts",
+backend/tests/test_reliability_api.py:37:        "/api/alerts/{alert_id}",
+backend/tests/test_reliability_api.py:42:        "/api/slos/{slo_definition_id}/evaluate",
+backend/tests/test_slo_engine.py:1:from app.models import SLOMetricType
+backend/tests/test_slo_engine.py:2:from app.reliability.slo_engine import is_slo_breached
+backend/tests/test_slo_engine.py:5:def test_availability_slo_calculation_is_breached():
+backend/tests/test_slo_engine.py:10:    result = is_slo_breached(
+backend/tests/test_slo_engine.py:11:        metric_type=SLOMetricType.AVAILABILITY,
+backend/tests/test_slo_engine.py:19:def test_latency_slo_calculation_is_breached():
+backend/tests/test_slo_engine.py:24:    result = is_slo_breached(
+backend/tests/test_slo_engine.py:25:        metric_type=SLOMetricType.P95_LATENCY,
+backend/tests/test_slo_engine.py:34:    result = is_slo_breached(
+backend/tests/test_slo_engine.py:35:        metric_type=SLOMetricType.AVAILABILITY,
+backend/tests/test_slo_engine.py:44:    result = is_slo_breached(
+backend/tests/test_slo_engine.py:45:        metric_type=SLOMetricType.P95_LATENCY,
+backend/tests/test_slo_engine.py:54:    result = is_slo_breached(
+backend/tests/test_slo_engine.py:55:        metric_type=SLOMetricType.ERROR_RATE,
+backend/tests/conftest.py:101:    Pure SLO and error-budget unit tests do not use PostgreSQL.

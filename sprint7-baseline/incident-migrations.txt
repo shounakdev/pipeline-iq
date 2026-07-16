@@ -1,0 +1,53 @@
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:1:"""add incidents table
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:23:        "incidents",
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:35:        sa.Column("incident_type", sa.String(), nullable=False),
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:57:    op.create_index("ix_incidents_service_id", "incidents", ["service_id"])
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:58:    op.create_index("ix_incidents_service_name", "incidents", ["service_name"])
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:59:    op.create_index("ix_incidents_environment", "incidents", ["environment"])
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:60:    op.create_index("ix_incidents_severity", "incidents", ["severity"])
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:61:    op.create_index("ix_incidents_status", "incidents", ["status"])
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:62:    op.create_index("ix_incidents_incident_type", "incidents", ["incident_type"])
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:63:    op.create_index("ix_incidents_source_event_id", "incidents", ["source_event_id"])
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:64:    op.create_index("ix_incidents_correlation_id", "incidents", ["correlation_id"])
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:65:    op.create_index("ix_incidents_snapshot_id", "incidents", ["snapshot_id"])
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:69:    op.drop_index("ix_incidents_snapshot_id", table_name="incidents")
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:70:    op.drop_index("ix_incidents_correlation_id", table_name="incidents")
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:71:    op.drop_index("ix_incidents_source_event_id", table_name="incidents")
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:72:    op.drop_index("ix_incidents_incident_type", table_name="incidents")
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:73:    op.drop_index("ix_incidents_status", table_name="incidents")
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:74:    op.drop_index("ix_incidents_severity", table_name="incidents")
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:75:    op.drop_index("ix_incidents_environment", table_name="incidents")
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:76:    op.drop_index("ix_incidents_service_name", table_name="incidents")
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:77:    op.drop_index("ix_incidents_service_id", table_name="incidents")
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:78:    op.drop_table("incidents")
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:1:"""add incidents and incident events
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:19:incident_severity = postgresql.ENUM(
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:24:    name="incidentseverity",
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:28:incident_status = postgresql.ENUM(
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:33:    name="incidentstatus",
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:39:    # Local/dev cleanup from previous incident-table attempts.
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:40:    op.execute("DROP TABLE IF EXISTS incident_events CASCADE")
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:41:    op.execute("DROP TABLE IF EXISTS incidents CASCADE")
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:42:    op.execute("DROP TYPE IF EXISTS incidentstatus CASCADE")
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:43:    op.execute("DROP TYPE IF EXISTS incidentseverity CASCADE")
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:45:    incident_severity.create(op.get_bind(), checkfirst=True)
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:46:    incident_status.create(op.get_bind(), checkfirst=True)
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:49:        "incidents",
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:53:        sa.Column("severity", incident_severity, nullable=False),
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:54:        sa.Column("status", incident_status, nullable=False),
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:66:        "incident_events",
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:69:            "incident_id",
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:71:            sa.ForeignKey("incidents.id", ondelete="CASCADE"),
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:80:    op.create_index("ix_incidents_service_id", "incidents", ["service_id"])
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:81:    op.create_index("ix_incidents_environment", "incidents", ["environment"])
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:82:    op.create_index("ix_incidents_status", "incidents", ["status"])
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:83:    op.create_index("ix_incidents_severity", "incidents", ["severity"])
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:84:    op.create_index("ix_incidents_correlation_id", "incidents", ["correlation_id"])
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:86:        "ix_incidents_triggered_by_event_id",
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:87:        "incidents",
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:91:    op.create_index("ix_incident_events_incident_id", "incident_events", ["incident_id"])
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:92:    op.create_index("ix_incident_events_event_type", "incident_events", ["event_type"])
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:96:    op.execute("DROP TABLE IF EXISTS incident_events CASCADE")
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:97:    op.execute("DROP TABLE IF EXISTS incidents CASCADE")
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:98:    op.execute("DROP TYPE IF EXISTS incidentstatus CASCADE")
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:99:    op.execute("DROP TYPE IF EXISTS incidentseverity CASCADE")

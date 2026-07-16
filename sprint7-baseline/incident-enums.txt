@@ -1,0 +1,22 @@
+backend/app/models.py:570:class IncidentSeverity(str, enum.Enum):
+backend/app/models.py:577:class IncidentStatus(str, enum.Enum):
+backend/app/models.py:593:        SQLEnum(IncidentSeverity, name="incidentseverity"),
+backend/app/models.py:599:        SQLEnum(IncidentStatus, name="incidentstatus"),
+backend/app/models.py:601:        default=IncidentStatus.OPEN,
+backend/app/incidents/router.py:7:from app.models import Incident, IncidentStatus, IncidentSeverity
+backend/app/incidents/router.py:32:        query = query.filter(Incident.status == IncidentStatus(status))
+backend/app/incidents/router.py:35:        query = query.filter(Incident.severity == IncidentSeverity(severity))
+backend/app/incidents/router.py:107:        query = query.filter(Incident.status == IncidentStatus(status))
+backend/app/incidents/incident_service.py:11:    IncidentSeverity,
+backend/app/incidents/incident_service.py:12:    IncidentStatus,
+backend/app/incidents/incident_service.py:18:    IncidentStatus.OPEN,
+backend/app/incidents/incident_service.py:19:    IncidentStatus.ACKNOWLEDGED,
+backend/app/incidents/incident_service.py:32:def _severity_from_alert(alert_severity: str | None) -> IncidentSeverity:
+backend/app/incidents/incident_service.py:36:        return IncidentSeverity.CRITICAL
+backend/app/incidents/incident_service.py:38:        return IncidentSeverity.HIGH
+backend/app/incidents/incident_service.py:40:        return IncidentSeverity.MEDIUM
+backend/app/incidents/incident_service.py:41:    return IncidentSeverity.LOW
+backend/app/incidents/incident_service.py:281:        status=IncidentStatus.OPEN,
+backend/app/incidents/incident_service.py:329:    if incident.status == IncidentStatus.RESOLVED:
+backend/app/incidents/incident_service.py:334:    incident.status = IncidentStatus.ACKNOWLEDGED
+backend/app/incidents/incident_service.py:370:    incident.status = IncidentStatus.RESOLVED

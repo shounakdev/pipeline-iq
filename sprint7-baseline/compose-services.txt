@@ -1,0 +1,14 @@
+loki
+platformiq-kafka
+platformiq-kafka-init
+postgres
+redis
+platformiq-celery-beat
+sonarqube_db
+sonarqube
+backend
+grafana
+promtail
+platformiq-kafka-ui
+prometheus
+worker

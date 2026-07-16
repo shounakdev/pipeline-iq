@@ -1,0 +1,110 @@
+32:def _severity_from_alert(alert_severity: str | None) -> IncidentSeverity:
+44:def _build_correlation_id(alert_event: dict[str, Any]) -> str:
+45:    payload = alert_event.get("payload") or {}
+48:        alert_event.get("service_id")
+53:        alert_event.get("environment")
+57:    event_type = (
+58:        alert_event.get("event_type")
+59:        or payload.get("event_type")
+64:        alert_event.get("correlation_id")
+68:    return correlation_id or f"{service_id}:{environment}:{event_type}"
+71:def _build_title(
+72:    alert_event: dict[str, Any],
+75:    payload = alert_event.get("payload") or {}
+79:        or alert_event.get("service_name")
+81:        or alert_event.get("service_id")
+86:        alert_event.get("environment")
+90:    event_type = str(
+91:        alert_event.get("event_type")
+92:        or payload.get("event_type")
+97:        event_type,
+98:        event_type.replace("_", " ").lower(),
+104:def _build_description(
+105:    alert_event: dict[str, Any],
+108:    payload = alert_event.get("payload") or {}
+112:        or alert_event.get("service_name")
+114:        or alert_event.get("service_id")
+119:        alert_event.get("environment")
+123:    event_type = str(
+124:        alert_event.get("event_type")
+125:        or payload.get("event_type")
+130:        event_type,
+131:        event_type.replace("_", " ").lower(),
+140:def _event_to_out(event: IncidentEvent) -> dict[str, Any]:
+142:        "id": event.id,
+143:        "incident_id": event.incident_id,
+144:        "event_type": event.event_type,
+145:        "message": event.message,
+146:        "metadata": event.event_metadata,
+147:        "created_at": event.created_at,
+151:def incident_to_out(incident: Incident) -> dict[str, Any]:
+161:        "triggered_by_event_id": incident.triggered_by_event_id,
+169:def incident_detail_to_out(incident: Incident) -> dict[str, Any]:
+171:    data["events"] = [_event_to_out(event) for event in incident.events]
+175:def publish_incident_event(event_type: str, payload: dict[str, Any]) -> None:
+180:        incident.events
+184:        # from app.events.publisher import publish_event
+185:        # publish_event(topic="incident.events", event_type=event_type, payload=payload)
+186:        logger.info("Incident event emitted: %s payload=%s", event_type, payload)
+188:        logger.exception("Failed to publish incident event")
+191:def create_or_update_incident_from_alert(
+193:    alert_event: dict[str, Any],
+199:    we attach another incident event instead of creating duplicate incidents.
+202:    payload = alert_event.get("payload") or {}
+205:        alert_event.get("severity")
+211:        alert_event.get("service_id")
+217:        alert_event.get("service_name")
+219:        or alert_event.get("service_id")
+225:        alert_event.get("environment")
+230:    triggered_by_event_id = (
+231:        alert_event.get("event_id")
+232:        or payload.get("event_id")
+233:        or alert_event.get("id")
+236:    correlation_id = _build_correlation_id(alert_event)
+252:        event = IncidentEvent(
+254:            event_type="INCIDENT_ALERT_ATTACHED",
+256:            event_metadata=alert_event,
+260:        db.add(event)
+261:        db.commit()
+264:        publish_incident_event(
+271:                "alert_event": alert_event,
+277:    incident = Incident(
+278:        title=_build_title(alert_event, service_name),
+279:        description=_build_description(alert_event, service_name),
+285:        triggered_by_event_id=triggered_by_event_id,
+291:    db.add(incident)
+292:    db.flush()
+294:    event = IncidentEvent(
+296:        event_type="INCIDENT_CREATED",
+298:        event_metadata=alert_event,
+302:    db.add(event)
+303:    db.commit()
+306:    publish_incident_event(
+316:            "triggered_by_event_id": incident.triggered_by_event_id,
+323:def acknowledge_incident(db: Session, incident_id: UUID) -> Incident:
+337:    event = IncidentEvent(
+339:        event_type="INCIDENT_ACKNOWLEDGED",
+341:        event_metadata={},
+345:    db.add(event)
+346:    db.commit()
+349:    publish_incident_event(
+362:def resolve_incident(db: Session, incident_id: UUID) -> Incident:
+374:    event = IncidentEvent(
+376:        event_type="INCIDENT_RESOLVED",
+378:        event_metadata={},
+382:    db.add(event)
+383:    db.commit()
+386:    publish_incident_event(
+400:def build_incident_timeline(db: Session, incident: Incident) -> list[dict[str, Any]]:
+405:    - incident events
+414:    for event in incident.events:
+417:                "timestamp": event.created_at,
+418:                "source": "incident.events",
+419:                "event_type": event.event_type,
+420:                "title": event.message or event.event_type,
+421:                "details": event.event_metadata or {},
+450:                    "event_type": "SERVICE_HEALTH_SNAPSHOT",
+490:                        "source": "pipeline.events",
+491:                        "event_type": "PIPELINE_RUN",
+530:                        "source": "deployment.events",
+531:                        "event_type": "DEPLOYMENT_RUN",

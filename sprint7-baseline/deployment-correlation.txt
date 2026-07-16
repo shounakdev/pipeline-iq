@@ -1,0 +1,70 @@
+backend/app/reliability/alert_service.py:31:def _find_latest_deployment(
+backend/app/reliability/alert_service.py:44:        Deployment.created_at <= correlation_time,
+backend/app/reliability/alert_service.py:351:    latest_deployment = _find_latest_deployment(
+backend/app/reliability/alert_service.py:364:        deployment=latest_deployment,
+backend/app/reliability/alert_service.py:374:        deployment_id=(
+backend/app/reliability/alert_service.py:375:            latest_deployment.id
+backend/app/reliability/alert_service.py:376:            if latest_deployment is not None
+backend/app/reliability/alert_service.py:415:        "deployment_id": (
+backend/app/reliability/alert_service.py:416:            str(latest_deployment.id)
+backend/app/reliability/alert_service.py:417:            if latest_deployment is not None
+backend/app/reliability/query_service.py:317:        "deployment_id": (
+backend/app/reliability/query_service.py:318:            str(alert.deployment_id)
+backend/app/reliability/query_service.py:319:            if alert.deployment_id is not None
+backend/app/reliability/query_service.py:457:    latest_deployment = (
+backend/app/reliability/query_service.py:477:        latest_deployment=(
+backend/app/reliability/query_service.py:479:                latest_deployment
+backend/app/reliability/query_service.py:616:    if alert.deployment_id is not None:
+backend/app/reliability/query_service.py:621:                == alert.deployment_id
+backend/app/reliability/schemas.py:116:    deployment_id: str | None = None
+backend/app/reliability/schemas.py:127:    latest_deployment: (
+backend/app/models.py:378:    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+backend/app/models.py:402:    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+backend/app/models.py:954:    deployment_id = Column(
+backend/app/models.py.bak:314:    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+backend/app/models.py.bak:338:    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+backend/app/deployments/schemas.py:22:    deployment_id: UUID
+backend/app/deployments/router.py:37:    deployment_id: UUID
+backend/app/deployments/router.py:118:                deployment_id=deployment.id,
+backend/app/deployments/router.py:124:        deployment_id=deployment.id,
+backend/app/deployments/router.py:141:            "deployment_id": str(deployment.id),
+backend/app/deployments/router.py:187:@router.get("/deployments/{deployment_id}", response_model=DeploymentOut)
+backend/app/deployments/router.py:189:    deployment_id: UUID,
+backend/app/deployments/router.py:194:        .filter(Deployment.id == deployment_id)
+backend/app/deployments/router.py:205:    "/deployments/{deployment_id}/workloads",
+backend/app/deployments/router.py:209:    deployment_id: UUID,
+backend/app/deployments/router.py:214:        .filter(Deployment.id == deployment_id)
+backend/app/deployments/router.py:223:        .filter(KubernetesWorkload.deployment_id == deployment_id)
+backend/app/deployments/router.py:232:    "/deployments/{deployment_id}/workloads",
+backend/app/deployments/router.py:236:    deployment_id: UUID,
+backend/app/deployments/router.py:242:        .filter(Deployment.id == deployment_id)
+backend/app/deployments/router.py:250:        deployment_id=deployment_id,
+backend/app/deployments/router.py:297:                    "deployment_id": str(deployment.id),
+backend/app/deployments/router.py:320:                    "deployment_id": str(deployment.id),
+backend/app/events/handlers.py:50:    deployment_id = payload.get("deployment_id")
+backend/app/events/handlers.py:52:    if not deployment_id:
+backend/app/events/handlers.py:64:            DeploymentRun.id == deployment_id
+backend/app/events/handlers.py:68:            raise ValueError(f"DeploymentRun not found for deployment_id={deployment_id}")
+backend/app/incidents/incident_service.py:407:    - latest pipeline/deployment rows if your models exist
+backend/app/incidents/incident_service.py:505:    # Add latest deployment history if DeploymentRun exists.
+backend/app/incidents/incident_service.py:534:                            "deployment_id": str(deployment.id),
+backend/app/reliability/alert_service.py:31:def _find_latest_deployment(
+backend/app/reliability/alert_service.py:44:        Deployment.created_at <= correlation_time,
+backend/app/reliability/alert_service.py:351:    latest_deployment = _find_latest_deployment(
+backend/app/reliability/alert_service.py:364:        deployment=latest_deployment,
+backend/app/reliability/alert_service.py:374:        deployment_id=(
+backend/app/reliability/alert_service.py:375:            latest_deployment.id
+backend/app/reliability/alert_service.py:376:            if latest_deployment is not None
+backend/app/reliability/alert_service.py:415:        "deployment_id": (
+backend/app/reliability/alert_service.py:416:            str(latest_deployment.id)
+backend/app/reliability/alert_service.py:417:            if latest_deployment is not None
+backend/app/reliability/query_service.py:317:        "deployment_id": (
+backend/app/reliability/query_service.py:318:            str(alert.deployment_id)
+backend/app/reliability/query_service.py:319:            if alert.deployment_id is not None
+backend/app/reliability/query_service.py:457:    latest_deployment = (
+backend/app/reliability/query_service.py:477:        latest_deployment=(
+backend/app/reliability/query_service.py:479:                latest_deployment
+backend/app/reliability/query_service.py:616:    if alert.deployment_id is not None:
+backend/app/reliability/query_service.py:621:                == alert.deployment_id
+backend/app/reliability/schemas.py:116:    deployment_id: str | None = None
+backend/app/reliability/schemas.py:127:    latest_deployment: (

@@ -1,0 +1,215 @@
+backend/app/events/envelope.py:12:    event_type: str,
+backend/app/events/envelope.py:28:        event_type=event_type,
+backend/app/events/consumer.py:39:    "event_type",
+backend/app/events/consumer.py:59:    if not envelope.get("event_type"):
+backend/app/events/consumer.py:60:        raise ValueError("Missing event_type")
+backend/app/events/consumer.py:82:        "event_type": "DEAD_LETTER_EVENT",
+backend/app/events/consumer.py:126:                event_type=envelope.get("event_type"),
+backend/app/events/kafka_producer.py:32:def publish_event_to_kafka(topic: str, envelope: Dict[str, Any]) -> None:
+backend/app/events/schemas.py:11:    event_type: str
+backend/app/events/outbox.py:7:from app.models import OutboxEvent
+backend/app/events/outbox.py:10:def create_outbox_event(
+backend/app/events/outbox.py:13:    event_type: str,
+backend/app/events/outbox.py:19:) -> OutboxEvent:
+backend/app/events/outbox.py:21:    Creates an outbox event inside the current DB transaction.
+backend/app/events/outbox.py:25:    - Caller must commit after saving both business data and outbox event.
+backend/app/events/outbox.py:27:    resolved_topic = topic or EVENT_TOPIC_MAP.get(event_type)
+backend/app/events/outbox.py:30:        raise ValueError(f"No Kafka topic mapped for event_type={event_type}")
+backend/app/events/outbox.py:33:        event_type=event_type,
+backend/app/events/outbox.py:40:    outbox_event = OutboxEvent(
+backend/app/events/outbox.py:43:        event_type=envelope["event_type"],
+backend/app/events/outbox.py:53:    db.add(outbox_event)
+backend/app/events/outbox.py:54:    return outbox_event
+backend/app/events/router.py:37:    event_type: Optional[str] = None,
+backend/app/events/router.py:51:        event_type=event_type,
+backend/app/events/service.py:10:from app.events.outbox import create_outbox_event
+backend/app/events/service.py:17:    event_type: str,
+backend/app/events/service.py:33:    return create_outbox_event(
+backend/app/events/service.py:35:        event_type=event_type,
+backend/app/events/service.py:47:        "event_type": event.event_type,
+backend/app/events/service.py:67:        "event_type": event.event_type,
+backend/app/events/service.py:86:    event_type: Optional[str] = None,
+backend/app/events/service.py:99:    if event_type:
+backend/app/events/service.py:100:        query = query.filter(EventRecord.event_type == event_type)
+backend/app/events/outbox_publisher.py:7:from app.events.kafka_producer import publish_event_to_kafka
+backend/app/events/outbox_publisher.py:8:from app.models import OutboxEvent
+backend/app/events/outbox_publisher.py:19:def build_envelope_from_outbox(event: OutboxEvent) -> dict:
+backend/app/events/outbox_publisher.py:22:        "event_type": event.event_type,
+backend/app/events/outbox_publisher.py:34:def publish_pending_outbox_events(db: Session) -> int:
+backend/app/events/outbox_publisher.py:36:        db.query(OutboxEvent)
+backend/app/events/outbox_publisher.py:37:        .filter(OutboxEvent.status == "PENDING")
+backend/app/events/outbox_publisher.py:38:        .order_by(OutboxEvent.created_at.asc())
+backend/app/events/outbox_publisher.py:54:            envelope = build_envelope_from_outbox(event)
+backend/app/events/outbox_publisher.py:56:            publish_event_to_kafka(
+backend/app/events/outbox_publisher.py:72:                db.query(OutboxEvent)
+backend/app/events/outbox_publisher.py:73:                .filter(OutboxEvent.id == event_db_id)
+backend/app/events/outbox_publisher.py:93:def run_outbox_publisher_once() -> int:
+backend/app/events/outbox_publisher.py:97:        return publish_pending_outbox_events(db)
+backend/app/events/handlers.py:26:    if record.event_type not in SUPPORTED_EVENT_TYPES:
+backend/app/events/handlers.py:27:        raise ValueError(f"Unsupported event_type={record.event_type}")
+backend/app/events/handlers.py:70:        if record.event_type.endswith("_STARTED"):
+backend/app/events/handlers.py:72:        elif record.event_type.endswith("_COMPLETED"):
+backend/app/events/handlers.py:74:        elif record.event_type.endswith("_FAILED"):
+backend/app/events/handlers.py:97:            "event_type": record.event_type,
+backend/app/events/handlers.py:151:    title = f"{service_name} - {record.event_type}"
+backend/app/events/handlers.py:154:        event_type=record.event_type,
+backend/app/events/handlers.py:168:        incident_type=record.event_type,
+backend/app/events/handlers.py:182:    event_type: str,
+backend/app/events/handlers.py:187:    if event_type == "HIGH_ERROR_RATE":
+backend/app/events/handlers.py:194:    if event_type == "HIGH_LATENCY":
+backend/app/events/handlers.py:201:    if event_type == "POD_RESTART_SPIKE":
+backend/app/events/handlers.py:208:    if event_type == "SERVICE_DEGRADED":
+backend/app/events/handlers.py:215:    if event_type == "SERVICE_DOWN":
+backend/app/events/handlers.py:218:    return f"{service_name} in {environment} triggered alert {event_type}."
+backend/app/events/idempotency.py:41:        event_type=envelope.get("event_type"),
+backend/app/models.py:433:    event_type = Column(String, nullable=False, index=True)
+backend/app/models.py:470:class OutboxEvent(Base):
+backend/app/models.py:471:    __tablename__ = "outbox_events"
+backend/app/models.py:477:    event_type = Column(String, index=True, nullable=False)
+backend/app/models.py:539:    event_type = Column(String, nullable=True, index=True)
+backend/app/models.py:641:    event_type = Column(String, nullable=False, index=True)
+backend/app/observability/alert_service.py:23:        or f"{snapshot.service_id}:{snapshot.environment}:{alert.event_type}"
+backend/app/observability/alert_service.py:28:        "event_type": alert.event_type,
+backend/app/observability/alert_rules.py:7:    event_type: str
+backend/app/observability/alert_rules.py:23:                event_type="HIGH_ERROR_RATE",
+backend/app/observability/alert_rules.py:35:                event_type="HIGH_LATENCY",
+backend/app/observability/alert_rules.py:47:                event_type="POD_RESTART_SPIKE",
+backend/app/observability/alert_rules.py:63:                event_type="SERVICE_DEGRADED",
+backend/app/observability/alert_rules.py:75:                event_type="SERVICE_DOWN",
+backend/app/observability/metrics.py:25:    ["event_type"],
+backend/app/observability/metrics.py:31:    ["event_type"],
+backend/app/celery_app.py:8:from app.events.outbox_publisher import run_outbox_publisher_once
+backend/app/celery_app.py:55:    "events.publish_outbox_events": {
+backend/app/celery_app.py:72:    "publish-outbox-events-every-10-seconds": {
+backend/app/celery_app.py:73:        "task": "events.publish_outbox_events",
+backend/app/celery_app.py:125:@celery_app.task(name="events.publish_outbox_events")
+backend/app/celery_app.py:126:def publish_outbox_events_task():
+backend/app/celery_app.py:127:    return run_outbox_publisher_once()
+backend/app/deployments/kubernetes_capture.py:79:                event_type=KUBERNETES_DEPLOYMENT_HEALTHY,
+backend/app/deployments/kubernetes_capture.py:96:                event_type=KUBERNETES_DEPLOYMENT_UNHEALTHY,
+backend/app/deployments/kubernetes_capture.py:117:            event_type=KUBERNETES_POD_UNHEALTHY,
+backend/app/deployments/kubernetes_capture.py:141:            event_type=KUBERNETES_RESTART_DETECTED,
+backend/app/deployments/router.py:136:        event_type=DEPLOYMENT_STARTED,
+backend/app/deployments/router.py:292:                event_type=DEPLOYMENT_FAILED,
+backend/app/deployments/router.py:315:                event_type=DEPLOYMENT_COMPLETED,
+backend/app/main.py:134:        event_type=PIPELINE_STARTED,
+backend/app/events/envelope.py:12:    event_type: str,
+backend/app/events/envelope.py:28:        event_type=event_type,
+backend/app/events/consumer.py:39:    "event_type",
+backend/app/events/consumer.py:59:    if not envelope.get("event_type"):
+backend/app/events/consumer.py:60:        raise ValueError("Missing event_type")
+backend/app/events/consumer.py:82:        "event_type": "DEAD_LETTER_EVENT",
+backend/app/events/consumer.py:126:                event_type=envelope.get("event_type"),
+backend/app/events/kafka_producer.py:32:def publish_event_to_kafka(topic: str, envelope: Dict[str, Any]) -> None:
+backend/app/events/schemas.py:11:    event_type: str
+backend/app/events/outbox.py:7:from app.models import OutboxEvent
+backend/app/events/outbox.py:10:def create_outbox_event(
+backend/app/events/outbox.py:13:    event_type: str,
+backend/app/events/outbox.py:19:) -> OutboxEvent:
+backend/app/events/outbox.py:21:    Creates an outbox event inside the current DB transaction.
+backend/app/events/outbox.py:25:    - Caller must commit after saving both business data and outbox event.
+backend/app/events/outbox.py:27:    resolved_topic = topic or EVENT_TOPIC_MAP.get(event_type)
+backend/app/events/outbox.py:30:        raise ValueError(f"No Kafka topic mapped for event_type={event_type}")
+backend/app/events/outbox.py:33:        event_type=event_type,
+backend/app/events/outbox.py:40:    outbox_event = OutboxEvent(
+backend/app/events/outbox.py:43:        event_type=envelope["event_type"],
+backend/app/events/outbox.py:53:    db.add(outbox_event)
+backend/app/events/outbox.py:54:    return outbox_event
+backend/app/events/router.py:37:    event_type: Optional[str] = None,
+backend/app/events/router.py:51:        event_type=event_type,
+backend/app/events/service.py:10:from app.events.outbox import create_outbox_event
+backend/app/events/service.py:17:    event_type: str,
+backend/app/events/service.py:33:    return create_outbox_event(
+backend/app/events/service.py:35:        event_type=event_type,
+backend/app/events/service.py:47:        "event_type": event.event_type,
+backend/app/events/service.py:67:        "event_type": event.event_type,
+backend/app/events/service.py:86:    event_type: Optional[str] = None,
+backend/app/events/service.py:99:    if event_type:
+backend/app/events/service.py:100:        query = query.filter(EventRecord.event_type == event_type)
+backend/app/events/outbox_publisher.py:7:from app.events.kafka_producer import publish_event_to_kafka
+backend/app/events/outbox_publisher.py:8:from app.models import OutboxEvent
+backend/app/events/outbox_publisher.py:19:def build_envelope_from_outbox(event: OutboxEvent) -> dict:
+backend/app/events/outbox_publisher.py:22:        "event_type": event.event_type,
+backend/app/events/outbox_publisher.py:34:def publish_pending_outbox_events(db: Session) -> int:
+backend/app/events/outbox_publisher.py:36:        db.query(OutboxEvent)
+backend/app/events/outbox_publisher.py:37:        .filter(OutboxEvent.status == "PENDING")
+backend/app/events/outbox_publisher.py:38:        .order_by(OutboxEvent.created_at.asc())
+backend/app/events/outbox_publisher.py:54:            envelope = build_envelope_from_outbox(event)
+backend/app/events/outbox_publisher.py:56:            publish_event_to_kafka(
+backend/app/events/outbox_publisher.py:72:                db.query(OutboxEvent)
+backend/app/events/outbox_publisher.py:73:                .filter(OutboxEvent.id == event_db_id)
+backend/app/events/outbox_publisher.py:93:def run_outbox_publisher_once() -> int:
+backend/app/events/outbox_publisher.py:97:        return publish_pending_outbox_events(db)
+backend/app/events/handlers.py:26:    if record.event_type not in SUPPORTED_EVENT_TYPES:
+backend/app/events/handlers.py:27:        raise ValueError(f"Unsupported event_type={record.event_type}")
+backend/app/events/handlers.py:70:        if record.event_type.endswith("_STARTED"):
+backend/app/events/handlers.py:72:        elif record.event_type.endswith("_COMPLETED"):
+backend/app/events/handlers.py:74:        elif record.event_type.endswith("_FAILED"):
+backend/app/events/handlers.py:97:            "event_type": record.event_type,
+backend/app/events/handlers.py:151:    title = f"{service_name} - {record.event_type}"
+backend/app/events/handlers.py:154:        event_type=record.event_type,
+backend/app/events/handlers.py:168:        incident_type=record.event_type,
+backend/app/events/handlers.py:182:    event_type: str,
+backend/app/events/handlers.py:187:    if event_type == "HIGH_ERROR_RATE":
+backend/app/events/handlers.py:194:    if event_type == "HIGH_LATENCY":
+backend/app/events/handlers.py:201:    if event_type == "POD_RESTART_SPIKE":
+backend/app/events/handlers.py:208:    if event_type == "SERVICE_DEGRADED":
+backend/app/events/handlers.py:215:    if event_type == "SERVICE_DOWN":
+backend/app/events/handlers.py:218:    return f"{service_name} in {environment} triggered alert {event_type}."
+backend/app/events/idempotency.py:41:        event_type=envelope.get("event_type"),
+backend/app/incidents/incident_router.py:35:    event_type: str,
+backend/app/incidents/incident_router.py:45:                event_type,
+backend/app/incidents/incident_router.py:53:                :event_type,
+backend/app/incidents/incident_router.py:63:            "event_type": event_type,
+backend/app/incidents/incident_router.py:155:                event_type,
+backend/app/incidents/incident_router.py:174:                "type": item["event_type"],
+backend/app/incidents/incident_router.py:276:        event_type="INCIDENT_ACKNOWLEDGED",
+backend/app/incidents/incident_router.py:328:        event_type="INCIDENT_RESOLVED",
+backend/app/incidents/incident_router.py:382:                ie.event_type,
+backend/app/incidents/incident_router.py:401:                "type": item["event_type"],
+backend/app/incidents/schemas.py:11:    event_type: str
+backend/app/incidents/schemas.py:40:    event_type: str
+backend/app/incidents/incident_service.py:57:    event_type = (
+backend/app/incidents/incident_service.py:58:        alert_event.get("event_type")
+backend/app/incidents/incident_service.py:59:        or payload.get("event_type")
+backend/app/incidents/incident_service.py:68:    return correlation_id or f"{service_id}:{environment}:{event_type}"
+backend/app/incidents/incident_service.py:90:    event_type = str(
+backend/app/incidents/incident_service.py:91:        alert_event.get("event_type")
+backend/app/incidents/incident_service.py:92:        or payload.get("event_type")
+backend/app/incidents/incident_service.py:97:        event_type,
+backend/app/incidents/incident_service.py:98:        event_type.replace("_", " ").lower(),
+backend/app/incidents/incident_service.py:123:    event_type = str(
+backend/app/incidents/incident_service.py:124:        alert_event.get("event_type")
+backend/app/incidents/incident_service.py:125:        or payload.get("event_type")
+backend/app/incidents/incident_service.py:130:        event_type,
+backend/app/incidents/incident_service.py:131:        event_type.replace("_", " ").lower(),
+backend/app/incidents/incident_service.py:144:        "event_type": event.event_type,
+backend/app/incidents/incident_service.py:175:def publish_incident_event(event_type: str, payload: dict[str, Any]) -> None:
+backend/app/incidents/incident_service.py:184:        # from app.events.publisher import publish_event
+backend/app/incidents/incident_service.py:185:        # publish_event(topic="incident.events", event_type=event_type, payload=payload)
+backend/app/incidents/incident_service.py:186:        logger.info("Incident event emitted: %s payload=%s", event_type, payload)
+backend/app/incidents/incident_service.py:254:            event_type="INCIDENT_ALERT_ATTACHED",
+backend/app/incidents/incident_service.py:296:        event_type="INCIDENT_CREATED",
+backend/app/incidents/incident_service.py:339:        event_type="INCIDENT_ACKNOWLEDGED",
+backend/app/incidents/incident_service.py:376:        event_type="INCIDENT_RESOLVED",
+backend/app/incidents/incident_service.py:419:                "event_type": event.event_type,
+backend/app/incidents/incident_service.py:420:                "title": event.message or event.event_type,
+backend/app/incidents/incident_service.py:450:                    "event_type": "SERVICE_HEALTH_SNAPSHOT",
+backend/app/incidents/incident_service.py:491:                        "event_type": "PIPELINE_RUN",
+backend/app/incidents/incident_service.py:531:                        "event_type": "DEPLOYMENT_RUN",
+backend/app/control_plane/routes.py:331:        event_type=PIPELINE_STARTED,
+backend/app/tasks.py:83:def emit_pipeline_terminal_event(pipeline_id: str, event_type: str):
+backend/app/tasks.py:85:    Record PIPELINE_COMPLETED / PIPELINE_FAILED into the transactional outbox.
+backend/app/tasks.py:106:            event_type=event_type,
+backend/app/tasks.py:130:        print(f"Failed to record {event_type} for pipeline {pipeline_id}: {exc}")
+backend/app/reliability/alert_service.py:398:        # transactional outbox envelope may not place
+backend/app/reliability/alert_service.py:456:    outbox_event = record_platform_event(
+backend/app/reliability/alert_service.py:458:        event_type=alert_type.value,
+backend/app/reliability/alert_service.py:465:    return alert, outbox_event, True
+backend/app/reliability/slo_engine.py:142:    outbox_event = None
+backend/app/reliability/slo_engine.py:161:            outbox_event,
+backend/app/reliability/slo_engine.py:171:        # Measurement, error budget, alert and outbox
+backend/app/reliability/slo_engine.py:183:        if outbox_event is not None:
+backend/app/reliability/slo_engine.py:184:            db.refresh(outbox_event)
+backend/app/reliability/slo_engine.py:251:            outbox_event.event_id
+backend/app/reliability/slo_engine.py:252:            if outbox_event is not None

@@ -1,0 +1,81 @@
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    slo_definition = relationship(
+        "SLODefinition",
+        back_populates="error_budget_statuses",
+    )
+
+    service = relationship("Service")
+
+
+class ReliabilityAlert(Base):
+    __tablename__ = "reliability_alerts"
+
+    id = Column(
+        String(36),
+        primary_key=True,
+        default=generate_uuid,
+    )
+
+    service_id = Column(
+        String(36),
+        ForeignKey("services.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    slo_definition_id = Column(
+        String(36),
+        ForeignKey("slo_definitions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    alert_type = Column(
+        SQLEnum(
+            ReliabilityAlertType,
+            name="reliability_alert_type",
+        ),
+        nullable=False,
+    )
+
+    severity = Column(
+        SQLEnum(
+            ReliabilitySeverity,
+            name="reliability_severity",
+        ),
+        nullable=False,
+    )
+
+    triggered_value = Column(Float, nullable=False)
+    threshold_value = Column(Float, nullable=False)
+
+    deployment_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("deployments.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    status = Column(
+        SQLEnum(
+            ReliabilityAlertStatus,
+            name="reliability_alert_status",
+        ),
+        nullable=False,
+        default=ReliabilityAlertStatus.OPEN,
+        server_default=ReliabilityAlertStatus.OPEN.value,
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    resolved_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )

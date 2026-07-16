@@ -1,0 +1,14 @@
+NAME                     IMAGE                                              COMMAND                  SERVICE                  CREATED          STATUS                    PORTS
+cicd_backend             intelligent-cicd-platform-backend                  "sh -c 'uvicorn app.…"   backend                  3 days ago       Up 12 minutes             0.0.0.0:8000->8000/tcp, :::8000->8000/tcp
+cicd_postgres            postgres:16                                        "docker-entrypoint.s…"   postgres                 4 days ago       Up 13 minutes             0.0.0.0:5433->5432/tcp, :::5433->5432/tcp
+cicd_redis               redis:7                                            "docker-entrypoint.s…"   redis                    4 days ago       Up 13 minutes             0.0.0.0:6380->6379/tcp, :::6380->6379/tcp
+cicd_sonarqube           sonarqube:lts-community                            "/opt/sonarqube/dock…"   sonarqube                4 days ago       Up 13 minutes             0.0.0.0:9000->9000/tcp, :::9000->9000/tcp
+cicd_sonarqube_db        postgres:16                                        "docker-entrypoint.s…"   sonarqube_db             4 days ago       Up 13 minutes             5432/tcp
+cicd_worker              intelligent-cicd-platform-worker                   "celery -A app.celer…"   worker                   3 days ago       Up 12 minutes             8000/tcp
+platformiq-celery-beat   intelligent-cicd-platform-platformiq-celery-beat   "celery -A app.celer…"   platformiq-celery-beat   4 days ago       Up 12 minutes             8000/tcp
+platformiq-grafana       grafana/grafana:latest                             "/run.sh"                grafana                  13 minutes ago   Up 13 minutes             0.0.0.0:3002->3000/tcp, :::3002->3000/tcp
+platformiq-kafka         apache/kafka:4.1.2                                 "/__cacert_entrypoin…"   platformiq-kafka         4 days ago       Up 13 minutes (healthy)   0.0.0.0:9092->9092/tcp, :::9092->9092/tcp
+platformiq-kafka-ui      provectuslabs/kafka-ui:latest                      "/bin/sh -c 'java --…"   platformiq-kafka-ui      13 minutes ago   Up 13 minutes             0.0.0.0:8085->8080/tcp, :::8085->8080/tcp
+platformiq-loki          grafana/loki:2.9.8                                 "/usr/bin/loki -conf…"   loki                     13 minutes ago   Up 13 minutes             0.0.0.0:3100->3100/tcp, :::3100->3100/tcp
+platformiq-prometheus    prom/prometheus:latest                             "/bin/prometheus --c…"   prometheus               4 days ago       Up 13 minutes             0.0.0.0:9090->9090/tcp, :::9090->9090/tcp
+platformiq-promtail      grafana/promtail:2.9.8                             "/usr/bin/promtail -…"   promtail                 13 minutes ago   Up 13 minutes             

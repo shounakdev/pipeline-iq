@@ -1,0 +1,27 @@
+backend/app/observability/alert_service.py:6:from app.incidents.incident_service import create_or_update_incident_from_alert
+backend/app/observability/alert_service.py:53:    and create/update incidents from those alerts.
+backend/app/observability/alert_service.py:76:        # Convert alert into incident
+backend/app/observability/alert_service.py:77:        create_or_update_incident_from_alert(db, event)
+backend/app/observability/metrics.py:18:    "Total number of incidents created",
+backend/app/events/handlers.py:10:    create_or_update_incident_from_alert,
+backend/app/events/handlers.py:23:    - telemetry.alerts events create incidents.
+backend/app/events/handlers.py:89:    Convert telemetry and reliability alerts into incidents.
+backend/app/events/handlers.py:110:    create_or_update_incident_from_alert(
+backend/app/events/handlers.py:126:    Converts observability alert events into incidents.
+backend/app/events/constants.py:57:INCIDENT_CREATED = "INCIDENT_CREATED"
+backend/app/events/constants.py:93:    INCIDENT_CREATED: TOPIC_INCIDENT_EVENTS,
+backend/app/incidents/router.py:43:    incidents = query.order_by(Incident.created_at.desc()).all()
+backend/app/incidents/router.py:109:    incidents = query.order_by(Incident.created_at.desc()).all()
+backend/app/incidents/router.py:125:    incidents = query.order_by(Incident.created_at.desc()).limit(10).all()
+backend/app/incidents/incident_service.py:32:def _severity_from_alert(alert_severity: str | None) -> IncidentSeverity:
+backend/app/incidents/incident_service.py:135:        f"Incident created from telemetry alert {alert_label} "
+backend/app/incidents/incident_service.py:164:        "created_at": incident.created_at,
+backend/app/incidents/incident_service.py:191:def create_or_update_incident_from_alert(
+backend/app/incidents/incident_service.py:196:    Converts a telemetry alert into an incident.
+backend/app/incidents/incident_service.py:198:    If an active incident already exists for the same service/environment/alert type,
+backend/app/incidents/incident_service.py:254:            event_type="INCIDENT_ALERT_ATTACHED",
+backend/app/incidents/incident_service.py:255:            message="Additional telemetry alert attached to existing incident.",
+backend/app/incidents/incident_service.py:265:            "INCIDENT_ALERT_ATTACHED",
+backend/app/incidents/incident_service.py:296:        event_type="INCIDENT_CREATED",
+backend/app/incidents/incident_service.py:297:        message="Incident created from telemetry alert.",
+backend/app/incidents/incident_service.py:307:        "INCIDENT_CREATED",
