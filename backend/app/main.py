@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import require_roles
 from app.auth.router import router as auth_router
 from app.control_plane.routes import router as control_plane_router
-from app.database import Base, engine, get_db
+from app.database import get_db
 from app.deployments.router import router as deployments_router
 from app.events.constants import PIPELINE_STARTED
 from app.events.router import router as events_router
@@ -26,9 +26,9 @@ from app.observability.metrics import API_REQUEST_DURATION_SECONDS
 from app.observability.metrics_router import router as metrics_router
 from app.schemas import PipelineTriggerRequest
 from app.tasks import execute_pipeline_task
+from app.reliability.router import router as reliability_router
 
 
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="PlatformIQ(Formerly Intelligent CI/CD Platform)",
@@ -62,6 +62,7 @@ app.include_router(events_router)
 app.include_router(auth_router)
 app.include_router(control_plane_router)
 app.include_router(deployments_router)
+app.include_router(reliability_router)
 
 
 @app.middleware("http")

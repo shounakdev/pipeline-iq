@@ -6,7 +6,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum,
+    Enum as SQLEnum,
     Float,
     ForeignKey,
     Index,
@@ -17,10 +17,11 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.ext.mutable import MutableDict, MutableList
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, validates
 
 from app.database import Base
 
@@ -217,7 +218,7 @@ class ServiceHealthSnapshot(Base):
 
     environment = Column(String, nullable=False, default="staging")
     status = Column(
-        Enum(ServiceHealthStatus),
+        SQLEnum(ServiceHealthStatus),
         nullable=False,
         default=ServiceHealthStatus.UNKNOWN,
     )
@@ -567,84 +568,1081 @@ class DeadLetterEvent(Base):
     last_retry_at = Column(DateTime(timezone=True), nullable=True)
 
 
+# ============================================================
+# Sprint 7 — Incident Response and Timeline Engine
+# ============================================================
+
+
+def enum_values(enum_class):
+    """
+    Persist enum values rather than Python member names.
+
+    Example:
+        IncidentSeverity.SEV_1 -> "SEV-1"
+    """
+    return [member.value for member in enum_class]
+
+
 class IncidentSeverity(str, enum.Enum):
+    SEV_1 = "SEV-1"
+    SEV_2 = "SEV-2"
+    SEV_3 = "SEV-3"
+
+    # Temporary Sprint 5 compatibility aliases.
+    # Remove after the legacy incident service is replaced.
+    CRITICAL = "SEV-1"
+    HIGH = "SEV-2"
+    MEDIUM = "SEV-3"
+    LOW = "SEV-3"
+
+
+class IncidentStatus(str, enum.Enum):
+    DETECTED = "DETECTED"
+    ACKNOWLEDGED = "ACKNOWLEDGED"
+    INVESTIGATING = "INVESTIGATING"
+    ACTION_RECOMMENDED = "ACTION_RECOMMENDED"
+    REMEDIATING = "REMEDIATING"
+    RESOLVED = "RESOLVED"
+    FAILED_RECOVERY = "FAILED_RECOVERY"
+
+    # Temporary Sprint 5 compatibility aliases.
+    OPEN = "DETECTED"
+    FALSE_POSITIVE = "RESOLVED"
+
+
+incident_severity_enum = SQLEnum(
+    IncidentSeverity,
+    name="incidentseverity",
+    values_callable=enum_values,
+    validate_strings=True,
+)
+
+
+incident_status_enum = SQLEnum(
+    IncidentStatus,
+    name="incidentstatus",
+    values_callable=enum_values,
+    validate_strings=True,
+)
+
+
+class Incident(Base):
+    __tablename__ = "incidents"
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    incident_number = Column(
+        String(32),
+        nullable=False,
+        unique=True,
+        server_default=text("next_incident_number()"),
+    )
+
+    title = Column(
+        String(255),
+        nullable=False,
+    )
+
+    description = Column(
+        Text,
+        nullable=True,
+    )
+
+    severity = Column(
+        incident_severity_enum,
+        nullable=False,
+        default=IncidentSeverity.SEV_3,
+        server_default=IncidentSeverity.SEV_3.value,
+    )
+
+    status = Column(
+        incident_status_enum,
+        nullable=False,
+        default=IncidentStatus.DETECTED,
+        server_default=IncidentStatus.DETECTED.value,
+    )
+
+    primary_service_id = Column(
+        String(36),
+        ForeignKey("services.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    environment = Column(
+        String(100),
+        nullable=False,
+    )
+
+    triggering_alert_id = Column(
+        String(36),
+        ForeignKey(
+            "reliability_alerts.id",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+    )
+
+    suspected_deployment_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "deployments.id",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+    )
+
+    deduplication_key = Column(
+        String(500),
+        nullable=True,
+    )
+
+    failure_started_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    detected_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    acknowledged_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    investigation_started_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    remediation_started_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    resolved_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    current_assignee_id = Column(
+        String(36),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    resolution_summary = Column(
+        Text,
+        nullable=True,
+    )
+
+    rca_summary = Column(
+        Text,
+        nullable=True,
+    )
+
+    remediation_summary = Column(
+        Text,
+        nullable=True,
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    created_by = Column(
+        String(36),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    # --------------------------------------------------------
+    # Temporary Sprint 5 compatibility columns.
+    #
+    # Keep these during Sprint 7B because the active router and
+    # old incident service still use these names.
+    # --------------------------------------------------------
+
+    service_id = Column(
+        String,
+        nullable=False,
+    )
+
+    correlation_id = Column(
+        String,
+        nullable=False,
+    )
+
+    triggered_by_event_id = Column(
+        String,
+        nullable=True,
+    )
+
+    started_at = Column(
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+    # --------------------------------------------------------
+    # Relationships
+    # --------------------------------------------------------
+
+    primary_service = relationship(
+        "Service",
+        foreign_keys=[primary_service_id],
+    )
+
+    triggering_alert = relationship(
+        "ReliabilityAlert",
+        foreign_keys=[triggering_alert_id],
+    )
+
+    suspected_deployment = relationship(
+        "Deployment",
+        foreign_keys=[suspected_deployment_id],
+    )
+
+    current_assignee = relationship(
+        "User",
+        foreign_keys=[current_assignee_id],
+    )
+
+    creator = relationship(
+        "User",
+        foreign_keys=[created_by],
+    )
+
+    events = relationship(
+        "IncidentTimelineEvent",
+        back_populates="incident",
+        cascade="all, delete-orphan",
+        order_by=(
+            "IncidentTimelineEvent.occurred_at, "
+            "IncidentTimelineEvent.id"
+        ),
+    )
+
+    assignments = relationship(
+        "IncidentAssignment",
+        back_populates="incident",
+        cascade="all, delete-orphan",
+    )
+
+    comments = relationship(
+        "IncidentComment",
+        back_populates="incident",
+        cascade="all, delete-orphan",
+    )
+
+    metrics = relationship(
+        "IncidentMetric",
+        back_populates="incident",
+        cascade="all, delete-orphan",
+    )
+
+    alert_links = relationship(
+        "IncidentAlertLink",
+        back_populates="incident",
+        cascade="all, delete-orphan",
+    )
+
+    # Keep old ORM creation working until incident_service.py
+    # is replaced during the next Sprint 7 step.
+
+    @validates("service_id")
+    def sync_legacy_service_id(self, key, value):
+        if value:
+            self.primary_service_id = value
+
+        return value
+
+    @validates("correlation_id")
+    def sync_legacy_correlation_id(self, key, value):
+        if value:
+            self.deduplication_key = value
+
+        return value
+
+    @validates("started_at")
+    def sync_legacy_started_at(self, key, value):
+        if value:
+            self.failure_started_at = value
+
+        return value
+
+    __table_args__ = (
+        Index(
+            "ix_incidents_status",
+            "status",
+        ),
+        Index(
+            "ix_incidents_severity",
+            "severity",
+        ),
+        Index(
+            "ix_incidents_primary_service_id",
+            "primary_service_id",
+        ),
+        Index(
+            "ix_incidents_environment",
+            "environment",
+        ),
+        Index(
+            "ix_incidents_detected_at",
+            "detected_at",
+        ),
+        Index(
+            "ix_incidents_current_assignee_id",
+            "current_assignee_id",
+        ),
+        Index(
+            "ix_incidents_deduplication_key",
+            "deduplication_key",
+        ),
+    )
+
+
+class IncidentTimelineEvent(Base):
+    __tablename__ = "incident_timeline_events"
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    incident_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "incidents.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+    )
+
+    event_type = Column(
+        String(100),
+        nullable=False,
+    )
+
+    source = Column(
+        String(100),
+        nullable=False,
+        default="SYSTEM",
+        server_default="SYSTEM",
+    )
+
+    message = Column(
+        Text,
+        nullable=True,
+    )
+
+    from_status = Column(
+        incident_status_enum,
+        nullable=True,
+    )
+
+    to_status = Column(
+        incident_status_enum,
+        nullable=True,
+    )
+
+    actor_user_id = Column(
+        String(36),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    alert_id = Column(
+        String(36),
+        ForeignKey(
+            "reliability_alerts.id",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+    )
+
+    deployment_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "deployments.id",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+    )
+
+    metadata_json = Column(
+        JSONB,
+        nullable=True,
+    )
+
+    occurred_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    incident = relationship(
+        "Incident",
+        back_populates="events",
+    )
+
+    actor_user = relationship(
+        "User",
+        foreign_keys=[actor_user_id],
+    )
+
+    alert = relationship(
+        "ReliabilityAlert",
+        foreign_keys=[alert_id],
+    )
+
+    deployment = relationship(
+        "Deployment",
+        foreign_keys=[deployment_id],
+    )
+
+    # Compatibility with old IncidentEvent(event_metadata=...).
+    @property
+    def event_metadata(self):
+        return self.metadata_json
+
+    @event_metadata.setter
+    def event_metadata(self, value):
+        self.metadata_json = value
+
+    __table_args__ = (
+        Index(
+            "ix_incident_timeline_incident_occurred_id",
+            "incident_id",
+            "occurred_at",
+            "id",
+        ),
+        Index(
+            "ix_incident_timeline_event_type",
+            "event_type",
+        ),
+    )
+
+
+# Temporary import compatibility:
+#
+# from app.models import IncidentEvent
+#
+# will continue to work, but the real table is now
+# incident_timeline_events.
+IncidentEvent = IncidentTimelineEvent
+
+
+class IncidentAssignment(Base):
+    __tablename__ = "incident_assignments"
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    incident_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "incidents.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    assigned_to_user_id = Column(
+        String(36),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    assigned_by_user_id = Column(
+        String(36),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    assignment_note = Column(
+        Text,
+        nullable=True,
+    )
+
+    assigned_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    unassigned_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    is_active = Column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default="true",
+    )
+
+    incident = relationship(
+        "Incident",
+        back_populates="assignments",
+    )
+
+    assigned_to_user = relationship(
+        "User",
+        foreign_keys=[assigned_to_user_id],
+    )
+
+    assigned_by_user = relationship(
+        "User",
+        foreign_keys=[assigned_by_user_id],
+    )
+
+
+class IncidentComment(Base):
+    __tablename__ = "incident_comments"
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    incident_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "incidents.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    author_user_id = Column(
+        String(36),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    comment = Column(
+        Text,
+        nullable=False,
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    incident = relationship(
+        "Incident",
+        back_populates="comments",
+    )
+
+    author = relationship(
+        "User",
+        foreign_keys=[author_user_id],
+    )
+
+
+class IncidentMetric(Base):
+    __tablename__ = "incident_metrics"
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    incident_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "incidents.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    metric_type = Column(
+        String(100),
+        nullable=False,
+    )
+
+    metric_name = Column(
+        String(255),
+        nullable=False,
+    )
+
+    value = Column(
+        Float,
+        nullable=False,
+    )
+
+    unit = Column(
+        String(50),
+        nullable=True,
+    )
+
+    source = Column(
+        String(100),
+        nullable=False,
+        default="UNKNOWN",
+        server_default="UNKNOWN",
+    )
+
+    captured_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    metadata_json = Column(
+        JSONB,
+        nullable=True,
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    incident = relationship(
+        "Incident",
+        back_populates="metrics",
+    )
+
+
+class IncidentAlertLink(Base):
+    __tablename__ = "incident_alert_links"
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    incident_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "incidents.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    reliability_alert_id = Column(
+        String(36),
+        ForeignKey(
+            "reliability_alerts.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    linked_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    is_triggering_alert = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+    )
+
+    incident = relationship(
+        "Incident",
+        back_populates="alert_links",
+    )
+
+    reliability_alert = relationship(
+        "ReliabilityAlert",
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "incident_id",
+            "reliability_alert_id",
+            name="uq_incident_alert_link",
+        ),
+    )
+
+# ============================================================
+# Sprint 6 — Reliability Models
+# ============================================================
+
+
+class SLOMetricType(str, enum.Enum):
+    AVAILABILITY = "AVAILABILITY"
+    P95_LATENCY = "P95_LATENCY"
+    ERROR_RATE = "ERROR_RATE"
+
+
+class ReliabilitySeverity(str, enum.Enum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
     CRITICAL = "CRITICAL"
 
 
-class IncidentStatus(str, enum.Enum):
+class ErrorBudgetState(str, enum.Enum):
+    HEALTHY = "HEALTHY"
+    WARNING = "WARNING"
+    BREACHED = "BREACHED"
+    EXHAUSTED = "EXHAUSTED"
+
+
+class ReliabilityAlertType(str, enum.Enum):
+    SLO_BREACH = "SLO_BREACH"
+    ERROR_BUDGET_BURN = "ERROR_BUDGET_BURN"
+    ERROR_BUDGET_EXHAUSTED = "ERROR_BUDGET_EXHAUSTED"
+    LATENCY_BREACH = "LATENCY_BREACH"
+    AVAILABILITY_BREACH = "AVAILABILITY_BREACH"
+    ERROR_RATE_BREACH = "ERROR_RATE_BREACH"
+
+
+class ReliabilityAlertStatus(str, enum.Enum):
     OPEN = "OPEN"
     ACKNOWLEDGED = "ACKNOWLEDGED"
     RESOLVED = "RESOLVED"
     FALSE_POSITIVE = "FALSE_POSITIVE"
 
 
-class Incident(Base):
-    __tablename__ = "incidents"
+class SLODefinition(Base):
+    __tablename__ = "slo_definitions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(
+        String(36),
+        primary_key=True,
+        default=generate_uuid,
+    )
 
-    title = Column(String, nullable=False)
-    description = Column(Text, nullable=True)
-
-    severity = Column(
-        Enum(IncidentSeverity, name="incidentseverity"),
+    service_id = Column(
+        String(36),
+        ForeignKey("services.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
 
-    status = Column(
-        Enum(IncidentStatus, name="incidentstatus"),
+    metric_type = Column(
+        SQLEnum(SLOMetricType, name="slo_metric_type"),
         nullable=False,
-        default=IncidentStatus.OPEN,
-        index=True,
     )
 
-    service_id = Column(String, nullable=False, index=True)
-    environment = Column(String, nullable=False, index=True)
+    target_value = Column(Float, nullable=False)
 
-    correlation_id = Column(String, nullable=False, index=True)
-    triggered_by_event_id = Column(String, nullable=True, index=True)
+    window_minutes = Column(
+        Integer,
+        nullable=False,
+        default=60,
+        server_default="60",
+    )
 
-    started_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    resolved_at = Column(DateTime, nullable=True)
+    severity_on_breach = Column(
+        SQLEnum(
+            ReliabilitySeverity,
+            name="reliability_severity",
+        ),
+        nullable=False,
+        default=ReliabilitySeverity.HIGH,
+        server_default=ReliabilitySeverity.HIGH.value,
+    )
 
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    enabled = Column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default="true",
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
     updated_at = Column(
-        DateTime,
+        DateTime(timezone=True),
         nullable=False,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        server_default=func.now(),
+        onupdate=func.now(),
     )
 
-    events = relationship(
-        "IncidentEvent",
-        back_populates="incident",
+    service = relationship("Service")
+
+    measurements = relationship(
+        "SLOMeasurement",
+        back_populates="slo_definition",
+        cascade="all, delete-orphan",
+    )
+
+    error_budget_statuses = relationship(
+        "ErrorBudgetStatus",
+        back_populates="slo_definition",
+        cascade="all, delete-orphan",
+    )
+
+    alerts = relationship(
+        "ReliabilityAlert",
+        back_populates="slo_definition",
         cascade="all, delete-orphan",
     )
 
 
-class IncidentEvent(Base):
-    __tablename__ = "incident_events"
+class SLOMeasurement(Base):
+    __tablename__ = "slo_measurements"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(
+        String(36),
+        primary_key=True,
+        default=generate_uuid,
+    )
 
-    incident_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("incidents.id", ondelete="CASCADE"),
+    slo_definition_id = Column(
+        String(36),
+        ForeignKey("slo_definitions.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
 
-    event_type = Column(String, nullable=False, index=True)
-    message = Column(Text, nullable=True)
+    service_id = Column(
+        String(36),
+        ForeignKey("services.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
 
-    # Important: SQLAlchemy reserves the name "metadata".
-    # The Python attribute is event_metadata, but the DB column is metadata.
-    event_metadata = Column("metadata", JSON, nullable=True)
+    metric_type = Column(
+        SQLEnum(SLOMetricType, name="slo_metric_type"),
+        nullable=False,
+    )
 
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    measured_value = Column(Float, nullable=False)
+    target_value = Column(Float, nullable=False)
+    is_breached = Column(Boolean, nullable=False)
+    window_minutes = Column(Integer, nullable=False)
 
-    incident = relationship("Incident", back_populates="events")
+    source = Column(
+        String(50),
+        nullable=False,
+        default="PROMETHEUS",
+        server_default="PROMETHEUS",
+    )
+
+    evaluated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        index=True,
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    slo_definition = relationship(
+        "SLODefinition",
+        back_populates="measurements",
+    )
+
+    service = relationship("Service")
+
+
+class ErrorBudgetStatus(Base):
+    __tablename__ = "error_budget_statuses"
+
+    id = Column(
+        String(36),
+        primary_key=True,
+        default=generate_uuid,
+    )
+
+    slo_definition_id = Column(
+        String(36),
+        ForeignKey("slo_definitions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    service_id = Column(
+        String(36),
+        ForeignKey("services.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    target_percentage = Column(Float, nullable=False)
+    allowed_failure_percentage = Column(Float, nullable=False)
+
+    consumed_percentage = Column(
+        Float,
+        nullable=False,
+        default=0.0,
+        server_default="0",
+    )
+
+    remaining_percentage = Column(
+        Float,
+        nullable=False,
+        default=100.0,
+        server_default="100",
+    )
+
+    burn_rate = Column(
+        Float,
+        nullable=False,
+        default=0.0,
+        server_default="0",
+    )
+
+    status = Column(
+        SQLEnum(ErrorBudgetState, name="error_budget_state"),
+        nullable=False,
+        default=ErrorBudgetState.HEALTHY,
+        server_default=ErrorBudgetState.HEALTHY.value,
+    )
+
+    window_minutes = Column(Integer, nullable=False)
+
+    evaluated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        index=True,
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    slo_definition = relationship(
+        "SLODefinition",
+        back_populates="error_budget_statuses",
+    )
+
+    service = relationship("Service")
+
+
+class ReliabilityAlert(Base):
+    __tablename__ = "reliability_alerts"
+
+    id = Column(
+        String(36),
+        primary_key=True,
+        default=generate_uuid,
+    )
+
+    service_id = Column(
+        String(36),
+        ForeignKey("services.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    slo_definition_id = Column(
+        String(36),
+        ForeignKey("slo_definitions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    alert_type = Column(
+        SQLEnum(
+            ReliabilityAlertType,
+            name="reliability_alert_type",
+        ),
+        nullable=False,
+    )
+
+    severity = Column(
+        SQLEnum(
+            ReliabilitySeverity,
+            name="reliability_severity",
+        ),
+        nullable=False,
+    )
+
+    triggered_value = Column(Float, nullable=False)
+    threshold_value = Column(Float, nullable=False)
+
+    deployment_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("deployments.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    status = Column(
+        SQLEnum(
+            ReliabilityAlertStatus,
+            name="reliability_alert_status",
+        ),
+        nullable=False,
+        default=ReliabilityAlertStatus.OPEN,
+        server_default=ReliabilityAlertStatus.OPEN.value,
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    resolved_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    service = relationship("Service")
+
+    slo_definition = relationship(
+        "SLODefinition",
+        back_populates="alerts",
+    )
+
+    deployment = relationship("Deployment")
