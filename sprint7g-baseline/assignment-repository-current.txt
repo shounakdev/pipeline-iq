@@ -1,0 +1,121 @@
+    incident and reliability-alert constraint.
+    """
+
+    existing_statement = select(IncidentAlertLink).where(
+        IncidentAlertLink.incident_id == incident_id,
+        (
+            IncidentAlertLink.reliability_alert_id
+            == reliability_alert_id
+        ),
+    )
+
+    existing_link = db.execute(
+        existing_statement,
+    ).scalar_one_or_none()
+
+    if existing_link is not None:
+        if (
+            is_triggering_alert
+            and not existing_link.is_triggering_alert
+        ):
+            existing_link.is_triggering_alert = True
+            db.add(existing_link)
+            db.flush()
+
+        return existing_link
+
+    alert_link = IncidentAlertLink(
+        incident_id=incident_id,
+        reliability_alert_id=reliability_alert_id,
+        is_triggering_alert=is_triggering_alert,
+    )
+
+    db.add(alert_link)
+    db.flush()
+
+    return alert_link
+
+
+def create_assignment(
+    db: Session,
+    *,
+    incident_id: UUID,
+    assigned_to_user_id: str,
+    assigned_by_user_id: str | None = None,
+    assignment_note: str | None = None,
+    assigned_at: datetime | None = None,
+) -> IncidentAssignment:
+    """
+    Create an active incident assignment.
+    """
+
+    values: dict[str, Any] = {
+        "incident_id": incident_id,
+        "assigned_to_user_id": assigned_to_user_id,
+        "assigned_by_user_id": assigned_by_user_id,
+        "assignment_note": assignment_note,
+        "is_active": True,
+    }
+
+    if assigned_at is not None:
+        values["assigned_at"] = assigned_at
+
+    assignment = IncidentAssignment(**values)
+
+    db.add(assignment)
+    db.flush()
+
+    return assignment
+
+
+def close_active_assignment(
+    db: Session,
+    *,
+    incident_id: UUID,
+    unassigned_at: datetime,
+) -> IncidentAssignment | None:
+    """
+    Close the latest active assignment for an incident.
+    """
+
+    assignment = get_latest_active_assignment(
+        db,
+        incident_id,
+    )
+
+    if assignment is None:
+        return None
+
+    assignment.is_active = False
+    assignment.unassigned_at = unassigned_at
+
+    db.add(assignment)
+    db.flush()
+
+    return assignment
+
+
+def create_comment(
+    db: Session,
+    *,
+    incident_id: UUID,
+    comment: str,
+    author_user_id: str | None = None,
+) -> IncidentComment:
+    """
+    Create an incident comment.
+    """
+
+    incident_comment = IncidentComment(
+        incident_id=incident_id,
+        author_user_id=author_user_id,
+        comment=comment,
+    )
+
+    db.add(incident_comment)
+    db.flush()
+
+    return incident_comment
+
+
+def create_timeline_event(

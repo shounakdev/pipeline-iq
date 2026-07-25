@@ -1,0 +1,1989 @@
+
+========================================================================================
+backend/app/models.py
+========================================================================================
+
+--- Environment ---
+class Environment(Base):
+    __tablename__ = "environments"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    service_id = Column(String, ForeignKey("services.id"), nullable=False)
+    name = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    service = relationship("Service", back_populates="environments")
+
+--- Deployment ---
+class Deployment(Base):
+    __tablename__ = "deployments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    service_id = Column(String(36), ForeignKey("services.id"), nullable=False)
+    pipeline_run_id = Column(String(36), ForeignKey("pipeline_runs.id"), nullable=True)
+    environment_id = Column(String(36), ForeignKey("environments.id"), nullable=True)
+
+    commit_sha = Column(String(100), nullable=True)
+    image_tag = Column(String(255), nullable=False)
+    deployment_version = Column(String(50), nullable=True)
+
+    argo_sync_status = Column(String(50), nullable=True, default="UNKNOWN")
+    kubernetes_rollout_status = Column(String(50), nullable=True, default="UNKNOWN")
+
+    previous_revision = Column(String(100), nullable=True)
+
+    namespace = Column(String(100), nullable=True)
+    cluster_name = Column(String(100), nullable=True, default="kind-platformiq")
+    service_name = Column(String(150), nullable=True)
+    argo_application_name = Column(String(150), nullable=True)
+
+    pod_count = Column(Integer, nullable=True, default=0)
+    restart_count = Column(Integer, nullable=True, default=0)
+    failure_reason = Column(Text, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    deployed_at = Column(DateTime(timezone=True), nullable=True)
+
+    workloads = relationship(
+        "KubernetesWorkload",
+        back_populates="deployment",
+        cascade="all, delete-orphan",
+    )
+
+    revisions = relationship(
+        "DeploymentRevision",
+        back_populates="deployment",
+        cascade="all, delete-orphan",
+    )
+
+--- Incident ---
+class Incident(Base):
+    __tablename__ = "incidents"
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    incident_number = Column(
+        String(32),
+        nullable=False,
+        unique=True,
+        server_default=text("next_incident_number()"),
+    )
+
+    title = Column(
+        String(255),
+        nullable=False,
+    )
+
+    description = Column(
+        Text,
+        nullable=True,
+    )
+
+    severity = Column(
+        incident_severity_enum,
+        nullable=False,
+        default=IncidentSeverity.SEV_3,
+        server_default=IncidentSeverity.SEV_3.value,
+    )
+
+    status = Column(
+        incident_status_enum,
+        nullable=False,
+        default=IncidentStatus.DETECTED,
+        server_default=IncidentStatus.DETECTED.value,
+    )
+
+    primary_service_id = Column(
+        String(36),
+        ForeignKey("services.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    environment = Column(
+        String(100),
+        nullable=False,
+    )
+
+    triggering_alert_id = Column(
+        String(36),
+        ForeignKey(
+            "reliability_alerts.id",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+    )
+
+    suspected_deployment_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "deployments.id",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+    )
+
+    deduplication_key = Column(
+        String(500),
+        nullable=True,
+    )
+
+    failure_started_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    detected_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    acknowledged_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    investigation_started_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    remediation_started_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    resolved_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    current_assignee_id = Column(
+        String(36),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    resolution_summary = Column(
+        Text,
+        nullable=True,
+    )
+
+    rca_summary = Column(
+        Text,
+        nullable=True,
+    )
+
+    remediation_summary = Column(
+        Text,
+        nullable=True,
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    created_by = Column(
+        String(36),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    # --------------------------------------------------------
+    # Temporary Sprint 5 compatibility columns.
+    #
+    # Keep these during Sprint 7B because the active router and
+    # old incident service still use these names.
+    # --------------------------------------------------------
+
+    # Legacy Sprint 5 compatibility fields.
+    # New Sprint 7 code must use primary_service_id, deduplication_key,
+    # detected_at, and the incident-alert relationship instead.
+    service_id = Column(
+        String,
+        nullable=True,
+        index=True,
+    )
+
+    correlation_id = Column(
+        String,
+        nullable=True,
+        index=True,
+    )
+
+    triggered_by_event_id = Column(
+        String,
+        nullable=True,
+        index=True,
+    )
+
+    started_at = Column(
+        DateTime,
+        nullable=True,
+    )
+
+    # --------------------------------------------------------
+    # Relationships
+    # --------------------------------------------------------
+
+    primary_service = relationship(
+        "Service",
+        foreign_keys=[primary_service_id],
+    )
+
+    triggering_alert = relationship(
+        "ReliabilityAlert",
+        foreign_keys=[triggering_alert_id],
+    )
+
+    suspected_deployment = relationship(
+        "Deployment",
+        foreign_keys=[suspected_deployment_id],
+    )
+
+    current_assignee = relationship(
+        "User",
+        foreign_keys=[current_assignee_id],
+    )
+
+    creator = relationship(
+        "User",
+        foreign_keys=[created_by],
+    )
+
+    events = relationship(
+        "IncidentTimelineEvent",
+        back_populates="incident",
+        cascade="all, delete-orphan",
+        order_by=(
+            "IncidentTimelineEvent.occurred_at, "
+            "IncidentTimelineEvent.id"
+        ),
+    )
+
+    assignments = relationship(
+        "IncidentAssignment",
+        back_populates="incident",
+        cascade="all, delete-orphan",
+    )
+
+    comments = relationship(
+        "IncidentComment",
+        back_populates="incident",
+        cascade="all, delete-orphan",
+    )
+
+    metrics = relationship(
+        "IncidentMetric",
+        back_populates="incident",
+        cascade="all, delete-orphan",
+    )
+
+    alert_links = relationship(
+        "IncidentAlertLink",
+        back_populates="incident",
+        cascade="all, delete-orphan",
+    )
+
+    # Keep old ORM creation working until incident_service.py
+    # is replaced during the next Sprint 7 step.
+
+    @validates("service_id")
+    def sync_legacy_service_id(self, key, value):
+        if value:
+            self.primary_service_id = value
+
+        return value
+
+    @validates("correlation_id")
+    def sync_legacy_correlation_id(self, key, value):
+        if value:
+            self.deduplication_key = value
+
+        return value
+
+    @validates("started_at")
+    def sync_legacy_started_at(self, key, value):
+        if value:
+            self.failure_started_at = value
+
+        return value
+
+    __table_args__ = (
+        Index(
+            "ix_incidents_status",
+            "status",
+        ),
+        Index(
+            "ix_incidents_severity",
+            "severity",
+        ),
+        Index(
+            "ix_incidents_primary_service_id",
+            "primary_service_id",
+        ),
+        Index(
+            "ix_incidents_environment",
+            "environment",
+        ),
+        Index(
+            "ix_incidents_detected_at",
+            "detected_at",
+        ),
+        Index(
+            "ix_incidents_current_assignee_id",
+            "current_assignee_id",
+        ),
+        Index(
+            "ix_incidents_deduplication_key",
+            "deduplication_key",
+        ),
+    )
+
+--- IncidentTimelineEvent ---
+class IncidentTimelineEvent(Base):
+    __tablename__ = "incident_timeline_events"
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    incident_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "incidents.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+    )
+
+    event_type = Column(
+        String(100),
+        nullable=False,
+    )
+
+    source = Column(
+        String(100),
+        nullable=False,
+        default="SYSTEM",
+        server_default="SYSTEM",
+    )
+
+    message = Column(
+        Text,
+        nullable=True,
+    )
+
+    from_status = Column(
+        incident_status_enum,
+        nullable=True,
+    )
+
+    to_status = Column(
+        incident_status_enum,
+        nullable=True,
+    )
+
+    actor_user_id = Column(
+        String(36),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    alert_id = Column(
+        String(36),
+        ForeignKey(
+            "reliability_alerts.id",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+    )
+
+    deployment_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "deployments.id",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+    )
+
+    metadata_json = Column(
+        JSONB,
+        nullable=True,
+    )
+
+    occurred_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    incident = relationship(
+        "Incident",
+        back_populates="events",
+    )
+
+    actor_user = relationship(
+        "User",
+        foreign_keys=[actor_user_id],
+    )
+
+    alert = relationship(
+        "ReliabilityAlert",
+        foreign_keys=[alert_id],
+    )
+
+    deployment = relationship(
+        "Deployment",
+        foreign_keys=[deployment_id],
+    )
+
+    # Compatibility with old IncidentEvent(event_metadata=...).
+    @property
+    def event_metadata(self):
+        return self.metadata_json
+
+    @event_metadata.setter
+    def event_metadata(self, value):
+        self.metadata_json = value
+
+    __table_args__ = (
+        Index(
+            "ix_incident_timeline_incident_occurred_id",
+            "incident_id",
+            "occurred_at",
+            "id",
+        ),
+        Index(
+            "ix_incident_timeline_event_type",
+            "event_type",
+        ),
+    )
+
+--- IncidentMetric ---
+class IncidentMetric(Base):
+    __tablename__ = "incident_metrics"
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    incident_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "incidents.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    metric_type = Column(
+        String(100),
+        nullable=False,
+    )
+
+    metric_name = Column(
+        String(255),
+        nullable=False,
+    )
+
+    value = Column(
+        Float,
+        nullable=False,
+    )
+
+    unit = Column(
+        String(50),
+        nullable=True,
+    )
+
+    source = Column(
+        String(100),
+        nullable=False,
+        default="UNKNOWN",
+        server_default="UNKNOWN",
+    )
+
+    captured_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    metadata_json = Column(
+        JSONB,
+        nullable=True,
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    incident = relationship(
+        "Incident",
+        back_populates="metrics",
+    )
+
+--- SLODefinition ---
+class SLODefinition(Base):
+    __tablename__ = "slo_definitions"
+
+    id = Column(
+        String(36),
+        primary_key=True,
+        default=generate_uuid,
+    )
+
+    service_id = Column(
+        String(36),
+        ForeignKey("services.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    metric_type = Column(
+        SQLEnum(SLOMetricType, name="slo_metric_type"),
+        nullable=False,
+    )
+
+    target_value = Column(Float, nullable=False)
+
+    window_minutes = Column(
+        Integer,
+        nullable=False,
+        default=60,
+        server_default="60",
+    )
+
+    severity_on_breach = Column(
+        SQLEnum(
+            ReliabilitySeverity,
+            name="reliability_severity",
+        ),
+        nullable=False,
+        default=ReliabilitySeverity.HIGH,
+        server_default=ReliabilitySeverity.HIGH.value,
+    )
+
+    enabled = Column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default="true",
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    service = relationship("Service")
+
+    measurements = relationship(
+        "SLOMeasurement",
+        back_populates="slo_definition",
+        cascade="all, delete-orphan",
+    )
+
+    error_budget_statuses = relationship(
+        "ErrorBudgetStatus",
+        back_populates="slo_definition",
+        cascade="all, delete-orphan",
+    )
+
+    alerts = relationship(
+        "ReliabilityAlert",
+        back_populates="slo_definition",
+        cascade="all, delete-orphan",
+    )
+
+--- SLOMeasurement ---
+class SLOMeasurement(Base):
+    __tablename__ = "slo_measurements"
+
+    id = Column(
+        String(36),
+        primary_key=True,
+        default=generate_uuid,
+    )
+
+    slo_definition_id = Column(
+        String(36),
+        ForeignKey("slo_definitions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    service_id = Column(
+        String(36),
+        ForeignKey("services.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    metric_type = Column(
+        SQLEnum(SLOMetricType, name="slo_metric_type"),
+        nullable=False,
+    )
+
+    measured_value = Column(Float, nullable=False)
+    target_value = Column(Float, nullable=False)
+    is_breached = Column(Boolean, nullable=False)
+    window_minutes = Column(Integer, nullable=False)
+
+    source = Column(
+        String(50),
+        nullable=False,
+        default="PROMETHEUS",
+        server_default="PROMETHEUS",
+    )
+
+    evaluated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        index=True,
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    slo_definition = relationship(
+        "SLODefinition",
+        back_populates="measurements",
+    )
+
+    service = relationship("Service")
+
+--- ErrorBudgetStatus ---
+class ErrorBudgetStatus(Base):
+    __tablename__ = "error_budget_statuses"
+
+    id = Column(
+        String(36),
+        primary_key=True,
+        default=generate_uuid,
+    )
+
+    slo_definition_id = Column(
+        String(36),
+        ForeignKey("slo_definitions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    service_id = Column(
+        String(36),
+        ForeignKey("services.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    target_percentage = Column(Float, nullable=False)
+    allowed_failure_percentage = Column(Float, nullable=False)
+
+    consumed_percentage = Column(
+        Float,
+        nullable=False,
+        default=0.0,
+        server_default="0",
+    )
+
+    remaining_percentage = Column(
+        Float,
+        nullable=False,
+        default=100.0,
+        server_default="100",
+    )
+
+    burn_rate = Column(
+        Float,
+        nullable=False,
+        default=0.0,
+        server_default="0",
+    )
+
+    status = Column(
+        SQLEnum(ErrorBudgetState, name="error_budget_state"),
+        nullable=False,
+        default=ErrorBudgetState.HEALTHY,
+        server_default=ErrorBudgetState.HEALTHY.value,
+    )
+
+    window_minutes = Column(Integer, nullable=False)
+
+    evaluated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        index=True,
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    slo_definition = relationship(
+        "SLODefinition",
+        back_populates="error_budget_statuses",
+    )
+
+    service = relationship("Service")
+
+--- ReliabilityAlert ---
+class ReliabilityAlert(Base):
+    __tablename__ = "reliability_alerts"
+
+    id = Column(
+        String(36),
+        primary_key=True,
+        default=generate_uuid,
+    )
+
+    service_id = Column(
+        String(36),
+        ForeignKey("services.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    slo_definition_id = Column(
+        String(36),
+        ForeignKey("slo_definitions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    alert_type = Column(
+        SQLEnum(
+            ReliabilityAlertType,
+            name="reliability_alert_type",
+        ),
+        nullable=False,
+    )
+
+    severity = Column(
+        SQLEnum(
+            ReliabilitySeverity,
+            name="reliability_severity",
+        ),
+        nullable=False,
+    )
+
+    triggered_value = Column(Float, nullable=False)
+    threshold_value = Column(Float, nullable=False)
+
+    deployment_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("deployments.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    status = Column(
+        SQLEnum(
+            ReliabilityAlertStatus,
+            name="reliability_alert_status",
+        ),
+        nullable=False,
+        default=ReliabilityAlertStatus.OPEN,
+        server_default=ReliabilityAlertStatus.OPEN.value,
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    resolved_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    service = relationship("Service")
+
+    slo_definition = relationship(
+        "SLODefinition",
+        back_populates="alerts",
+    )
+
+    deployment = relationship("Deployment")
+
+========================================================================================
+backend/app/incidents/repository.py
+========================================================================================
+
+--- get_incident_by_id ---
+def get_incident_by_id(
+    db: Session,
+    incident_id: UUID,
+) -> Incident | None:
+    """
+    Return one incident by its UUID.
+    """
+
+    statement = select(Incident).where(
+        Incident.id == incident_id,
+    )
+
+    return db.execute(statement).scalar_one_or_none()
+
+--- find_open_incident_by_deduplication_key ---
+def find_open_incident_by_deduplication_key(
+    db: Session,
+    deduplication_key: str,
+    *,
+    correlation_cutoff: datetime,
+) -> Incident | None:
+    """
+    Find a matching non-terminal incident inside the correlation window.
+
+    Correlation uses the latest linked alert when one exists, falling
+    back to the original incident detection timestamp.
+    """
+
+    terminal_statuses = (
+        IncidentStatus.RESOLVED,
+        IncidentStatus.FAILED_RECOVERY,
+    )
+
+    latest_alert_at = (
+        select(func.max(ReliabilityAlert.created_at))
+        .join(
+            IncidentAlertLink,
+            (
+                IncidentAlertLink.reliability_alert_id
+                == ReliabilityAlert.id
+            ),
+        )
+        .where(
+            IncidentAlertLink.incident_id == Incident.id,
+        )
+        .correlate(Incident)
+        .scalar_subquery()
+    )
+
+    latest_correlation_activity = func.coalesce(
+        latest_alert_at,
+        Incident.detected_at,
+    )
+
+    statement = (
+        select(Incident)
+        .where(
+            Incident.deduplication_key == deduplication_key,
+            Incident.status.notin_(terminal_statuses),
+            Incident.resolved_at.is_(None),
+            latest_correlation_activity >= correlation_cutoff,
+        )
+        .order_by(
+            latest_correlation_activity.desc(),
+            Incident.detected_at.desc(),
+            Incident.created_at.desc(),
+        )
+        .limit(1)
+    )
+
+    return db.execute(statement).scalar_one_or_none()
+
+--- get_incident_metrics ---
+def get_incident_metrics(
+    db: Session,
+    incident_id: UUID,
+) -> list[IncidentMetric]:
+    """
+    Return captured metric snapshots, newest first.
+    """
+
+    statement = (
+        select(IncidentMetric)
+        .where(
+            IncidentMetric.incident_id == incident_id,
+        )
+        .order_by(
+            IncidentMetric.captured_at.desc(),
+            IncidentMetric.created_at.desc(),
+        )
+    )
+
+    return list(
+        db.execute(statement).scalars().all(),
+    )
+
+--- create_incident ---
+def create_incident(
+    db: Session,
+    **incident_values: Any,
+) -> Incident:
+    """
+    Create and flush an incident.
+
+    The service layer is responsible for supplying validated values and
+    committing or rolling back the transaction.
+    """
+
+    incident = Incident(**incident_values)
+
+    db.add(incident)
+    db.flush()
+
+    return incident
+
+--- update_incident ---
+def update_incident(
+    db: Session,
+    incident: Incident,
+    **field_updates,
+) -> Incident:
+    """Update general incident fields without committing the transaction."""
+    protected_fields = {
+        "id",
+        "incident_number",
+        "created_at",
+    }
+
+    for field_name, value in field_updates.items():
+        if field_name in protected_fields:
+            raise ValueError(
+                f"Incident field cannot be updated: {field_name}"
+            )
+
+        if not hasattr(incident, field_name):
+            raise ValueError(
+                f"Unknown Incident field: {field_name}"
+            )
+
+        setattr(incident, field_name, value)
+
+    db.add(incident)
+    db.flush()
+
+    return incident
+
+--- create_timeline_event ---
+def create_timeline_event(
+    db: Session,
+    *,
+    incident_id: UUID,
+    event_type: str,
+    source: str,
+    message: str | None = None,
+    from_status: IncidentStatus | None = None,
+    to_status: IncidentStatus | None = None,
+    actor_user_id: str | None = None,
+    alert_id: str | None = None,
+    deployment_id: UUID | None = None,
+    metadata_json: dict[str, Any] | None = None,
+    occurred_at: datetime | None = None,
+) -> IncidentTimelineEvent:
+    """
+    Create an incident timeline event.
+    """
+
+    values: dict[str, Any] = {
+        "incident_id": incident_id,
+        "event_type": event_type,
+        "source": source,
+        "message": message,
+        "from_status": from_status,
+        "to_status": to_status,
+        "actor_user_id": actor_user_id,
+        "alert_id": alert_id,
+        "deployment_id": deployment_id,
+        "metadata_json": metadata_json,
+    }
+
+    if occurred_at is not None:
+        values["occurred_at"] = occurred_at
+
+    timeline_event = IncidentTimelineEvent(**values)
+
+    db.add(timeline_event)
+    db.flush()
+
+    return timeline_event
+
+--- create_metric_snapshot ---
+def create_metric_snapshot(
+    db: Session,
+    *,
+    incident_id: UUID,
+    metric_type: str,
+    metric_name: str,
+    value: float,
+    source: str,
+    unit: str | None = None,
+    captured_at: datetime | None = None,
+    metadata_json: dict[str, Any] | None = None,
+) -> IncidentMetric:
+    """
+    Create one incident metric snapshot.
+    """
+
+    values: dict[str, Any] = {
+        "incident_id": incident_id,
+        "metric_type": metric_type,
+        "metric_name": metric_name,
+        "value": value,
+        "unit": unit,
+        "source": source,
+        "metadata_json": metadata_json,
+    }
+
+    if captured_at is not None:
+        values["captured_at"] = captured_at
+
+    metric = IncidentMetric(**values)
+
+    db.add(metric)
+    db.flush()
+
+    return metric
+
+========================================================================================
+backend/app/incidents/service.py
+========================================================================================
+
+--- _deployment_response ---
+def _deployment_response(
+    deployment: Any,
+) -> DeploymentSummaryResponse | None:
+    if deployment is None:
+        return None
+
+    return DeploymentSummaryResponse(
+        id=deployment.id,
+        service_id=str(deployment.service_id),
+        service_name=deployment.service_name,
+        environment_id=deployment.environment_id,
+        image_tag=deployment.image_tag,
+        deployment_version=deployment.deployment_version,
+        commit_sha=deployment.commit_sha,
+        argo_sync_status=deployment.argo_sync_status,
+        kubernetes_rollout_status=(deployment.kubernetes_rollout_status),
+        deployed_at=deployment.deployed_at,
+        created_at=deployment.created_at,
+    )
+
+--- _metric_response ---
+def _metric_response(
+    metric: IncidentMetric,
+) -> IncidentMetricResponse:
+    return IncidentMetricResponse(
+        id=metric.id,
+        incident_id=metric.incident_id,
+        metric_type=metric.metric_type,
+        metric_name=metric.metric_name,
+        value=float(metric.value),
+        unit=metric.unit,
+        source=metric.source,
+        captured_at=metric.captured_at,
+        metadata_json=metric.metadata_json,
+        created_at=metric.created_at,
+    )
+
+--- get_incident_detail ---
+def get_incident_detail(
+    db: Session,
+    incident_id: UUID,
+) -> IncidentDetailResponse | None:
+    incident = repository.get_incident_by_id(
+        db,
+        incident_id,
+    )
+
+    if incident is None:
+        return None
+
+    alerts = repository.get_incident_alerts(
+        db,
+        incident.id,
+    )
+    current_assignment = repository.get_latest_active_assignment(
+        db,
+        incident.id,
+    )
+    assignments = repository.get_incident_assignments(
+        db,
+        incident.id,
+    )
+    comments = repository.get_incident_comments(
+        db,
+        incident.id,
+    )
+    metrics = repository.get_incident_metrics(
+        db,
+        incident.id,
+    )
+    timeline_events = repository.get_incident_timeline(
+        db,
+        incident.id,
+    )
+
+    return IncidentDetailResponse(
+        incident=_incident_list_response(incident),
+        description=incident.description,
+        deduplication_key=(incident.deduplication_key or ""),
+        primary_service=_service_response(incident.primary_service),
+        affected_services=_affected_services(
+            incident,
+            alerts,
+        ),
+        triggering_alert_id=incident.triggering_alert_id,
+        triggering_alert=_alert_response(incident.triggering_alert),
+        related_alerts=[
+            response
+            for alert in alerts
+            if (response := _alert_response(alert)) is not None
+        ],
+        suspected_deployment=_deployment_response(incident.suspected_deployment),
+        failure_started_at=incident.failure_started_at,
+        investigation_started_at=(incident.investigation_started_at),
+        remediation_started_at=(incident.remediation_started_at),
+        created_by=incident.created_by,
+        creator=_operator_response(incident.creator),
+        current_assignment=_assignment_response(current_assignment),
+        assignment_history=[
+            response
+            for assignment in assignments
+            if (response := _assignment_response(assignment)) is not None
+        ],
+        comments=[_comment_response(comment) for comment in comments],
+        metric_snapshot=[_metric_response(metric) for metric in metrics],
+        timeline_summary=[_timeline_event_response(event) for event in timeline_events],
+        resolution_summary=incident.resolution_summary,
+        rca_summary=incident.rca_summary,
+        remediation_summary=incident.remediation_summary,
+        calculated_incident_metrics=(_calculated_metrics_response(incident)),
+    )
+
+--- create_or_update_incident_from_alert ---
+def create_or_update_incident_from_alert(
+    db: Session,
+    alert: ReliabilityAlert,
+    *,
+    environment: str,
+    failure_started_at: datetime | None = None,
+    affected_service_count: int = 1,
+    availability_percent: float | None = None,
+    high_severity_alert_count: int = 0,
+    actor_user_id: str | None = None,
+) -> IncidentDetailResponse:
+    """
+    Create or update an open incident for a reliability alert.
+
+    ReliabilityAlert has no environment column, so callers must supply
+    the environment from the event or telemetry context.
+    """
+    try:
+        existing_alert_link = repository.get_incident_alert_link_by_alert_id(
+            db,
+            str(alert.id),
+        )
+
+        if existing_alert_link is not None:
+            existing_detail = get_incident_detail(
+                db,
+                existing_alert_link.incident_id,
+            )
+
+            if existing_detail is None:
+                raise RuntimeError(
+                    "Incident alert link references a missing "
+                    f"incident: alert_id={alert.id}"
+                )
+
+            return existing_detail
+
+        normalised_environment = environment.strip()
+
+        if not normalised_environment:
+            raise ValueError("Incident environment must not be empty")
+
+        if availability_percent is None:
+            alert_type = _enum_value(alert.alert_type)
+
+            if alert_type == "AVAILABILITY_BREACH":
+                availability_percent = float(alert.triggered_value)
+
+        deduplication_category = (
+            alert.slo_definition_id
+            or _enum_value(alert.alert_type)
+        )
+
+        deduplication_key = build_deduplication_key(
+            alert.service_id,
+            normalised_environment,
+            deduplication_category,
+        )
+
+        deduplication_lock_id = build_deduplication_lock_id(
+            deduplication_key,
+        )
+        repository.acquire_incident_deduplication_lock(
+            db,
+            lock_id=deduplication_lock_id,
+        )
+
+        alert_type_value = _enum_value(alert.alert_type)
+
+        severity_decision = calculate_incident_severity_decision(
+            alert.severity,
+            environment=normalised_environment,
+            alert_type=alert.alert_type,
+            service_criticality=getattr(
+                alert.service,
+                "criticality",
+                None,
+            ),
+            measured_value=float(alert.triggered_value),
+            threshold_value=float(alert.threshold_value),
+            availability_percent=availability_percent,
+            affected_service_count=affected_service_count,
+            high_severity_alert_count=high_severity_alert_count,
+            deployment_correlated=alert.deployment_id is not None,
+            error_budget_exhausted=(
+                alert_type_value == "ERROR_BUDGET_EXHAUSTED"
+            ),
+        )
+        severity = severity_decision.severity
+
+        alert_created_at = alert.created_at or _utcnow()
+
+        if alert_created_at.tzinfo is None:
+            alert_created_at = alert_created_at.replace(
+                tzinfo=timezone.utc,
+            )
+
+        correlation_cutoff = alert_created_at - timedelta(
+            minutes=INCIDENT_CORRELATION_WINDOW_MINUTES,
+        )
+
+        incident = repository.find_open_incident_by_deduplication_key(
+            db,
+            deduplication_key,
+            correlation_cutoff=correlation_cutoff,
+        )
+        should_capture_alert_metrics = True
+
+        if incident is None:
+            service_name = (
+                alert.service.name
+                if alert.service is not None
+                else str(alert.service_id)
+            )
+            alert_name = str(_enum_value(alert.alert_type)).replace("_", " ").title()
+
+            detected_at = alert.created_at or _utcnow()
+            failure_time = failure_started_at or detected_at
+
+            incident = repository.create_incident(
+                db,
+                title=f"{alert_name}: {service_name}",
+                description=(
+                    "Automatically created from reliability " f"alert {alert.id}."
+                ),
+                severity=severity,
+                status=IncidentStatus.DETECTED,
+                primary_service_id=alert.service_id,
+                environment=normalised_environment,
+                triggering_alert_id=alert.id,
+                suspected_deployment_id=alert.deployment_id,
+                deduplication_key=deduplication_key,
+                failure_started_at=failure_time,
+                detected_at=detected_at,
+                created_by=actor_user_id,
+                service_id=alert.service_id,
+                correlation_id=deduplication_key,
+                triggered_by_event_id=alert.id,
+            )
+
+            repository.link_alert_to_incident(
+                db,
+                incident_id=incident.id,
+                reliability_alert_id=alert.id,
+                is_triggering_alert=True,
+            )
+
+            repository.create_timeline_event(
+                db,
+                incident_id=incident.id,
+                event_type=get_timeline_event_type(IncidentStatus.DETECTED),
+                source="RELIABILITY_ALERT",
+                message=(
+                    "Incident automatically detected from "
+                    f"reliability alert {alert.id}."
+                ),
+                to_status=IncidentStatus.DETECTED,
+                actor_user_id=actor_user_id,
+                alert_id=alert.id,
+                deployment_id=alert.deployment_id,
+                metadata_json={
+                    "deduplication_key": deduplication_key,
+                    "alert_type": _enum_value(alert.alert_type),
+                    "alert_severity": _enum_value(alert.severity),
+                    "incident_severity": severity.value,
+                    "severity_reason_code": (
+                        severity_decision.reason_code
+                    ),
+                    "severity_explanation": (
+                        severity_decision.explanation
+                    ),
+                    "severity_evidence": severity_decision.evidence,
+                },
+                occurred_at=detected_at,
+            )
+
+            repository.create_audit_event(
+                db,
+                action="INCIDENT_CREATED",
+                entity_type="INCIDENT",
+                entity_id=str(incident.id),
+                actor_id=actor_user_id,
+                details=_json_details(
+                    alert_id=alert.id,
+                    service_id=alert.service_id,
+                    environment=normalised_environment,
+                    severity=severity.value,
+                    severity_reason_code=(
+                        severity_decision.reason_code
+                    ),
+                    severity_explanation=(
+                        severity_decision.explanation
+                    ),
+                    severity_evidence=severity_decision.evidence,
+                    deduplication_key=deduplication_key,
+                ),
+            )
+        else:
+            linked_alerts = repository.get_incident_alerts(
+                db,
+                incident.id,
+            )
+            linked_alert_ids = {str(linked_alert.id) for linked_alert in linked_alerts}
+            should_capture_alert_metrics = str(alert.id) not in linked_alert_ids
+
+            if should_capture_alert_metrics:
+                repository.link_alert_to_incident(
+                    db,
+                    incident_id=incident.id,
+                    reliability_alert_id=alert.id,
+                    is_triggering_alert=False,
+                )
+
+                repository.create_timeline_event(
+                    db,
+                    incident_id=incident.id,
+                    event_type="ALERT_LINKED",
+                    source="RELIABILITY_ALERT",
+                    message=(
+                        f"Reliability alert {alert.id} linked "
+                        "to the existing incident."
+                    ),
+                    actor_user_id=actor_user_id,
+                    alert_id=alert.id,
+                    deployment_id=alert.deployment_id,
+                    metadata_json={
+                        "alert_type": _enum_value(alert.alert_type),
+                        "alert_severity": _enum_value(alert.severity),
+                    },
+                )
+
+                repository.create_audit_event(
+                    db,
+                    action="INCIDENT_ALERT_LINKED",
+                    entity_type="INCIDENT",
+                    entity_id=str(incident.id),
+                    actor_id=actor_user_id,
+                    details=_json_details(
+                        alert_id=alert.id,
+                    ),
+                )
+
+            if is_more_severe(
+                severity,
+                incident.severity,
+            ):
+                previous_severity = incident.severity
+
+                repository.update_incident_severity(
+                    db,
+                    incident,
+                    severity=severity,
+                )
+
+                repository.create_timeline_event(
+                    db,
+                    incident_id=incident.id,
+                    event_type="SEVERITY_CHANGED",
+                    source="RELIABILITY_RULE",
+                    message=(
+                        "Incident severity escalated from "
+                        f"{previous_severity.value} to "
+                        f"{severity.value}."
+                    ),
+                    actor_user_id=actor_user_id,
+                    alert_id=alert.id,
+                    deployment_id=alert.deployment_id,
+                    metadata_json={
+                        "previous_severity": (
+                            previous_severity.value
+                        ),
+                        "new_severity": severity.value,
+                        "reason_code": severity_decision.reason_code,
+                        "explanation": severity_decision.explanation,
+                        "evidence": severity_decision.evidence,
+                    },
+                )
+
+                repository.create_audit_event(
+                    db,
+                    action="INCIDENT_SEVERITY_CHANGED",
+                    entity_type="INCIDENT",
+                    entity_id=str(incident.id),
+                    actor_id=actor_user_id,
+                    details=_json_details(
+                        previous_severity=(
+                            previous_severity.value
+                        ),
+                        new_severity=severity.value,
+                        reason_code=severity_decision.reason_code,
+                        explanation=severity_decision.explanation,
+                        evidence=severity_decision.evidence,
+                        alert_id=alert.id,
+                    ),
+                )
+
+        if should_capture_alert_metrics:
+            repository.create_metric_snapshot(
+                db,
+                incident_id=incident.id,
+                metric_type="RELIABILITY_ALERT",
+                metric_name="triggered_value",
+                value=float(alert.triggered_value),
+                source="RELIABILITY_ALERT",
+                metadata_json={
+                    "alert_id": str(alert.id),
+                    "alert_type": _enum_value(alert.alert_type),
+                },
+            )
+            repository.create_metric_snapshot(
+                db,
+                incident_id=incident.id,
+                metric_type="RELIABILITY_ALERT",
+                metric_name="threshold_value",
+                value=float(alert.threshold_value),
+                source="RELIABILITY_ALERT",
+                metadata_json={
+                    "alert_id": str(alert.id),
+                    "alert_type": _enum_value(alert.alert_type),
+                },
+            )
+
+        db.commit()
+        db.refresh(incident)
+
+        detail = get_incident_detail(
+            db,
+            incident.id,
+        )
+
+        if detail is None:
+            raise RuntimeError("Incident was committed but could not be reloaded")
+
+        return detail
+
+    except Exception:
+        db.rollback()
+        raise
+
+========================================================================================
+backend/app/reliability/alert_service.py
+========================================================================================
+
+--- _find_latest_deployment ---
+def _find_latest_deployment(
+    db: Session,
+    *,
+    service_id: str,
+    occurred_at: datetime | None = None,
+    environment_id: str | None = None,
+) -> Deployment | None:
+    correlation_time = occurred_at or datetime.now(
+        timezone.utc
+    )
+
+    query = db.query(Deployment).filter(
+        Deployment.service_id == service_id,
+        Deployment.created_at <= correlation_time,
+    )
+
+    if environment_id is not None:
+        query = query.filter(
+            Deployment.environment_id == environment_id
+        )
+
+    return (
+        query.order_by(
+            Deployment.created_at.desc()
+        )
+        .first()
+    )
+
+--- create_reliability_alert_and_event ---
+def create_reliability_alert_and_event(
+    db: Session,
+    *,
+    service: Service,
+    slo_definition: SLODefinition,
+    measurement: SLOMeasurement,
+    error_budget: ErrorBudgetStatus | None,
+) -> tuple[
+    ReliabilityAlert | None,
+    Any | None,
+    bool,
+]:
+    service_id = str(service.id)
+    slo_definition_id = str(
+        slo_definition.id
+    )
+
+    alert_type = determine_alert_type(
+        measurement=measurement,
+        error_budget=error_budget,
+    )
+
+    # Resolve alerts that no longer match the current
+    # condition. When alert_type is None, all alert types
+    # managed by this SLO are resolved.
+    _resolve_inactive_alert_types(
+        db,
+        service_id=service_id,
+        slo_definition_id=slo_definition_id,
+        measurement=measurement,
+        active_alert_type=alert_type,
+    )
+
+    # The SLO and its error budget are currently healthy.
+    # Any previously active alert was resolved above.
+    if alert_type is None:
+        return None, None, False
+
+    severity = ReliabilitySeverity(
+        slo_definition.severity_on_breach
+    )
+
+    triggered_value = float(
+        measurement.measured_value
+    )
+    threshold_value = float(
+        measurement.target_value
+    )
+
+    existing_alert = find_existing_open_alert(
+        db,
+        service_id=service_id,
+        slo_definition_id=slo_definition_id,
+        alert_type=alert_type,
+    )
+
+    if existing_alert is not None:
+        # Refresh the existing alert with the latest
+        # evaluated values instead of creating a duplicate.
+        existing_alert.triggered_value = (
+            triggered_value
+        )
+        existing_alert.threshold_value = (
+            threshold_value
+        )
+        existing_alert.severity = severity
+
+        db.flush()
+
+        return existing_alert, None, False
+
+    alert_created_at = datetime.now(timezone.utc)
+
+    latest_deployment = _find_latest_deployment(
+        db,
+        service_id=slo_definition.service_id,
+        occurred_at=alert_created_at,
+        environment_id=getattr(
+            slo_definition,
+            "environment_id",
+            None,
+        ),
+    )
+
+    environment = get_deployment_environment(
+        db,
+        deployment=latest_deployment,
+    )
+
+    alert = ReliabilityAlert(
+        service_id=service_id,
+        slo_definition_id=slo_definition_id,
+        alert_type=alert_type,
+        severity=severity,
+        triggered_value=triggered_value,
+        threshold_value=threshold_value,
+        deployment_id=(
+            latest_deployment.id
+            if latest_deployment is not None
+            else None
+        ),
+        status=ReliabilityAlertStatus.OPEN,
+        created_at=alert_created_at,
+    )
+
+    db.add(alert)
+    db.flush()
+
+    metric_type = SLOMetricType(
+        measurement.metric_type
+    )
+
+    correlation_id = (
+        f"{service.id}:"
+        f"{environment}:"
+        f"{metric_type.value}"
+    )
+
+    payload = {
+        "alert_id": str(alert.id),
+        "alert_type": alert_type.value,
+        "created_at": alert_created_at.isoformat(),
+
+        # Keep these in the payload because the
+        # transactional outbox envelope may not place
+        # them at the top level.
+        "severity": severity.value,
+        "service_name": service.name,
+        "source": "platformiq-reliability",
+        "reliability_alert_id": str(alert.id),
+        "slo_definition_id": slo_definition_id,
+        "measurement_id": str(measurement.id),
+        "metric_type": metric_type.value,
+        "triggered_value": triggered_value,
+        "threshold_value": threshold_value,
+        "is_breached": bool(
+            measurement.is_breached
+        ),
+        "window_minutes": int(
+            measurement.window_minutes
+        ),
+        "deployment_id": (
+            str(latest_deployment.id)
+            if latest_deployment is not None
+            else None
+        ),
+        "error_budget_remaining": (
+            float(
+                error_budget.remaining_percentage
+            )
+            if error_budget is not None
+            else None
+        ),
+        "error_budget_consumed": (
+            float(
+                error_budget.consumed_percentage
+            )
+            if error_budget is not None
+            else None
+        ),
+        "burn_rate": (
+            float(error_budget.burn_rate)
+            if error_budget is not None
+            else None
+        ),
+        "error_budget_status": (
+            ErrorBudgetState(
+                error_budget.status
+            ).value
+            if error_budget is not None
+            else None
+        ),
+        "rapid_burn": (
+            bool(
+                error_budget.burn_rate
+                >= RAPID_BURN_THRESHOLD
+            )
+            if error_budget is not None
+            else False
+        ),
+    }
+
+    outbox_event = record_platform_event(
+        db,
+        event_type=RELIABILITY_ALERT_CREATED,
+        correlation_id=correlation_id,
+        service_id=service_id,
+        environment=environment,
+        payload=payload,
+    )
+
+    return alert, outbox_event, True
+
+========================================================================================
+backend/app/incidents/config.py
+========================================================================================
+"""Configuration values for the incident response engine."""
+
+from __future__ import annotations
+
+import os
+
+
+def _positive_int_from_env(name: str, default: int) -> int:
+    """Read a positive integer from the environment."""
+
+    raw_value = os.getenv(name, str(default))
+
+    try:
+        value = int(raw_value)
+    except ValueError as exc:
+        raise ValueError(
+            f"{name} must be a valid integer, received {raw_value!r}"
+        ) from exc
+
+    if value <= 0:
+        raise ValueError(f"{name} must be greater than zero")
+
+    return value
+
+
+def _positive_float_from_env(name: str, default: float) -> float:
+    """Read a positive floating-point value from the environment."""
+
+    raw_value = os.getenv(name, str(default))
+
+    try:
+        value = float(raw_value)
+    except ValueError as exc:
+        raise ValueError(
+            f"{name} must be a valid number, received {raw_value!r}"
+        ) from exc
+
+    if value <= 0:
+        raise ValueError(f"{name} must be greater than zero")
+
+    return value
+
+
+INCIDENT_CORRELATION_WINDOW_MINUTES = _positive_int_from_env(
+    "INCIDENT_CORRELATION_WINDOW_MINUTES",
+    30,
+)
+
+INCIDENT_CRITICAL_AVAILABILITY_THRESHOLD = _positive_float_from_env(
+    "INCIDENT_CRITICAL_AVAILABILITY_THRESHOLD",
+    95.0,
+)
+
+INCIDENT_CRITICAL_LATENCY_MULTIPLIER = _positive_float_from_env(
+    "INCIDENT_CRITICAL_LATENCY_MULTIPLIER",
+    2.0,
+)
+
+INCIDENT_HIGH_SEVERITY_ALERT_ESCALATION_COUNT = _positive_int_from_env(
+    "INCIDENT_HIGH_SEVERITY_ALERT_ESCALATION_COUNT",
+    3,
+)
+
+INCIDENT_MULTIPLE_SERVICE_ESCALATION_COUNT = _positive_int_from_env(
+    "INCIDENT_MULTIPLE_SERVICE_ESCALATION_COUNT",
+    2,
+)
+
+
+========================================================================================
+backend/app/incidents/schemas.py
+========================================================================================
+
+--- DeploymentSummaryResponse ---
+class DeploymentSummaryResponse(ResponseSchema):
+    id: UUID
+    service_id: str
+    service_name: str | None = None
+    environment_id: str | None = None
+    image_tag: str
+    deployment_version: str | None = None
+    commit_sha: str | None = None
+    argo_sync_status: str | None = None
+    kubernetes_rollout_status: str | None = None
+    deployed_at: datetime | None = None
+    created_at: datetime
+
+--- IncidentMetricResponse ---
+class IncidentMetricResponse(ResponseSchema):
+    id: UUID
+    incident_id: UUID
+
+    metric_type: str
+    metric_name: str
+    value: float
+    unit: str | None = None
+    source: str
+
+    captured_at: datetime
+    metadata_json: dict[str, Any] | None = None
+    created_at: datetime
+
+--- IncidentListResponse ---
+class IncidentListResponse(ResponseSchema):
+    incident_id: UUID
+
+    # Temporary compatibility field for the current Sprint 5 frontend.
+    # Both values will contain the same incident UUID.
+    id: UUID | None = None
+
+    incident_number: str
+    title: str
+
+    severity: IncidentSeverity
+    status: IncidentStatus
+
+    # These represent the new primary_service_id relationship in a
+    # frontend-friendly form.
+    service_id: str
+    service_name: str | None = None
+
+    environment: str
+
+    assigned_operator: OperatorSummaryResponse | None = None
+    suspected_deployment_id: UUID | None = None
+
+    detected_at: datetime
+    acknowledged_at: datetime | None = None
+    resolved_at: datetime | None = None
+
+    created_at: datetime
+    updated_at: datetime
+
+--- IncidentDetailResponse ---
+class IncidentDetailResponse(ResponseSchema):
+    incident: IncidentListResponse
+
+    description: str | None = None
+    deduplication_key: str
+
+    primary_service: ServiceSummaryResponse
+    affected_services: list[ServiceSummaryResponse] = Field(
+        default_factory=list,
+    )
+
+    triggering_alert_id: str | None = None
+    triggering_alert: ReliabilityAlertSummaryResponse | None = None
+
+    related_alerts: list[ReliabilityAlertSummaryResponse] = Field(
+        default_factory=list,
+    )
+
+    suspected_deployment: DeploymentSummaryResponse | None = None
+
+    failure_started_at: datetime | None = None
+    investigation_started_at: datetime | None = None
+    remediation_started_at: datetime | None = None
+
+    created_by: str | None = None
+    creator: OperatorSummaryResponse | None = None
+
+    current_assignment: IncidentAssignmentResponse | None = None
+
+    assignment_history: list[IncidentAssignmentResponse] = Field(
+        default_factory=list,
+    )
+    comments: list[IncidentCommentResponse] = Field(
+        default_factory=list,
+    )
+    metric_snapshot: list[IncidentMetricResponse] = Field(
+        default_factory=list,
+    )
+    timeline_summary: list[IncidentTimelineEventResponse] = Field(
+        default_factory=list,
+    )
+
+    resolution_summary: str | None = None
+    rca_summary: str | None = None
+    remediation_summary: str | None = None
+
+    calculated_incident_metrics: (
+        IncidentCalculatedMetricsResponse | None
+    ) = None
+
+========================================================================================
+EXISTING INCIDENT TESTS
+========================================================================================
+
+backend/tests/test_incident_deduplication_repository.py
+  - test_returns_matching_open_incident_inside_window
+  - test_returns_incident_at_exact_window_boundary
+  - test_does_not_return_incident_outside_window
+  - test_does_not_return_resolved_incident_inside_window
+  - test_does_not_return_incident_with_different_key
+  - test_deduplication_lock_blocks_competing_transaction
+
+backend/tests/test_incident_deduplication_service.py
+  - test_duplicate_alerts_update_one_incident_and_escalate
+  - test_alert_outside_window_creates_new_incident
+  - test_different_environment_creates_new_incident
+
+backend/tests/test_incident_rules.py
+  - test_build_deduplication_key_normalises_values
+  - test_high_production_alert_maps_to_sev_2
+  - test_non_production_alert_maps_to_sev_3
+  - test_critical_availability_maps_to_sev_1
+  - test_availability_at_critical_boundary_does_not_force_sev_1
+  - test_complete_unavailability_maps_to_sev_1
+  - test_multiple_related_services_map_to_sev_1
+  - test_repeated_high_severity_alerts_map_to_sev_1
+  - test_error_budget_exhaustion_maps_to_sev_2
+  - test_critical_latency_ratio_maps_to_sev_2
+  - test_high_alert_on_critical_service_maps_to_sev_2
+  - test_deployment_correlated_high_alert_maps_to_sev_2
+  - test_severity_comparison_allows_only_upward_escalation
+  - test_compatibility_wrapper_returns_enum
+  - test_deduplication_lock_id_is_stable_and_signed_64_bit

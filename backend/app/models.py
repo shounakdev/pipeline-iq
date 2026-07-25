@@ -1,6 +1,7 @@
 import enum
 import uuid
 from datetime import datetime, timezone
+from app.incidents.enums import IncidentSeverity, IncidentStatus
 
 from sqlalchemy import (
     Boolean,
@@ -583,31 +584,8 @@ def enum_values(enum_class):
     return [member.value for member in enum_class]
 
 
-class IncidentSeverity(str, enum.Enum):
-    SEV_1 = "SEV-1"
-    SEV_2 = "SEV-2"
-    SEV_3 = "SEV-3"
-
-    # Temporary Sprint 5 compatibility aliases.
-    # Remove after the legacy incident service is replaced.
-    CRITICAL = "SEV-1"
-    HIGH = "SEV-2"
-    MEDIUM = "SEV-3"
-    LOW = "SEV-3"
 
 
-class IncidentStatus(str, enum.Enum):
-    DETECTED = "DETECTED"
-    ACKNOWLEDGED = "ACKNOWLEDGED"
-    INVESTIGATING = "INVESTIGATING"
-    ACTION_RECOMMENDED = "ACTION_RECOMMENDED"
-    REMEDIATING = "REMEDIATING"
-    RESOLVED = "RESOLVED"
-    FAILED_RECOVERY = "FAILED_RECOVERY"
-
-    # Temporary Sprint 5 compatibility aliases.
-    OPEN = "DETECTED"
-    FALSE_POSITIVE = "RESOLVED"
 
 
 incident_severity_enum = SQLEnum(

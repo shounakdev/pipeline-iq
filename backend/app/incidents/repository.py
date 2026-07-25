@@ -1,15 +1,21 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any
+import uuid
 from uuid import UUID
-
+import json
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+
+
 from app.models import (
     AuditEvent,
+    Deployment,
+    Environment,
+    ErrorBudgetStatus,
     Incident,
     IncidentAlertLink,
     IncidentAssignment,
@@ -19,6 +25,8 @@ from app.models import (
     IncidentStatus,
     IncidentTimelineEvent,
     ReliabilityAlert,
+    SLOMeasurement,
+    User,
 )
 
 
@@ -27,16 +35,55 @@ from app.models import (
 # ---------------------------------------------------------------------------
 
 
+def get_incidents_for_metrics(
+    db: Session,
+):
+    statement = select(
+        Incident.failure_started_at,
+        Incident.detected_at,
+        Incident.acknowledged_at,
+        Incident.resolved_at,
+        Incident.status,
+        Incident.severity,
+    )
+
+    return db.execute(statement).all()
+
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _enum_value(value: Any) -> Any:
+    """Return an enum's persisted value while leaving plain values alone."""
+    return getattr(value, "value", value)
+
+
 def get_incident_by_id(
     db: Session,
     incident_id: UUID,
+    *,
+    for_update: bool = False,
 ) -> Incident | None:
-    """
-    Return one incident by its UUID.
-    """
-
+    """Return one incident by UUID, optionally locking it for mutation."""
     statement = select(Incident).where(
         Incident.id == incident_id,
+    )
+
+    if for_update:
+        statement = statement.with_for_update()
+
+    return db.execute(statement).scalar_one_or_none()
+
+
+def get_user_by_id(
+    db: Session,
+    user_id: str,
+) -> User | None:
+    """Return the assignment target user without changing the session."""
+    statement = select(User).where(
+        User.id == user_id,
     )
 
     return db.execute(statement).scalar_one_or_none()
@@ -85,61 +132,105 @@ def get_incident_alert_link_by_alert_id(
 def list_incidents(
     db: Session,
     *,
-    statuses: Sequence[IncidentStatus | str] | None = None,
-    severities: Sequence[IncidentSeverity | str] | None = None,
+    status: IncidentStatus | str | None = None,
+    severity: IncidentSeverity | str | None = None,
     service_id: str | None = None,
     environment: str | None = None,
-    assigned_to_user_id: str | None = None,
+    assignee_id: str | None = None,
+    from_date: datetime | None = None,
+    to_date: datetime | None = None,
     offset: int = 0,
-    limit: int = 100,
-) -> list[Incident]:
+    limit: int = 25,
+) -> tuple[list[Incident], int]:
     """
-    Return incidents matching the supplied filters.
-
-    Pagination and filter validation belong to the service or router layer.
+    Return a paginated collection of incidents and the total number of
+    incidents matching the supplied filters.
     """
 
     statement = select(Incident)
 
-    if statuses:
-        statement = statement.where(
-            Incident.status.in_(statuses),
+    count_statement = (
+        select(
+            func.count(
+                func.distinct(Incident.id),
+            ),
+        )
+        .select_from(Incident)
+    )
+
+    filters = []
+
+    if status is not None:
+        filters.append(
+            Incident.status == status,
         )
 
-    if severities:
-        statement = statement.where(
-            Incident.severity.in_(severities),
+    if severity is not None:
+        filters.append(
+            Incident.severity == severity,
         )
 
     if service_id is not None:
-        statement = statement.where(
+        filters.append(
             Incident.primary_service_id == service_id,
         )
 
     if environment is not None:
-        statement = statement.where(
+        filters.append(
             Incident.environment == environment,
         )
 
-    if assigned_to_user_id is not None:
-        statement = statement.where(
-            Incident.current_assignee_id == assigned_to_user_id,
+    if from_date is not None:
+        filters.append(
+            Incident.detected_at >= from_date,
+        )
+
+    if to_date is not None:
+        filters.append(
+            Incident.detected_at <= to_date,
+        )
+
+    if assignee_id is not None:
+        active_assignment_incident_ids = (
+            select(
+                IncidentAssignment.incident_id,
+            )
+            .where(
+                IncidentAssignment.assigned_to_user_id
+                == assignee_id,
+                IncidentAssignment.is_active.is_(True),
+            )
+        )
+
+        filters.append(
+            Incident.id.in_(
+                active_assignment_incident_ids,
+            ),
+        )
+
+    if filters:
+        statement = statement.where(*filters)
+        count_statement = count_statement.where(
+            *filters,
         )
 
     statement = (
         statement
         .order_by(
             Incident.detected_at.desc(),
-            Incident.created_at.desc(),
+            Incident.id.desc(),
         )
         .offset(offset)
         .limit(limit)
     )
 
-    return list(
-        db.execute(statement).scalars().all(),
+    incidents = list(
+        db.scalars(statement).unique().all(),
     )
 
+    total = db.scalar(count_statement) or 0
+
+    return incidents, int(total)
 
 def acquire_incident_deduplication_lock(
     db: Session,
@@ -158,6 +249,137 @@ def acquire_incident_deduplication_lock(
             func.pg_advisory_xact_lock(lock_id),
         )
     ).scalar_one()
+
+
+def find_suspected_deployment(
+    db: Session,
+    *,
+    service_id: str,
+    environment: str,
+    detected_at: datetime,
+    correlation_window_minutes: int,
+) -> Deployment | None:
+    """
+    Return the latest deployment that can be treated as suspected evidence.
+
+    A deployment is eligible only when it belongs to the incident's
+    primary service and environment, occurred no later than detection,
+    and falls inside the configured lookback window.
+
+    Returning None is valid and does not prevent incident creation.
+    """
+
+    normalised_environment = environment.strip().lower()
+
+    if not normalised_environment:
+        return None
+
+    if correlation_window_minutes <= 0:
+        raise ValueError(
+            "Deployment correlation window must be greater than zero"
+        )
+
+    correlation_start = detected_at - timedelta(
+        minutes=correlation_window_minutes,
+    )
+
+    statement = (
+        select(Deployment)
+        .join(
+            Environment,
+            Environment.id == Deployment.environment_id,
+        )
+        .where(
+            Deployment.service_id == service_id,
+            Environment.service_id == service_id,
+            func.lower(func.trim(Environment.name))
+            == normalised_environment,
+            Deployment.created_at <= detected_at,
+            Deployment.created_at >= correlation_start,
+        )
+        .order_by(
+            Deployment.created_at.desc(),
+            Deployment.id.desc(),
+        )
+        .limit(1)
+    )
+
+    return db.execute(statement).scalar_one_or_none()
+
+
+def get_latest_slo_measurements_for_snapshot(
+    db: Session,
+    *,
+    service_id: str,
+    captured_before: datetime,
+) -> list[SLOMeasurement]:
+    """
+    Return the newest known measurement for each SLO metric type.
+
+    Only measurements evaluated on or before incident detection are
+    eligible. This keeps the incident snapshot independent of later
+    reliability evaluations and current Prometheus values.
+    """
+
+    statement = (
+        select(SLOMeasurement)
+        .where(
+            SLOMeasurement.service_id == service_id,
+            SLOMeasurement.evaluated_at <= captured_before,
+        )
+        .order_by(
+            SLOMeasurement.evaluated_at.desc(),
+            SLOMeasurement.created_at.desc(),
+            SLOMeasurement.id.desc(),
+        )
+    )
+
+    measurements = list(
+        db.execute(statement).scalars().all(),
+    )
+
+    latest_by_metric: dict[str, SLOMeasurement] = {}
+
+    for measurement in measurements:
+        metric_type = measurement.metric_type
+        metric_key = str(
+            getattr(metric_type, "value", metric_type)
+        )
+
+        if metric_key not in latest_by_metric:
+            latest_by_metric[metric_key] = measurement
+
+    return list(latest_by_metric.values())
+
+
+def get_latest_error_budget_status_for_snapshot(
+    db: Session,
+    *,
+    service_id: str,
+    slo_definition_id: str,
+    captured_before: datetime,
+) -> ErrorBudgetStatus | None:
+    """
+    Return the latest error-budget evaluation known at detection time.
+    """
+
+    statement = (
+        select(ErrorBudgetStatus)
+        .where(
+            ErrorBudgetStatus.service_id == service_id,
+            ErrorBudgetStatus.slo_definition_id
+            == slo_definition_id,
+            ErrorBudgetStatus.evaluated_at <= captured_before,
+        )
+        .order_by(
+            ErrorBudgetStatus.evaluated_at.desc(),
+            ErrorBudgetStatus.created_at.desc(),
+            ErrorBudgetStatus.id.desc(),
+        )
+        .limit(1)
+    )
+
+    return db.execute(statement).scalar_one_or_none()
 
 
 def find_open_incident_by_deduplication_key(
@@ -328,7 +550,7 @@ def get_incident_metrics(
     incident_id: UUID,
 ) -> list[IncidentMetric]:
     """
-    Return captured metric snapshots, newest first.
+    Return captured metric snapshots in deterministic chronological order.
     """
 
     statement = (
@@ -337,13 +559,13 @@ def get_incident_metrics(
             IncidentMetric.incident_id == incident_id,
         )
         .order_by(
-            IncidentMetric.captured_at.desc(),
-            IncidentMetric.created_at.desc(),
+            IncidentMetric.captured_at.asc(),
+            IncidentMetric.id.asc(),
         )
     )
 
     return list(
-        db.execute(statement).scalars().all(),
+        db.scalars(statement).all(),
     )
 
 
@@ -362,7 +584,7 @@ def get_incident_timeline(
         )
         .order_by(
             IncidentTimelineEvent.occurred_at.asc(),
-            IncidentTimelineEvent.created_at.asc(),
+            IncidentTimelineEvent.id.asc(),
         )
     )
 
@@ -378,22 +600,28 @@ def get_incident_timeline(
 
 def create_incident(
     db: Session,
+    *,
+    failure_started_at: datetime | None = None,
     **incident_values: Any,
 ) -> Incident:
     """
-    Create and flush an incident.
+    Create and flush an incident without committing the transaction.
 
-    The service layer is responsible for supplying validated values and
-    committing or rolling back the transaction.
+    The service layer supplies validated incident fields and owns the
+    surrounding commit or rollback. ``failure_started_at`` must contain only
+    a reliable source timestamp; when no source timestamp is known, it stays
+    ``None``.
     """
 
-    incident = Incident(**incident_values)
+    incident = Incident(
+        **incident_values,
+        failure_started_at=failure_started_at,
+    )
 
     db.add(incident)
     db.flush()
 
     return incident
-
 
 def update_incident_status(
     db: Session,
@@ -579,21 +807,42 @@ def close_active_assignment(
     return assignment
 
 
+def close_current_assignment(
+    db: Session,
+    *,
+    incident_id: UUID,
+    unassigned_at: datetime,
+) -> IncidentAssignment | None:
+    """Close the current assignment without committing.
+
+    This canonical Sprint 7J name delegates to the existing implementation
+    so older service calls using ``close_active_assignment`` remain valid.
+    """
+    return close_active_assignment(
+        db,
+        incident_id=incident_id,
+        unassigned_at=unassigned_at,
+    )
+
+
 def create_comment(
     db: Session,
     *,
     incident_id: UUID,
     comment: str,
     author_user_id: str | None = None,
+    created_at: datetime | None = None,
 ) -> IncidentComment:
     """
     Create an incident comment.
     """
 
     incident_comment = IncidentComment(
+        id=uuid.uuid4(),
         incident_id=incident_id,
         author_user_id=author_user_id,
         comment=comment,
+        created_at=created_at or utc_now(),
     )
 
     db.add(incident_comment)
@@ -608,9 +857,9 @@ def create_timeline_event(
     incident_id: UUID,
     event_type: str,
     source: str,
-    message: str | None = None,
-    from_status: IncidentStatus | None = None,
-    to_status: IncidentStatus | None = None,
+    message: str,
+    from_status: IncidentStatus | str | None = None,
+    to_status: IncidentStatus | str | None = None,
     actor_user_id: str | None = None,
     alert_id: str | None = None,
     deployment_id: UUID | None = None,
@@ -618,26 +867,25 @@ def create_timeline_event(
     occurred_at: datetime | None = None,
 ) -> IncidentTimelineEvent:
     """
-    Create an incident timeline event.
+    Create and flush an immutable incident timeline event.
+
+    Transaction commit or rollback is handled by the service layer.
     """
 
-    values: dict[str, Any] = {
-        "incident_id": incident_id,
-        "event_type": event_type,
-        "source": source,
-        "message": message,
-        "from_status": from_status,
-        "to_status": to_status,
-        "actor_user_id": actor_user_id,
-        "alert_id": alert_id,
-        "deployment_id": deployment_id,
-        "metadata_json": metadata_json,
-    }
-
-    if occurred_at is not None:
-        values["occurred_at"] = occurred_at
-
-    timeline_event = IncidentTimelineEvent(**values)
+    timeline_event = IncidentTimelineEvent(
+        id=uuid.uuid4(),
+        incident_id=incident_id,
+        event_type=event_type,
+        source=source,
+        message=message,
+        from_status=_enum_value(from_status),
+        to_status=_enum_value(to_status),
+        actor_user_id=actor_user_id,
+        alert_id=alert_id,
+        deployment_id=deployment_id,
+        metadata_json=metadata_json or {},
+        occurred_at=occurred_at or utc_now(),
+    )
 
     db.add(timeline_event)
     db.flush()
@@ -687,23 +935,26 @@ def create_audit_event(
     *,
     action: str,
     entity_type: str,
-    entity_id: str,
+    entity_id: str | None = None,
     actor_id: str | None = None,
-    details: str | None = None,
+    details: dict[str, Any] | str | None = None,
 ) -> AuditEvent:
-    """
-    Create an audit event.
-
-    AuditEvent.details is currently a text column. The service layer should
-    serialize structured dictionaries before calling this function.
-    """
+    if isinstance(details, str):
+        serialized_details = details
+    else:
+        serialized_details = json.dumps(
+            details or {},
+            default=str,
+        )
 
     audit_event = AuditEvent(
-        actor_id=actor_id,
+        id=str(uuid.uuid4()),
         action=action,
         entity_type=entity_type,
         entity_id=entity_id,
-        details=details,
+        actor_id=actor_id,
+        details=serialized_details,
+        created_at=utc_now(),
     )
 
     db.add(audit_event)

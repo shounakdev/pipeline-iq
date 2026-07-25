@@ -1,83 +1,201 @@
 """HTTP routes for Sprint 7 incident operations.
 
-The router translates HTTP input/output and delegates all incident business
-logic and transaction handling to app.incidents.service.
+The router handles authentication, authorization, HTTP error mapping, and
+request/response translation. Incident business logic remains in
+app.incidents.service.
 """
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+)
 from sqlalchemy.orm import Session
 
+from app.auth.dependencies import require_roles
 from app.database import get_db
 from app.incidents import service as incident_service
+from app.incidents.enums import (
+    IncidentSeverity,
+    IncidentStatus,
+)
 from app.incidents.schemas import (
     IncidentAcknowledgeRequest,
-    IncidentAssignmentRequest,
-    IncidentAssignmentResponse,
+    IncidentAssignRequest,
     IncidentCommentCreateRequest,
     IncidentCommentResponse,
     IncidentDetailResponse,
     IncidentListResponse,
+    IncidentMetricsResponse,
+    IncidentMetricsSummaryResponse,
     IncidentStatusUpdateRequest,
     IncidentTimelineResponse,
 )
-from app.models import IncidentSeverity, IncidentStatus
+from app.incidents.transitions import (
+    InvalidIncidentTransitionError,
+)
+from app.models import User
+
+
+INCIDENT_READ_ROLES = (
+    "admin",
+    "developer",
+    "operator",
+    "viewer",
+)
+
+INCIDENT_MANAGE_ROLES = (
+    "admin",
+    "developer",
+    "operator",
+)
+
+
+def _raise_incident_error(
+    error: Exception,
+) -> None:
+    """Translate incident domain exceptions into HTTP errors.
+
+    This helper is retained for compatibility with existing lifecycle tests
+    and any router code that needs explicit incident error translation.
+    Unknown exceptions are re-raised unchanged.
+    """
+
+    if isinstance(
+        error,
+        incident_service.IncidentNotFoundError,
+    ):
+        raise HTTPException(
+            status_code=404,
+            detail=str(error),
+        ) from error
+
+    if isinstance(
+        error,
+        (
+            incident_service.IncidentConflictError,
+            InvalidIncidentTransitionError,
+        ),
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail=str(error),
+        ) from error
+
+    if isinstance(error, ValueError):
+        raise HTTPException(
+            status_code=400,
+            detail=str(error),
+        ) from error
+
+    raise error
 
 
 router = APIRouter(
     prefix="/api/incidents",
-    tags=["incidents"],
+    tags=["Incidents"],
 )
 
+# Retained because main.py imports this router for service-level incident and
+# runtime-timeline endpoints.
 service_runtime_router = APIRouter(
     prefix="/api/services",
     tags=["runtime-timeline"],
 )
 
 
-def _require_found(result: Any) -> Any:
-    if result is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Incident not found",
-        )
-
-    return result
-
-
 @router.get(
     "",
-    response_model=list[IncidentListResponse],
+    response_model=IncidentListResponse,
 )
 def list_incidents_endpoint(
-    status_filter: IncidentStatus | None = Query(
+    status: IncidentStatus | None = Query(
         default=None,
-        alias="status",
     ),
-    severity_filter: IncidentSeverity | None = Query(
+    severity: IncidentSeverity | None = Query(
         default=None,
-        alias="severity",
     ),
-    service_id: str | None = Query(default=None),
-    environment: str | None = Query(default=None),
-    assigned_to_user_id: str | None = Query(default=None),
-    offset: int = Query(default=0, ge=0),
-    limit: int = Query(default=100, ge=1, le=500),
+    service_id: str | None = Query(
+        default=None,
+    ),
+    environment: str | None = Query(
+        default=None,
+    ),
+    assignee_id: str | None = Query(
+        default=None,
+    ),
+    from_date: datetime | None = Query(
+        default=None,
+    ),
+    to_date: datetime | None = Query(
+        default=None,
+    ),
+    page: int = Query(
+        default=1,
+        ge=1,
+    ),
+    page_size: int = Query(
+        default=25,
+        ge=1,
+        le=100,
+    ),
     db: Session = Depends(get_db),
+    _current_user: User = Depends(
+        require_roles(*INCIDENT_READ_ROLES)
+    ),
 ):
+    """Return a filtered and paginated incident list."""
+
+    if (
+        from_date is not None
+        and to_date is not None
+        and from_date > to_date
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "from_date cannot be later than "
+                "to_date"
+            ),
+        )
+
     return incident_service.list_incidents(
-        db=db,
-        statuses=[status_filter] if status_filter else None,
-        severities=[severity_filter] if severity_filter else None,
+        db,
+        status=status,
+        severity=severity,
         service_id=service_id,
         environment=environment,
-        assigned_to_user_id=assigned_to_user_id,
-        offset=offset,
-        limit=limit,
+        assignee_id=assignee_id,
+        from_date=from_date,
+        to_date=to_date,
+        page=page,
+        page_size=page_size,
+    )
+
+
+# This static route must remain before /{incident_id}; otherwise FastAPI may
+# attempt to interpret "metrics" as an incident UUID.
+@router.get(
+    "/metrics/summary",
+    response_model=IncidentMetricsSummaryResponse,
+)
+def get_incident_metrics_summary_endpoint(
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(
+        require_roles(*INCIDENT_READ_ROLES)
+    ),
+):
+    """Return aggregate metrics across incidents."""
+
+    return incident_service.get_incident_metrics_summary(
+        db,
     )
 
 
@@ -85,16 +203,108 @@ def list_incidents_endpoint(
     "/{incident_id}",
     response_model=IncidentDetailResponse,
 )
-def get_incident_endpoint(
+def get_incident_detail_endpoint(
     incident_id: UUID,
     db: Session = Depends(get_db),
+    _current_user: User = Depends(
+        require_roles(*INCIDENT_READ_ROLES)
+    ),
 ):
-    result = incident_service.get_incident_detail(
-        db=db,
+    """Return the complete details for one incident."""
+
+    return incident_service.get_incident_detail(
+        db,
         incident_id=incident_id,
     )
 
-    return _require_found(result)
+
+@router.post(
+    "/{incident_id}/acknowledge",
+    response_model=IncidentDetailResponse,
+)
+def acknowledge_incident_endpoint(
+    incident_id: UUID,
+    request: IncidentAcknowledgeRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(*INCIDENT_MANAGE_ROLES)
+    ),
+):
+    """Acknowledge an incident."""
+
+    return incident_service.acknowledge_incident(
+        db,
+        incident_id=incident_id,
+        request=request,
+        actor_user_id=str(current_user.id),
+    )
+
+
+@router.post(
+    "/{incident_id}/assign",
+    response_model=IncidentDetailResponse,
+)
+def assign_incident_endpoint(
+    incident_id: UUID,
+    request: IncidentAssignRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(*INCIDENT_MANAGE_ROLES)
+    ),
+):
+    """Create or replace the current incident assignment."""
+
+    return incident_service.assign_incident(
+        db,
+        incident_id=incident_id,
+        request=request,
+        assigned_by_user_id=str(current_user.id),
+    )
+
+
+@router.post(
+    "/{incident_id}/status",
+    response_model=IncidentDetailResponse,
+)
+def update_incident_status_endpoint(
+    incident_id: UUID,
+    request: IncidentStatusUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(*INCIDENT_MANAGE_ROLES)
+    ),
+):
+    """Apply a validated status transition to an incident."""
+
+    return incident_service.update_incident_status(
+        db,
+        incident_id=incident_id,
+        request=request,
+        actor_user_id=str(current_user.id),
+    )
+
+
+@router.post(
+    "/{incident_id}/comments",
+    response_model=IncidentCommentResponse,
+    status_code=201,
+)
+def add_incident_comment_endpoint(
+    incident_id: UUID,
+    request: IncidentCommentCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(*INCIDENT_MANAGE_ROLES)
+    ),
+):
+    """Add a comment to an incident."""
+
+    return incident_service.add_incident_comment(
+        db,
+        incident_id=incident_id,
+        request=request,
+        actor=current_user,
+    )
 
 
 @router.get(
@@ -104,148 +314,101 @@ def get_incident_endpoint(
 def get_incident_timeline_endpoint(
     incident_id: UUID,
     db: Session = Depends(get_db),
+    _current_user: User = Depends(
+        require_roles(*INCIDENT_READ_ROLES)
+    ),
 ):
-    result = incident_service.get_incident_timeline(
-        db=db,
+    """Return the chronological timeline for an incident."""
+
+    return incident_service.get_incident_timeline(
+        db,
         incident_id=incident_id,
     )
 
-    return _require_found(result)
 
-
-@router.post(
-    "/{incident_id}/acknowledge",
-    response_model=IncidentDetailResponse,
+@router.get(
+    "/{incident_id}/metrics",
+    response_model=IncidentMetricsResponse,
 )
-def acknowledge_incident_endpoint(
-    incident_id: UUID,
-    request: IncidentAcknowledgeRequest | None = None,
-    db: Session = Depends(get_db),
-):
-    try:
-        result = incident_service.acknowledge_incident(
-            db=db,
-            incident_id=incident_id,
-            request=request or IncidentAcknowledgeRequest(),
-        )
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
-
-    return _require_found(result)
-
-
-@router.post(
-    "/{incident_id}/resolve",
-    response_model=IncidentDetailResponse,
-)
-def resolve_incident_endpoint(
+def get_incident_metrics_endpoint(
     incident_id: UUID,
     db: Session = Depends(get_db),
+    _current_user: User = Depends(
+        require_roles(*INCIDENT_READ_ROLES)
+    ),
 ):
-    request = IncidentStatusUpdateRequest(
-        status=IncidentStatus.RESOLVED,
-    )
+    """Return MTTD, MTTA, MTTR, and metric snapshots for an incident."""
 
-    try:
-        result = incident_service.update_incident_status(
-            db=db,
-            incident_id=incident_id,
-            request=request,
-        )
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
-
-    return _require_found(result)
-
-
-@router.patch(
-    "/{incident_id}/status",
-    response_model=IncidentDetailResponse,
-)
-def update_incident_status_endpoint(
-    incident_id: UUID,
-    request: IncidentStatusUpdateRequest,
-    db: Session = Depends(get_db),
-):
-    try:
-        result = incident_service.update_incident_status(
-            db=db,
-            incident_id=incident_id,
-            request=request,
-        )
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
-
-    return _require_found(result)
-
-
-@router.post(
-    "/{incident_id}/assign",
-    response_model=IncidentAssignmentResponse,
-)
-def assign_incident_endpoint(
-    incident_id: UUID,
-    request: IncidentAssignmentRequest,
-    db: Session = Depends(get_db),
-):
-    result = incident_service.assign_incident(
-        db=db,
+    return incident_service.get_incident_metrics(
+        db,
         incident_id=incident_id,
-        request=request,
     )
-
-    return _require_found(result)
-
-
-@router.post(
-    "/{incident_id}/comments",
-    response_model=IncidentCommentResponse,
-)
-def add_incident_comment_endpoint(
-    incident_id: UUID,
-    request: IncidentCommentCreateRequest,
-    db: Session = Depends(get_db),
-):
-    result = incident_service.add_incident_comment(
-        db=db,
-        incident_id=incident_id,
-        request=request,
-    )
-
-    return _require_found(result)
 
 
 @service_runtime_router.get(
     "/{service_id}/incidents",
-    response_model=list[IncidentListResponse],
+    response_model=IncidentListResponse,
 )
 def get_service_incidents_endpoint(
     service_id: str,
-    status_filter: IncidentStatus | None = Query(
+    status: IncidentStatus | None = Query(
         default=None,
-        alias="status",
     ),
-    environment: str | None = Query(default=None),
-    offset: int = Query(default=0, ge=0),
-    limit: int = Query(default=100, ge=1, le=500),
+    severity: IncidentSeverity | None = Query(
+        default=None,
+    ),
+    environment: str | None = Query(
+        default=None,
+    ),
+    assignee_id: str | None = Query(
+        default=None,
+    ),
+    from_date: datetime | None = Query(
+        default=None,
+    ),
+    to_date: datetime | None = Query(
+        default=None,
+    ),
+    page: int = Query(
+        default=1,
+        ge=1,
+    ),
+    page_size: int = Query(
+        default=25,
+        ge=1,
+        le=100,
+    ),
     db: Session = Depends(get_db),
+    _current_user: User = Depends(
+        require_roles(*INCIDENT_READ_ROLES)
+    ),
 ):
+    """Return incidents associated with a particular service."""
+
+    if (
+        from_date is not None
+        and to_date is not None
+        and from_date > to_date
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "from_date cannot be later than "
+                "to_date"
+            ),
+        )
+
     return incident_service.list_incidents(
-        db=db,
-        statuses=[status_filter] if status_filter else None,
+        db,
+        status=status,
+        severity=severity,
         service_id=service_id,
         environment=environment,
-        offset=offset,
-        limit=limit,
+        assignee_id=assignee_id,
+        from_date=from_date,
+        to_date=to_date,
+        page=page,
+        page_size=page_size,
     )
 
 
@@ -255,11 +418,18 @@ def get_service_incidents_endpoint(
 )
 def get_service_runtime_timeline_endpoint(
     service_id: str,
-    environment: str | None = Query(default=None),
+    environment: str | None = Query(
+        default=None,
+    ),
     db: Session = Depends(get_db),
+    _current_user: User = Depends(
+        require_roles(*INCIDENT_READ_ROLES)
+    ),
 ):
+    """Return the combined runtime timeline for a service."""
+
     return incident_service.get_service_runtime_timeline(
-        db=db,
+        db,
         service_id=service_id,
         environment=environment,
     )

@@ -1,0 +1,2431 @@
+========================================
+1. GIT STATUS
+========================================
+ M backend/app/incidents/config.py
+ M backend/app/incidents/repository.py
+ M backend/app/incidents/service.py
+?? backend/tests/test_incident_deployment_correlation_repository.py
+?? backend/tests/test_incident_deployment_correlation_service.py
+?? backend/tests/test_incident_metric_snapshot_service.py
+?? sprint7f-baseline/
+?? sprint7g-baseline/
+
+========================================
+2. INCIDENT FILES
+========================================
+backend/app/incidents/config.py
+backend/app/incidents/consumer.py
+backend/app/incidents/incident_router.py
+backend/app/incidents/incident_service.py
+backend/app/incidents/__init__.py
+backend/app/incidents/metrics.py
+backend/app/incidents/__pycache__/config.cpython-311.pyc
+backend/app/incidents/__pycache__/consumer.cpython-311.pyc
+backend/app/incidents/__pycache__/incident_router.cpython-311.pyc
+backend/app/incidents/__pycache__/incident_service.cpython-311.pyc
+backend/app/incidents/__pycache__/__init__.cpython-311.pyc
+backend/app/incidents/__pycache__/metrics.cpython-311.pyc
+backend/app/incidents/__pycache__/repository.cpython-311.pyc
+backend/app/incidents/__pycache__/router.cpython-311.pyc
+backend/app/incidents/__pycache__/rules.cpython-311.pyc
+backend/app/incidents/__pycache__/schemas.cpython-311.pyc
+backend/app/incidents/__pycache__/service.cpython-311.pyc
+backend/app/incidents/__pycache__/timeline.cpython-311.pyc
+backend/app/incidents/__pycache__/transitions.cpython-311.pyc
+backend/app/incidents/repository.py
+backend/app/incidents/repository.py.7a.bak
+backend/app/incidents/router.py
+backend/app/incidents/rules.py
+backend/app/incidents/schemas.py
+backend/app/incidents/schemas.py.sprint5.bak
+backend/app/incidents/service.py
+backend/app/incidents/timeline.py
+backend/app/incidents/transitions.py
+
+========================================
+3. INCIDENT MODEL
+========================================
+576-def enum_values(enum_class):
+577-    """
+578-    Persist enum values rather than Python member names.
+579-
+580-    Example:
+581-        IncidentSeverity.SEV_1 -> "SEV-1"
+582-    """
+583-    return [member.value for member in enum_class]
+584-
+585-
+586:class IncidentSeverity(str, enum.Enum):
+587-    SEV_1 = "SEV-1"
+588-    SEV_2 = "SEV-2"
+589-    SEV_3 = "SEV-3"
+590-
+591-    # Temporary Sprint 5 compatibility aliases.
+592-    # Remove after the legacy incident service is replaced.
+593-    CRITICAL = "SEV-1"
+594-    HIGH = "SEV-2"
+595-    MEDIUM = "SEV-3"
+596-    LOW = "SEV-3"
+597-
+598-
+599:class IncidentStatus(str, enum.Enum):
+600-    DETECTED = "DETECTED"
+601-    ACKNOWLEDGED = "ACKNOWLEDGED"
+602-    INVESTIGATING = "INVESTIGATING"
+603-    ACTION_RECOMMENDED = "ACTION_RECOMMENDED"
+604-    REMEDIATING = "REMEDIATING"
+605-    RESOLVED = "RESOLVED"
+606-    FAILED_RECOVERY = "FAILED_RECOVERY"
+607-
+608-    # Temporary Sprint 5 compatibility aliases.
+609-    OPEN = "DETECTED"
+610-    FALSE_POSITIVE = "RESOLVED"
+611-
+612-
+613-incident_severity_enum = SQLEnum(
+614-    IncidentSeverity,
+615-    name="incidentseverity",
+616-    values_callable=enum_values,
+617-    validate_strings=True,
+618-)
+619-
+620-
+621-incident_status_enum = SQLEnum(
+622-    IncidentStatus,
+623-    name="incidentstatus",
+624-    values_callable=enum_values,
+625-    validate_strings=True,
+626-)
+627-
+628-
+629:class Incident(Base):
+630-    __tablename__ = "incidents"
+631-
+632-    id = Column(
+633-        UUID(as_uuid=True),
+634-        primary_key=True,
+635-        default=uuid.uuid4,
+636-    )
+637-
+638-    incident_number = Column(
+639-        String(32),
+640-        nullable=False,
+641-        unique=True,
+642-        server_default=text("next_incident_number()"),
+643-    )
+644-
+645-    title = Column(
+646-        String(255),
+647-        nullable=False,
+648-    )
+649-
+650-    description = Column(
+651-        Text,
+652-        nullable=True,
+653-    )
+654-
+655-    severity = Column(
+656-        incident_severity_enum,
+657-        nullable=False,
+658-        default=IncidentSeverity.SEV_3,
+659-        server_default=IncidentSeverity.SEV_3.value,
+660-    )
+661-
+662-    status = Column(
+663-        incident_status_enum,
+664-        nullable=False,
+665-        default=IncidentStatus.DETECTED,
+666-        server_default=IncidentStatus.DETECTED.value,
+667-    )
+668-
+669-    primary_service_id = Column(
+670-        String(36),
+671-        ForeignKey("services.id", ondelete="SET NULL"),
+672-        nullable=True,
+673-    )
+674-
+675-    environment = Column(
+676-        String(100),
+677-        nullable=False,
+678-    )
+679-
+680-    triggering_alert_id = Column(
+681-        String(36),
+682-        ForeignKey(
+683-            "reliability_alerts.id",
+684-            ondelete="SET NULL",
+685-        ),
+686-        nullable=True,
+687-    )
+688-
+689-    suspected_deployment_id = Column(
+690-        UUID(as_uuid=True),
+691-        ForeignKey(
+692-            "deployments.id",
+693-            ondelete="SET NULL",
+694-        ),
+695-        nullable=True,
+696-    )
+697-
+698-    deduplication_key = Column(
+699-        String(500),
+700-        nullable=True,
+701-    )
+702-
+703-    failure_started_at = Column(
+704-        DateTime(timezone=True),
+705-        nullable=True,
+706-    )
+707-
+708-    detected_at = Column(
+709-        DateTime(timezone=True),
+710-        nullable=False,
+711-        server_default=func.now(),
+712-    )
+713-
+714-    acknowledged_at = Column(
+715-        DateTime(timezone=True),
+716-        nullable=True,
+717-    )
+718-
+719-    investigation_started_at = Column(
+720-        DateTime(timezone=True),
+721-        nullable=True,
+722-    )
+723-
+724-    remediation_started_at = Column(
+725-        DateTime(timezone=True),
+726-        nullable=True,
+727-    )
+728-
+729-    resolved_at = Column(
+730-        DateTime(timezone=True),
+731-        nullable=True,
+732-    )
+733-
+734-    current_assignee_id = Column(
+735-        String(36),
+736-        ForeignKey("users.id", ondelete="SET NULL"),
+737-        nullable=True,
+738-    )
+739-
+740-    resolution_summary = Column(
+741-        Text,
+742-        nullable=True,
+743-    )
+744-
+745-    rca_summary = Column(
+746-        Text,
+747-        nullable=True,
+748-    )
+749-
+--
+916-            "ix_incidents_current_assignee_id",
+917-            "current_assignee_id",
+918-        ),
+919-        Index(
+920-            "ix_incidents_deduplication_key",
+921-            "deduplication_key",
+922-        ),
+923-    )
+924-
+925-
+926:class IncidentTimelineEvent(Base):
+927-    __tablename__ = "incident_timeline_events"
+928-
+929-    id = Column(
+930-        UUID(as_uuid=True),
+931-        primary_key=True,
+932-        default=uuid.uuid4,
+933-    )
+934-
+935-    incident_id = Column(
+936-        UUID(as_uuid=True),
+937-        ForeignKey(
+938-            "incidents.id",
+939-            ondelete="CASCADE",
+940-        ),
+941-        nullable=False,
+942-    )
+943-
+944-    event_type = Column(
+945-        String(100),
+946-        nullable=False,
+947-    )
+948-
+949-    source = Column(
+950-        String(100),
+951-        nullable=False,
+952-        default="SYSTEM",
+953-        server_default="SYSTEM",
+954-    )
+955-
+956-    message = Column(
+957-        Text,
+958-        nullable=True,
+959-    )
+960-
+961-    from_status = Column(
+962-        incident_status_enum,
+963-        nullable=True,
+964-    )
+965-
+966-    to_status = Column(
+967-        incident_status_enum,
+968-        nullable=True,
+969-    )
+970-
+971-    actor_user_id = Column(
+972-        String(36),
+973-        ForeignKey("users.id", ondelete="SET NULL"),
+974-        nullable=True,
+975-    )
+976-
+977-    alert_id = Column(
+978-        String(36),
+979-        ForeignKey(
+980-            "reliability_alerts.id",
+981-            ondelete="SET NULL",
+982-        ),
+983-        nullable=True,
+984-    )
+985-
+986-    deployment_id = Column(
+987-        UUID(as_uuid=True),
+988-        ForeignKey(
+989-            "deployments.id",
+990-            ondelete="SET NULL",
+991-        ),
+992-        nullable=True,
+993-    )
+994-
+995-    metadata_json = Column(
+996-        JSONB,
+997-        nullable=True,
+998-    )
+999-
+1000-    occurred_at = Column(
+1001-        DateTime(timezone=True),
+1002-        nullable=False,
+1003-        server_default=func.now(),
+1004-    )
+1005-
+1006-    created_at = Column(
+1007-        DateTime(timezone=True),
+1008-        nullable=False,
+1009-        server_default=func.now(),
+1010-    )
+1011-
+1012-    incident = relationship(
+1013-        "Incident",
+1014-        back_populates="events",
+1015-    )
+1016-
+1017-    actor_user = relationship(
+1018-        "User",
+1019-        foreign_keys=[actor_user_id],
+1020-    )
+1021-
+1022-    alert = relationship(
+1023-        "ReliabilityAlert",
+1024-        foreign_keys=[alert_id],
+1025-    )
+1026-
+1027-    deployment = relationship(
+1028-        "Deployment",
+1029-        foreign_keys=[deployment_id],
+1030-    )
+1031-
+1032-    # Compatibility with old IncidentEvent(event_metadata=...).
+1033-    @property
+1034-    def event_metadata(self):
+1035-        return self.metadata_json
+1036-
+1037-    @event_metadata.setter
+1038-    def event_metadata(self, value):
+1039-        self.metadata_json = value
+1040-
+1041-    __table_args__ = (
+1042-        Index(
+1043-            "ix_incident_timeline_incident_occurred_id",
+1044-            "incident_id",
+1045-            "occurred_at",
+1046-            "id",
+--
+1054-
+1055-# Temporary import compatibility:
+1056-#
+1057-# from app.models import IncidentEvent
+1058-#
+1059-# will continue to work, but the real table is now
+1060-# incident_timeline_events.
+1061-IncidentEvent = IncidentTimelineEvent
+1062-
+1063-
+1064:class IncidentAssignment(Base):
+1065-    __tablename__ = "incident_assignments"
+1066-
+1067-    id = Column(
+1068-        UUID(as_uuid=True),
+1069-        primary_key=True,
+1070-        default=uuid.uuid4,
+1071-    )
+1072-
+1073-    incident_id = Column(
+1074-        UUID(as_uuid=True),
+1075-        ForeignKey(
+1076-            "incidents.id",
+1077-            ondelete="CASCADE",
+1078-        ),
+1079-        nullable=False,
+1080-        index=True,
+1081-    )
+1082-
+1083-    assigned_to_user_id = Column(
+1084-        String(36),
+1085-        ForeignKey("users.id", ondelete="SET NULL"),
+1086-        nullable=True,
+1087-    )
+1088-
+1089-    assigned_by_user_id = Column(
+1090-        String(36),
+1091-        ForeignKey("users.id", ondelete="SET NULL"),
+1092-        nullable=True,
+1093-    )
+1094-
+1095-    assignment_note = Column(
+1096-        Text,
+1097-        nullable=True,
+1098-    )
+1099-
+1100-    assigned_at = Column(
+1101-        DateTime(timezone=True),
+1102-        nullable=False,
+1103-        server_default=func.now(),
+1104-    )
+1105-
+1106-    unassigned_at = Column(
+1107-        DateTime(timezone=True),
+1108-        nullable=True,
+1109-    )
+1110-
+1111-    is_active = Column(
+1112-        Boolean,
+1113-        nullable=False,
+1114-        default=True,
+1115-        server_default="true",
+1116-    )
+1117-
+1118-    incident = relationship(
+1119-        "Incident",
+1120-        back_populates="assignments",
+1121-    )
+1122-
+1123-    assigned_to_user = relationship(
+1124-        "User",
+1125-        foreign_keys=[assigned_to_user_id],
+1126-    )
+1127-
+1128-    assigned_by_user = relationship(
+1129-        "User",
+1130-        foreign_keys=[assigned_by_user_id],
+1131-    )
+1132-
+1133-
+1134:class IncidentComment(Base):
+1135-    __tablename__ = "incident_comments"
+1136-
+1137-    id = Column(
+1138-        UUID(as_uuid=True),
+1139-        primary_key=True,
+1140-        default=uuid.uuid4,
+1141-    )
+1142-
+1143-    incident_id = Column(
+1144-        UUID(as_uuid=True),
+1145-        ForeignKey(
+1146-            "incidents.id",
+1147-            ondelete="CASCADE",
+1148-        ),
+1149-        nullable=False,
+1150-        index=True,
+1151-    )
+1152-
+1153-    author_user_id = Column(
+1154-        String(36),
+1155-        ForeignKey("users.id", ondelete="SET NULL"),
+1156-        nullable=True,
+1157-    )
+1158-
+1159-    comment = Column(
+1160-        Text,
+1161-        nullable=False,
+1162-    )
+1163-
+1164-    created_at = Column(
+1165-        DateTime(timezone=True),
+1166-        nullable=False,
+1167-        server_default=func.now(),
+1168-    )
+1169-
+1170-    updated_at = Column(
+1171-        DateTime(timezone=True),
+1172-        nullable=False,
+1173-        server_default=func.now(),
+1174-        onupdate=func.now(),
+1175-    )
+1176-
+1177-    incident = relationship(
+1178-        "Incident",
+1179-        back_populates="comments",
+1180-    )
+1181-
+1182-    author = relationship(
+1183-        "User",
+1184-        foreign_keys=[author_user_id],
+1185-    )
+1186-
+1187-
+1188:class IncidentMetric(Base):
+1189-    __tablename__ = "incident_metrics"
+1190-
+1191-    id = Column(
+1192-        UUID(as_uuid=True),
+1193-        primary_key=True,
+1194-        default=uuid.uuid4,
+1195-    )
+1196-
+1197-    incident_id = Column(
+1198-        UUID(as_uuid=True),
+1199-        ForeignKey(
+1200-            "incidents.id",
+1201-            ondelete="CASCADE",
+1202-        ),
+1203-        nullable=False,
+1204-        index=True,
+1205-    )
+1206-
+1207-    metric_type = Column(
+1208-        String(100),
+1209-        nullable=False,
+1210-    )
+1211-
+1212-    metric_name = Column(
+1213-        String(255),
+1214-        nullable=False,
+1215-    )
+1216-
+1217-    value = Column(
+1218-        Float,
+1219-        nullable=False,
+1220-    )
+1221-
+1222-    unit = Column(
+1223-        String(50),
+1224-        nullable=True,
+1225-    )
+1226-
+1227-    source = Column(
+1228-        String(100),
+1229-        nullable=False,
+1230-        default="UNKNOWN",
+1231-        server_default="UNKNOWN",
+1232-    )
+1233-
+1234-    captured_at = Column(
+1235-        DateTime(timezone=True),
+1236-        nullable=False,
+1237-        server_default=func.now(),
+1238-    )
+1239-
+1240-    metadata_json = Column(
+1241-        JSONB,
+1242-        nullable=True,
+1243-    )
+1244-
+1245-    created_at = Column(
+1246-        DateTime(timezone=True),
+1247-        nullable=False,
+1248-        server_default=func.now(),
+1249-    )
+1250-
+1251-    incident = relationship(
+1252-        "Incident",
+1253-        back_populates="metrics",
+1254-    )
+1255-
+1256-
+1257:class IncidentAlertLink(Base):
+1258-    __tablename__ = "incident_alert_links"
+1259-
+1260-    id = Column(
+1261-        UUID(as_uuid=True),
+1262-        primary_key=True,
+1263-        default=uuid.uuid4,
+1264-    )
+1265-
+1266-    incident_id = Column(
+1267-        UUID(as_uuid=True),
+1268-        ForeignKey(
+1269-            "incidents.id",
+1270-            ondelete="CASCADE",
+1271-        ),
+1272-        nullable=False,
+1273-        index=True,
+1274-    )
+1275-
+1276-    reliability_alert_id = Column(
+1277-        String(36),
+1278-        ForeignKey(
+1279-            "reliability_alerts.id",
+1280-            ondelete="CASCADE",
+1281-        ),
+1282-        nullable=False,
+1283-        index=True,
+1284-    )
+1285-
+1286-    linked_at = Column(
+1287-        DateTime(timezone=True),
+1288-        nullable=False,
+1289-        server_default=func.now(),
+1290-    )
+1291-
+1292-    is_triggering_alert = Column(
+1293-        Boolean,
+1294-        nullable=False,
+1295-        default=False,
+1296-        server_default="false",
+1297-    )
+1298-
+1299-    incident = relationship(
+1300-        "Incident",
+1301-        back_populates="alert_links",
+1302-    )
+1303-
+1304-    reliability_alert = relationship(
+1305-        "ReliabilityAlert",
+1306-    )
+1307-
+1308-    __table_args__ = (
+1309-        UniqueConstraint(
+1310-            "incident_id",
+1311-            "reliability_alert_id",
+1312-            name="uq_incident_alert_link",
+1313-        ),
+1314-        UniqueConstraint(
+1315-            "reliability_alert_id",
+1316-            name="uq_incident_alert_links_reliability_alert_id",
+1317-        ),
+1318-    )
+1319-
+1320-# ============================================================
+1321-# Sprint 6 — Reliability Models
+1322-# ============================================================
+1323-
+1324-
+1325-class SLOMetricType(str, enum.Enum):
+1326-    AVAILABILITY = "AVAILABILITY"
+1327-    P95_LATENCY = "P95_LATENCY"
+1328-    ERROR_RATE = "ERROR_RATE"
+1329-
+1330-
+1331-class ReliabilitySeverity(str, enum.Enum):
+1332-    LOW = "LOW"
+1333-    MEDIUM = "MEDIUM"
+1334-    HIGH = "HIGH"
+1335-    CRITICAL = "CRITICAL"
+1336-
+1337-
+1338-class ErrorBudgetState(str, enum.Enum):
+1339-    HEALTHY = "HEALTHY"
+1340-    WARNING = "WARNING"
+1341-    BREACHED = "BREACHED"
+1342-    EXHAUSTED = "EXHAUSTED"
+1343-
+1344-
+1345-class ReliabilityAlertType(str, enum.Enum):
+1346-    SLO_BREACH = "SLO_BREACH"
+1347-    ERROR_BUDGET_BURN = "ERROR_BUDGET_BURN"
+1348-    ERROR_BUDGET_EXHAUSTED = "ERROR_BUDGET_EXHAUSTED"
+1349-    LATENCY_BREACH = "LATENCY_BREACH"
+1350-    AVAILABILITY_BREACH = "AVAILABILITY_BREACH"
+1351-    ERROR_RATE_BREACH = "ERROR_RATE_BREACH"
+1352-
+1353-
+1354-class ReliabilityAlertStatus(str, enum.Enum):
+1355-    OPEN = "OPEN"
+1356-    ACKNOWLEDGED = "ACKNOWLEDGED"
+1357-    RESOLVED = "RESOLVED"
+1358-    FALSE_POSITIVE = "FALSE_POSITIVE"
+1359-
+1360-
+1361-class SLODefinition(Base):
+1362-    __tablename__ = "slo_definitions"
+1363-
+1364-    id = Column(
+1365-        String(36),
+1366-        primary_key=True,
+1367-        default=generate_uuid,
+1368-    )
+1369-
+1370-    service_id = Column(
+1371-        String(36),
+1372-        ForeignKey("services.id", ondelete="CASCADE"),
+1373-        nullable=False,
+1374-        index=True,
+1375-    )
+1376-
+1377-    metric_type = Column(
+
+========================================
+4. INCIDENT ASSIGNMENT MODEL
+========================================
+1054-
+1055-# Temporary import compatibility:
+1056-#
+1057-# from app.models import IncidentEvent
+1058-#
+1059-# will continue to work, but the real table is now
+1060-# incident_timeline_events.
+1061-IncidentEvent = IncidentTimelineEvent
+1062-
+1063-
+1064:class IncidentAssignment(Base):
+1065-    __tablename__ = "incident_assignments"
+1066-
+1067-    id = Column(
+1068-        UUID(as_uuid=True),
+1069-        primary_key=True,
+1070-        default=uuid.uuid4,
+1071-    )
+1072-
+1073-    incident_id = Column(
+1074-        UUID(as_uuid=True),
+1075-        ForeignKey(
+1076-            "incidents.id",
+1077-            ondelete="CASCADE",
+1078-        ),
+1079-        nullable=False,
+1080-        index=True,
+1081-    )
+1082-
+1083-    assigned_to_user_id = Column(
+1084-        String(36),
+1085-        ForeignKey("users.id", ondelete="SET NULL"),
+1086-        nullable=True,
+1087-    )
+1088-
+1089-    assigned_by_user_id = Column(
+1090-        String(36),
+1091-        ForeignKey("users.id", ondelete="SET NULL"),
+1092-        nullable=True,
+1093-    )
+1094-
+1095-    assignment_note = Column(
+1096-        Text,
+1097-        nullable=True,
+1098-    )
+1099-
+1100-    assigned_at = Column(
+1101-        DateTime(timezone=True),
+1102-        nullable=False,
+1103-        server_default=func.now(),
+1104-    )
+1105-
+1106-    unassigned_at = Column(
+1107-        DateTime(timezone=True),
+1108-        nullable=True,
+1109-    )
+1110-
+1111-    is_active = Column(
+1112-        Boolean,
+1113-        nullable=False,
+1114-        default=True,
+1115-        server_default="true",
+1116-    )
+1117-
+1118-    incident = relationship(
+1119-        "Incident",
+1120-        back_populates="assignments",
+1121-    )
+1122-
+1123-    assigned_to_user = relationship(
+1124-        "User",
+1125-        foreign_keys=[assigned_to_user_id],
+1126-    )
+1127-
+1128-    assigned_by_user = relationship(
+1129-        "User",
+1130-        foreign_keys=[assigned_by_user_id],
+1131-    )
+1132-
+1133-
+1134-class IncidentComment(Base):
+1135-    __tablename__ = "incident_comments"
+1136-
+1137-    id = Column(
+1138-        UUID(as_uuid=True),
+1139-        primary_key=True,
+1140-        default=uuid.uuid4,
+1141-    )
+1142-
+1143-    incident_id = Column(
+1144-        UUID(as_uuid=True),
+1145-        ForeignKey(
+1146-            "incidents.id",
+1147-            ondelete="CASCADE",
+1148-        ),
+1149-        nullable=False,
+1150-        index=True,
+1151-    )
+1152-
+1153-    author_user_id = Column(
+1154-        String(36),
+1155-        ForeignKey("users.id", ondelete="SET NULL"),
+1156-        nullable=True,
+1157-    )
+1158-
+1159-    comment = Column(
+1160-        Text,
+1161-        nullable=False,
+1162-    )
+1163-
+1164-    created_at = Column(
+
+========================================
+5. ACTIVE INCIDENT ROUTER
+========================================
+"""HTTP routes for Sprint 7 incident operations.
+
+The router translates HTTP input/output and delegates all incident business
+logic and transaction handling to app.incidents.service.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+from app.incidents import service as incident_service
+from app.incidents.schemas import (
+    IncidentAcknowledgeRequest,
+    IncidentAssignmentRequest,
+    IncidentAssignmentResponse,
+    IncidentCommentCreateRequest,
+    IncidentCommentResponse,
+    IncidentDetailResponse,
+    IncidentListResponse,
+    IncidentStatusUpdateRequest,
+    IncidentTimelineResponse,
+)
+from app.models import IncidentSeverity, IncidentStatus
+
+
+router = APIRouter(
+    prefix="/api/incidents",
+    tags=["incidents"],
+)
+
+service_runtime_router = APIRouter(
+    prefix="/api/services",
+    tags=["runtime-timeline"],
+)
+
+
+def _require_found(result: Any) -> Any:
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Incident not found",
+        )
+
+    return result
+
+
+@router.get(
+    "",
+    response_model=list[IncidentListResponse],
+)
+def list_incidents_endpoint(
+    status_filter: IncidentStatus | None = Query(
+        default=None,
+        alias="status",
+    ),
+    severity_filter: IncidentSeverity | None = Query(
+        default=None,
+        alias="severity",
+    ),
+    service_id: str | None = Query(default=None),
+    environment: str | None = Query(default=None),
+    assigned_to_user_id: str | None = Query(default=None),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
+    db: Session = Depends(get_db),
+):
+    return incident_service.list_incidents(
+        db=db,
+        statuses=[status_filter] if status_filter else None,
+        severities=[severity_filter] if severity_filter else None,
+        service_id=service_id,
+        environment=environment,
+        assigned_to_user_id=assigned_to_user_id,
+        offset=offset,
+        limit=limit,
+    )
+
+
+@router.get(
+    "/{incident_id}",
+    response_model=IncidentDetailResponse,
+)
+def get_incident_endpoint(
+    incident_id: UUID,
+    db: Session = Depends(get_db),
+):
+    result = incident_service.get_incident_detail(
+        db=db,
+        incident_id=incident_id,
+    )
+
+    return _require_found(result)
+
+
+@router.get(
+    "/{incident_id}/timeline",
+    response_model=IncidentTimelineResponse,
+)
+def get_incident_timeline_endpoint(
+    incident_id: UUID,
+    db: Session = Depends(get_db),
+):
+    result = incident_service.get_incident_timeline(
+        db=db,
+        incident_id=incident_id,
+    )
+
+    return _require_found(result)
+
+
+@router.post(
+    "/{incident_id}/acknowledge",
+    response_model=IncidentDetailResponse,
+)
+def acknowledge_incident_endpoint(
+    incident_id: UUID,
+    request: IncidentAcknowledgeRequest | None = None,
+    db: Session = Depends(get_db),
+):
+    try:
+        result = incident_service.acknowledge_incident(
+            db=db,
+            incident_id=incident_id,
+            request=request or IncidentAcknowledgeRequest(),
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    return _require_found(result)
+
+
+@router.post(
+    "/{incident_id}/resolve",
+    response_model=IncidentDetailResponse,
+)
+def resolve_incident_endpoint(
+    incident_id: UUID,
+    db: Session = Depends(get_db),
+):
+    request = IncidentStatusUpdateRequest(
+        status=IncidentStatus.RESOLVED,
+    )
+
+    try:
+        result = incident_service.update_incident_status(
+            db=db,
+            incident_id=incident_id,
+            request=request,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    return _require_found(result)
+
+
+@router.patch(
+    "/{incident_id}/status",
+    response_model=IncidentDetailResponse,
+)
+def update_incident_status_endpoint(
+    incident_id: UUID,
+    request: IncidentStatusUpdateRequest,
+    db: Session = Depends(get_db),
+):
+    try:
+        result = incident_service.update_incident_status(
+            db=db,
+            incident_id=incident_id,
+            request=request,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    return _require_found(result)
+
+
+@router.post(
+    "/{incident_id}/assign",
+    response_model=IncidentAssignmentResponse,
+)
+def assign_incident_endpoint(
+    incident_id: UUID,
+    request: IncidentAssignmentRequest,
+    db: Session = Depends(get_db),
+):
+    result = incident_service.assign_incident(
+        db=db,
+        incident_id=incident_id,
+        request=request,
+    )
+
+    return _require_found(result)
+
+
+@router.post(
+    "/{incident_id}/comments",
+    response_model=IncidentCommentResponse,
+)
+def add_incident_comment_endpoint(
+    incident_id: UUID,
+    request: IncidentCommentCreateRequest,
+    db: Session = Depends(get_db),
+):
+    result = incident_service.add_incident_comment(
+        db=db,
+        incident_id=incident_id,
+        request=request,
+    )
+
+    return _require_found(result)
+
+
+@service_runtime_router.get(
+    "/{service_id}/incidents",
+    response_model=list[IncidentListResponse],
+)
+def get_service_incidents_endpoint(
+    service_id: str,
+    status_filter: IncidentStatus | None = Query(
+        default=None,
+        alias="status",
+    ),
+    environment: str | None = Query(default=None),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
+    db: Session = Depends(get_db),
+):
+    return incident_service.list_incidents(
+        db=db,
+        statuses=[status_filter] if status_filter else None,
+        service_id=service_id,
+        environment=environment,
+        offset=offset,
+        limit=limit,
+    )
+
+
+@service_runtime_router.get(
+    "/{service_id}/runtime-timeline",
+    response_model=dict[str, Any],
+)
+def get_service_runtime_timeline_endpoint(
+    service_id: str,
+    environment: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    return incident_service.get_service_runtime_timeline(
+        db=db,
+        service_id=service_id,
+        environment=environment,
+    )
+
+========================================
+6. INCIDENT SCHEMAS
+========================================
+from datetime import datetime
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.models import IncidentSeverity, IncidentStatus
+
+
+class ResponseSchema(BaseModel):
+    """
+    Common configuration for schemas returned by the incident APIs.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RequestSchema(BaseModel):
+    """
+    Common configuration for incident request bodies.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+
+# ---------------------------------------------------------------------------
+# Shared summary responses
+# ---------------------------------------------------------------------------
+
+
+class ServiceSummaryResponse(ResponseSchema):
+    id: str
+    name: str
+    service_type: str | None = None
+    owner: str | None = None
+
+
+class OperatorSummaryResponse(ResponseSchema):
+    id: str
+    email: str
+    full_name: str | None = None
+
+
+class ReliabilityAlertSummaryResponse(ResponseSchema):
+    id: str
+    service_id: str
+    slo_definition_id: str
+    alert_type: str
+    severity: str
+    triggered_value: float
+    threshold_value: float
+    deployment_id: UUID | None = None
+    status: str
+    created_at: datetime
+    resolved_at: datetime | None = None
+
+
+class DeploymentSummaryResponse(ResponseSchema):
+    id: UUID
+    service_id: str
+    service_name: str | None = None
+    environment_id: str | None = None
+    image_tag: str
+    deployment_version: str | None = None
+    commit_sha: str | None = None
+    argo_sync_status: str | None = None
+    kubernetes_rollout_status: str | None = None
+    deployed_at: datetime | None = None
+    created_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Timeline responses
+# ---------------------------------------------------------------------------
+
+
+class IncidentTimelineEventResponse(ResponseSchema):
+    id: UUID
+    incident_id: UUID
+
+    event_type: str
+    source: str
+    message: str | None = None
+
+    from_status: IncidentStatus | None = None
+    to_status: IncidentStatus | None = None
+
+    actor_user_id: str | None = None
+    actor: OperatorSummaryResponse | None = None
+
+    alert_id: str | None = None
+    alert: ReliabilityAlertSummaryResponse | None = None
+
+    deployment_id: UUID | None = None
+    deployment: DeploymentSummaryResponse | None = None
+
+    metadata_json: dict[str, Any] | None = None
+
+    occurred_at: datetime
+    created_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Assignment requests and responses
+# ---------------------------------------------------------------------------
+
+
+class IncidentAssignmentRequest(RequestSchema):
+    assigned_to_user_id: str = Field(
+        min_length=1,
+        max_length=36,
+    )
+    assignment_note: str | None = Field(
+        default=None,
+        max_length=4000,
+    )
+
+
+class IncidentAssignmentResponse(ResponseSchema):
+    id: UUID
+    incident_id: UUID
+
+    assigned_to_user_id: str | None = None
+    assigned_to_user: OperatorSummaryResponse | None = None
+
+    assigned_by_user_id: str | None = None
+    assigned_by_user: OperatorSummaryResponse | None = None
+
+    assignment_note: str | None = None
+
+    assigned_at: datetime
+    unassigned_at: datetime | None = None
+    is_active: bool
+
+
+# ---------------------------------------------------------------------------
+# Incident update requests
+# ---------------------------------------------------------------------------
+
+
+class IncidentStatusUpdateRequest(RequestSchema):
+    status: IncidentStatus
+
+    note: str | None = Field(
+        default=None,
+        max_length=4000,
+    )
+
+    resolution_summary: str | None = Field(
+        default=None,
+        max_length=10000,
+    )
+    rca_summary: str | None = Field(
+        default=None,
+        max_length=10000,
+    )
+    remediation_summary: str | None = Field(
+        default=None,
+        max_length=10000,
+    )
+
+
+class IncidentAcknowledgeRequest(RequestSchema):
+    assigned_to_user_id: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=36,
+    )
+    note: str | None = Field(
+        default=None,
+        max_length=4000,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Comment requests and responses
+# ---------------------------------------------------------------------------
+
+
+class IncidentCommentCreateRequest(RequestSchema):
+    comment: str = Field(
+        min_length=1,
+        max_length=10000,
+    )
+
+
+class IncidentCommentResponse(ResponseSchema):
+    id: UUID
+    incident_id: UUID
+
+    author_user_id: str | None = None
+    author: OperatorSummaryResponse | None = None
+
+    comment: str
+
+    created_at: datetime
+    updated_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Incident metric responses
+# ---------------------------------------------------------------------------
+
+
+class IncidentMetricResponse(ResponseSchema):
+    id: UUID
+    incident_id: UUID
+
+    metric_type: str
+    metric_name: str
+    value: float
+    unit: str | None = None
+    source: str
+
+    captured_at: datetime
+    metadata_json: dict[str, Any] | None = None
+    created_at: datetime
+
+
+class IncidentCalculatedMetricsResponse(ResponseSchema):
+    incident_id: UUID
+
+    failure_started_at: datetime | None = None
+    detected_at: datetime
+    acknowledged_at: datetime | None = None
+    resolved_at: datetime | None = None
+
+    mttd_seconds: float | None = Field(
+        default=None,
+        ge=0,
+    )
+    mtta_seconds: float | None = Field(
+        default=None,
+        ge=0,
+    )
+    mttr_seconds: float | None = Field(
+        default=None,
+        ge=0,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Incident list and detail responses
+# ---------------------------------------------------------------------------
+
+
+class IncidentListResponse(ResponseSchema):
+    incident_id: UUID
+
+    # Temporary compatibility field for the current Sprint 5 frontend.
+    # Both values will contain the same incident UUID.
+    id: UUID | None = None
+
+    incident_number: str
+    title: str
+
+    severity: IncidentSeverity
+    status: IncidentStatus
+
+    # These represent the new primary_service_id relationship in a
+    # frontend-friendly form.
+    service_id: str
+    service_name: str | None = None
+
+    environment: str
+
+    assigned_operator: OperatorSummaryResponse | None = None
+    suspected_deployment_id: UUID | None = None
+
+    detected_at: datetime
+    acknowledged_at: datetime | None = None
+    resolved_at: datetime | None = None
+
+    created_at: datetime
+    updated_at: datetime
+
+
+class IncidentDetailResponse(ResponseSchema):
+    incident: IncidentListResponse
+
+    description: str | None = None
+    deduplication_key: str
+
+    primary_service: ServiceSummaryResponse
+    affected_services: list[ServiceSummaryResponse] = Field(
+        default_factory=list,
+    )
+
+    triggering_alert_id: str | None = None
+    triggering_alert: ReliabilityAlertSummaryResponse | None = None
+
+    related_alerts: list[ReliabilityAlertSummaryResponse] = Field(
+        default_factory=list,
+    )
+
+    suspected_deployment: DeploymentSummaryResponse | None = None
+
+    failure_started_at: datetime | None = None
+    investigation_started_at: datetime | None = None
+    remediation_started_at: datetime | None = None
+
+    created_by: str | None = None
+    creator: OperatorSummaryResponse | None = None
+
+    current_assignment: IncidentAssignmentResponse | None = None
+
+    assignment_history: list[IncidentAssignmentResponse] = Field(
+        default_factory=list,
+    )
+    comments: list[IncidentCommentResponse] = Field(
+        default_factory=list,
+    )
+    metric_snapshot: list[IncidentMetricResponse] = Field(
+        default_factory=list,
+    )
+    timeline_summary: list[IncidentTimelineEventResponse] = Field(
+        default_factory=list,
+    )
+
+    resolution_summary: str | None = None
+
+========================================
+7. INCIDENT SERVICES
+========================================
+
+----- backend/app/incidents/incident_service.py -----
+"""
+Legacy compatibility adapter for the incident service.
+
+New code should import incident operations from:
+
+    app.incidents.service
+
+This module remains temporarily available because older event handlers and
+worker processes may still import incident functions from:
+
+    app.incidents.incident_service
+
+Do not add database queries, transaction management, timeline generation,
+audit generation, or incident business rules to this module.
+"""
+
+from app.incidents.service import (
+    create_or_update_incident_from_alert,
+)
+
+
+__all__ = [
+    "create_or_update_incident_from_alert",
+]
+
+----- backend/app/incidents/service.py -----
+"""Incident application service.
+
+Coordinates incident repositories, pure business rules, timeline creation,
+audit logging, and transaction boundaries.
+"""
+
+from __future__ import annotations
+
+import json
+from datetime import datetime, timedelta, timezone
+from enum import Enum
+from typing import Any
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from app.incidents import repository
+from app.incidents.config import (
+    INCIDENT_CORRELATION_WINDOW_MINUTES,
+    INCIDENT_DEPLOYMENT_CORRELATION_WINDOW_MINUTES,
+)
+from app.incidents.metrics import calculate_incident_metrics
+from app.incidents.rules import (
+    build_deduplication_key,
+    build_deduplication_lock_id,
+    calculate_incident_severity_decision,
+    is_more_severe,
+)
+from app.incidents.schemas import (
+    DeploymentSummaryResponse,
+    IncidentAcknowledgeRequest,
+    IncidentAssignmentRequest,
+    IncidentAssignmentResponse,
+    IncidentCalculatedMetricsResponse,
+    IncidentCommentCreateRequest,
+    IncidentCommentResponse,
+    IncidentDetailResponse,
+    IncidentListResponse,
+    IncidentMetricResponse,
+    IncidentStatusUpdateRequest,
+    IncidentTimelineEventResponse,
+    IncidentTimelineResponse,
+    OperatorSummaryResponse,
+    ReliabilityAlertSummaryResponse,
+    ServiceSummaryResponse,
+)
+from app.incidents.timeline import get_timeline_event_type
+from app.incidents.transitions import validate_status_transition
+from app.models import (
+    Incident,
+    IncidentAssignment,
+    IncidentComment,
+    IncidentMetric,
+    IncidentSeverity,
+    IncidentStatus,
+    IncidentTimelineEvent,
+    ReliabilityAlert,
+)
+
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _enum_value(value: Any) -> Any:
+    if isinstance(value, Enum):
+        return value.value
+    return value
+
+
+def _json_details(**values: Any) -> str:
+    return json.dumps(
+        values,
+        default=str,
+        sort_keys=True,
+    )
+
+
+def _duration_seconds(value: timedelta | None) -> float | None:
+    if value is None:
+        return None
+    return max(value.total_seconds(), 0.0)
+
+
+def _isoformat_or_none(
+    value: datetime | None,
+) -> str | None:
+    if value is None:
+        return None
+    return value.isoformat()
+
+
+def _operator_response(user: Any) -> OperatorSummaryResponse | None:
+    if user is None:
+        return None
+
+    return OperatorSummaryResponse(
+        id=str(user.id),
+        email=user.email,
+        full_name=user.full_name,
+    )
+
+
+def _service_response(service: Any) -> ServiceSummaryResponse:
+    if service is None:
+        raise ValueError("Incident primary service could not be loaded")
+
+    return ServiceSummaryResponse(
+        id=str(service.id),
+        name=service.name,
+        service_type=service.service_type,
+        owner=service.owner,
+    )
+
+
+def _alert_response(
+    alert: ReliabilityAlert | None,
+) -> ReliabilityAlertSummaryResponse | None:
+    if alert is None:
+        return None
+
+    return ReliabilityAlertSummaryResponse(
+        id=str(alert.id),
+        service_id=str(alert.service_id),
+        slo_definition_id=str(alert.slo_definition_id),
+        alert_type=_enum_value(alert.alert_type),
+        severity=_enum_value(alert.severity),
+        triggered_value=float(alert.triggered_value),
+        threshold_value=float(alert.threshold_value),
+        deployment_id=alert.deployment_id,
+        status=_enum_value(alert.status),
+        created_at=alert.created_at,
+        resolved_at=alert.resolved_at,
+    )
+
+
+def _deployment_response(
+    deployment: Any,
+) -> DeploymentSummaryResponse | None:
+    if deployment is None:
+        return None
+
+    return DeploymentSummaryResponse(
+        id=deployment.id,
+        service_id=str(deployment.service_id),
+        service_name=deployment.service_name,
+        environment_id=deployment.environment_id,
+        image_tag=deployment.image_tag,
+        deployment_version=deployment.deployment_version,
+        commit_sha=deployment.commit_sha,
+        argo_sync_status=deployment.argo_sync_status,
+        kubernetes_rollout_status=(deployment.kubernetes_rollout_status),
+        deployed_at=deployment.deployed_at,
+        created_at=deployment.created_at,
+    )
+
+
+def _assignment_response(
+    assignment: IncidentAssignment | None,
+) -> IncidentAssignmentResponse | None:
+    if assignment is None:
+        return None
+
+    return IncidentAssignmentResponse(
+        id=assignment.id,
+        incident_id=assignment.incident_id,
+        assigned_to_user_id=assignment.assigned_to_user_id,
+        assigned_to_user=_operator_response(assignment.assigned_to_user),
+        assigned_by_user_id=assignment.assigned_by_user_id,
+        assigned_by_user=_operator_response(assignment.assigned_by_user),
+        assignment_note=assignment.assignment_note,
+        assigned_at=assignment.assigned_at,
+        unassigned_at=assignment.unassigned_at,
+        is_active=assignment.is_active,
+    )
+
+
+def _comment_response(
+    comment: IncidentComment,
+) -> IncidentCommentResponse:
+    return IncidentCommentResponse(
+        id=comment.id,
+        incident_id=comment.incident_id,
+        author_user_id=comment.author_user_id,
+        author=_operator_response(comment.author),
+        comment=comment.comment,
+        created_at=comment.created_at,
+        updated_at=comment.updated_at,
+    )
+
+
+def _metric_response(
+    metric: IncidentMetric,
+) -> IncidentMetricResponse:
+    return IncidentMetricResponse(
+        id=metric.id,
+        incident_id=metric.incident_id,
+        metric_type=metric.metric_type,
+        metric_name=metric.metric_name,
+        value=float(metric.value),
+        unit=metric.unit,
+        source=metric.source,
+        captured_at=metric.captured_at,
+        metadata_json=metric.metadata_json,
+        created_at=metric.created_at,
+    )
+
+
+def _timeline_event_response(
+    event: IncidentTimelineEvent,
+) -> IncidentTimelineEventResponse:
+    return IncidentTimelineEventResponse(
+        id=event.id,
+        incident_id=event.incident_id,
+        event_type=event.event_type,
+        source=event.source,
+        message=event.message,
+        from_status=event.from_status,
+        to_status=event.to_status,
+        actor_user_id=event.actor_user_id,
+        actor=_operator_response(event.actor_user),
+        alert_id=event.alert_id,
+        alert=_alert_response(event.alert),
+        deployment_id=event.deployment_id,
+        deployment=_deployment_response(event.deployment),
+        metadata_json=event.metadata_json,
+        occurred_at=event.occurred_at,
+        created_at=event.created_at,
+    )
+
+
+def _calculated_metrics_response(
+    incident: Incident,
+) -> IncidentCalculatedMetricsResponse:
+    durations = calculate_incident_metrics(
+        failure_started_at=incident.failure_started_at,
+        detected_at=incident.detected_at,
+        acknowledged_at=incident.acknowledged_at,
+        resolved_at=incident.resolved_at,
+    )
+
+    return IncidentCalculatedMetricsResponse(
+        incident_id=incident.id,
+        failure_started_at=incident.failure_started_at,
+        detected_at=incident.detected_at,
+        acknowledged_at=incident.acknowledged_at,
+        resolved_at=incident.resolved_at,
+        mttd_seconds=_duration_seconds(getattr(durations, "mttd", None)),
+        mtta_seconds=_duration_seconds(getattr(durations, "mtta", None)),
+        mttr_seconds=_duration_seconds(getattr(durations, "mttr", None)),
+    )
+
+
+def _incident_list_response(
+    incident: Incident,
+) -> IncidentListResponse:
+    service_id = incident.primary_service_id or incident.service_id
+
+    if not service_id:
+        raise ValueError(f"Incident {incident.id} has no primary service")
+
+    return IncidentListResponse(
+        incident_id=incident.id,
+        id=incident.id,
+        incident_number=incident.incident_number,
+        title=incident.title,
+        severity=incident.severity,
+        status=incident.status,
+        service_id=str(service_id),
+        service_name=(
+            incident.primary_service.name
+            if incident.primary_service is not None
+            else None
+        ),
+        environment=incident.environment,
+        assigned_operator=_operator_response(incident.current_assignee),
+        suspected_deployment_id=(incident.suspected_deployment_id),
+        detected_at=incident.detected_at,
+        acknowledged_at=incident.acknowledged_at,
+        resolved_at=incident.resolved_at,
+        created_at=incident.created_at,
+        updated_at=incident.updated_at,
+    )
+
+
+def _affected_services(
+    incident: Incident,
+    alerts: list[ReliabilityAlert],
+) -> list[ServiceSummaryResponse]:
+    services: dict[str, Any] = {}
+
+    if incident.primary_service is not None:
+        services[str(incident.primary_service.id)] = incident.primary_service
+
+    for alert in alerts:
+        if alert.service is not None:
+            services[str(alert.service.id)] = alert.service
+
+    return [_service_response(service) for service in services.values()]
+
+
+def list_incidents(
+    db: Session,
+    *,
+    statuses: list[IncidentStatus] | None = None,
+    severities: list[IncidentSeverity] | None = None,
+    service_id: str | None = None,
+    environment: str | None = None,
+    assigned_to_user_id: str | None = None,
+    offset: int = 0,
+    limit: int = 100,
+) -> list[IncidentListResponse]:
+    incidents = repository.list_incidents(
+        db,
+        statuses=statuses,
+        severities=severities,
+        service_id=service_id,
+        environment=environment,
+        assigned_to_user_id=assigned_to_user_id,
+        offset=offset,
+        limit=limit,
+    )
+
+    return [_incident_list_response(incident) for incident in incidents]
+
+
+def _metric_unit(
+    metric_name: str,
+) -> str | None:
+    units = {
+        "AVAILABILITY": "%",
+        "ERROR_RATE": "%",
+        "P95_LATENCY": "ms",
+        "LATENCY": "ms",
+    }
+
+    return units.get(metric_name.upper())
+
+
+def _capture_initial_reliability_snapshot(
+    db: Session,
+    *,
+    incident: Incident,
+    alert: ReliabilityAlert,
+    detected_at: datetime,
+) -> None:
+    """
+    Persist the reliability state known when the incident was detected.
+
+    These records are independent of later Prometheus queries and later
+    SLO or error-budget evaluations.
+    """
+
+    measurements = (
+        repository.get_latest_slo_measurements_for_snapshot(
+            db,
+            service_id=str(incident.primary_service_id),
+            captured_before=detected_at,
+        )
+
+========================================
+8. INCIDENT STATUS REFERENCES
+========================================
+backend/app/models.py:600:    DETECTED = "DETECTED"
+backend/app/models.py:601:    ACKNOWLEDGED = "ACKNOWLEDGED"
+backend/app/models.py:602:    INVESTIGATING = "INVESTIGATING"
+backend/app/models.py:603:    ACTION_RECOMMENDED = "ACTION_RECOMMENDED"
+backend/app/models.py:604:    REMEDIATING = "REMEDIATING"
+backend/app/models.py:605:    RESOLVED = "RESOLVED"
+backend/app/models.py:606:    FAILED_RECOVERY = "FAILED_RECOVERY"
+backend/app/models.py:609:    OPEN = "DETECTED"
+backend/app/models.py:610:    FALSE_POSITIVE = "RESOLVED"
+backend/app/models.py:665:        default=IncidentStatus.DETECTED,
+backend/app/models.py:666:        server_default=IncidentStatus.DETECTED.value,
+backend/app/models.py:708:    detected_at = Column(
+backend/app/models.py:714:    acknowledged_at = Column(
+backend/app/models.py:729:    resolved_at = Column(
+backend/app/models.py:783:    # detected_at, and the incident-alert relationship instead.
+backend/app/models.py:912:            "ix_incidents_detected_at",
+backend/app/models.py:913:            "detected_at",
+backend/app/models.py:1356:    ACKNOWLEDGED = "ACKNOWLEDGED"
+backend/app/models.py:1357:    RESOLVED = "RESOLVED"
+backend/app/models.py:1645:    resolved_at = Column(
+backend/app/pipelineiq/risk/release_risk.py:192:        summary = "Release risk is critical. Do not release until the major issues are resolved."
+backend/app/pipelineiq/risk/release_risk.py:195:        recommendations = ["No major release blockers detected."]
+backend/app/deployments/kubernetes_capture.py:11:    KUBERNETES_RESTART_DETECTED,
+backend/app/deployments/kubernetes_capture.py:141:            event_type=KUBERNETES_RESTART_DETECTED,
+backend/app/events/outbox.py:27:    resolved_topic = topic or EVENT_TOPIC_MAP.get(event_type)
+backend/app/events/outbox.py:29:    if not resolved_topic:
+backend/app/events/outbox.py:42:        topic=resolved_topic,
+backend/app/events/service.py:204:        dead.status = "RESOLVED"
+backend/app/events/constants.py:34:KUBERNETES_RESTART_DETECTED = "KUBERNETES_RESTART_DETECTED"
+backend/app/events/constants.py:82:    KUBERNETES_RESTART_DETECTED: TOPIC_KUBERNETES_EVENTS,
+backend/app/pipeline_runner.py:109:        _emit(logs, "\npackage.json found. Node.js project detected.\n", on_log)
+backend/app/incidents/transitions.py:10:    IncidentStatus.DETECTED: {
+backend/app/incidents/transitions.py:11:        IncidentStatus.ACKNOWLEDGED,
+backend/app/incidents/transitions.py:13:    IncidentStatus.ACKNOWLEDGED: {
+backend/app/incidents/transitions.py:14:        IncidentStatus.INVESTIGATING,
+backend/app/incidents/transitions.py:16:    IncidentStatus.INVESTIGATING: {
+backend/app/incidents/transitions.py:17:        IncidentStatus.ACTION_RECOMMENDED,
+backend/app/incidents/transitions.py:18:        IncidentStatus.REMEDIATING,
+backend/app/incidents/transitions.py:19:        IncidentStatus.RESOLVED,
+backend/app/incidents/transitions.py:21:    IncidentStatus.ACTION_RECOMMENDED: {
+backend/app/incidents/transitions.py:22:        IncidentStatus.REMEDIATING,
+backend/app/incidents/transitions.py:23:        IncidentStatus.RESOLVED,
+backend/app/incidents/transitions.py:25:    IncidentStatus.REMEDIATING: {
+backend/app/incidents/transitions.py:26:        IncidentStatus.RESOLVED,
+backend/app/incidents/transitions.py:27:        IncidentStatus.FAILED_RECOVERY,
+backend/app/incidents/transitions.py:29:    IncidentStatus.FAILED_RECOVERY: {
+backend/app/incidents/transitions.py:30:        IncidentStatus.INVESTIGATING,
+backend/app/incidents/transitions.py:31:        IncidentStatus.ACTION_RECOMMENDED,
+backend/app/incidents/transitions.py:32:        IncidentStatus.REMEDIATING,
+backend/app/incidents/transitions.py:34:    IncidentStatus.RESOLVED: set(),
+backend/app/incidents/repository.py:136:            Incident.detected_at.desc(),
+backend/app/incidents/repository.py:172:    detected_at: datetime,
+backend/app/incidents/repository.py:195:    correlation_start = detected_at - timedelta(
+backend/app/incidents/repository.py:210:            Deployment.created_at <= detected_at,
+backend/app/incidents/repository.py:312:        IncidentStatus.RESOLVED,
+backend/app/incidents/repository.py:313:        IncidentStatus.FAILED_RECOVERY,
+backend/app/incidents/repository.py:334:        Incident.detected_at,
+backend/app/incidents/repository.py:342:            Incident.resolved_at.is_(None),
+backend/app/incidents/repository.py:347:            Incident.detected_at.desc(),
+backend/app/incidents/consumer.py:22:    ReliabilityAlertStatus.ACKNOWLEDGED,
+backend/app/incidents/consumer.py:107:    4. Ignore stale resolved alerts that were never linked.
+backend/app/incidents/consumer.py:148:    # was later resolved.
+backend/app/incidents/incident_router.py:149:        status=IncidentStatus.RESOLVED,
+backend/app/incidents/schemas.py:55:    resolved_at: datetime | None = None
+backend/app/incidents/schemas.py:224:    detected_at: datetime
+backend/app/incidents/schemas.py:225:    acknowledged_at: datetime | None = None
+backend/app/incidents/schemas.py:226:    resolved_at: datetime | None = None
+backend/app/incidents/schemas.py:270:    detected_at: datetime
+backend/app/incidents/schemas.py:271:    acknowledged_at: datetime | None = None
+backend/app/incidents/schemas.py:272:    resolved_at: datetime | None = None
+backend/app/incidents/service.py:134:        resolved_at=alert.resolved_at,
+backend/app/incidents/service.py:238:        detected_at=incident.detected_at,
+backend/app/incidents/service.py:239:        acknowledged_at=incident.acknowledged_at,
+backend/app/incidents/service.py:240:        resolved_at=incident.resolved_at,
+backend/app/incidents/service.py:246:        detected_at=incident.detected_at,
+backend/app/incidents/service.py:247:        acknowledged_at=incident.acknowledged_at,
+backend/app/incidents/service.py:248:        resolved_at=incident.resolved_at,
+backend/app/incidents/service.py:279:        detected_at=incident.detected_at,
+backend/app/incidents/service.py:280:        acknowledged_at=incident.acknowledged_at,
+backend/app/incidents/service.py:281:        resolved_at=incident.resolved_at,
+backend/app/incidents/service.py:346:    detected_at: datetime,
+backend/app/incidents/service.py:349:    Persist the reliability state known when the incident was detected.
+backend/app/incidents/service.py:359:            captured_before=detected_at,
+backend/app/incidents/service.py:409:            captured_before=detected_at,
+backend/app/incidents/service.py:644:            detected_at=alert_created_at,
+backend/app/incidents/service.py:693:            detected_at = alert_created_at
+backend/app/incidents/service.py:694:            failure_time = failure_started_at or detected_at
+backend/app/incidents/service.py:703:                status=IncidentStatus.DETECTED,
+backend/app/incidents/service.py:714:                detected_at=detected_at,
+backend/app/incidents/service.py:731:                event_type=get_timeline_event_type(IncidentStatus.DETECTED),
+backend/app/incidents/service.py:734:                    "Incident automatically detected from "
+backend/app/incidents/service.py:737:                to_status=IncidentStatus.DETECTED,
+backend/app/incidents/service.py:758:                occurred_at=detected_at,
+backend/app/incidents/service.py:794:                        "incident_detected_at": (
+backend/app/incidents/service.py:795:                            _isoformat_or_none(detected_at)
+backend/app/incidents/service.py:801:                    occurred_at=detected_at,
+backend/app/incidents/service.py:819:                        incident_detected_at=detected_at,
+backend/app/incidents/service.py:1006:                detected_at=incident.detected_at,
+backend/app/incidents/service.py:1046:        requested_status == IncidentStatus.ACKNOWLEDGED
+backend/app/incidents/service.py:1047:        and incident.acknowledged_at is None
+backend/app/incidents/service.py:1049:        field_updates["acknowledged_at"] = occurred_at
+backend/app/incidents/service.py:1052:        requested_status == IncidentStatus.INVESTIGATING
+backend/app/incidents/service.py:1058:        requested_status == IncidentStatus.REMEDIATING
+backend/app/incidents/service.py:1063:    if requested_status == IncidentStatus.RESOLVED:
+backend/app/incidents/service.py:1064:        field_updates["resolved_at"] = occurred_at
+backend/app/incidents/service.py:1173:            status=IncidentStatus.ACKNOWLEDGED,
+backend/app/incidents/timeline.py:7:    IncidentStatus.DETECTED: "INCIDENT_DETECTED",
+backend/app/incidents/timeline.py:8:    IncidentStatus.ACKNOWLEDGED: "INCIDENT_ACKNOWLEDGED",
+backend/app/incidents/timeline.py:9:    IncidentStatus.INVESTIGATING: "INVESTIGATION_STARTED",
+backend/app/incidents/timeline.py:10:    IncidentStatus.ACTION_RECOMMENDED: "ACTION_RECOMMENDED",
+backend/app/incidents/timeline.py:11:    IncidentStatus.REMEDIATING: "REMEDIATION_STARTED",
+backend/app/incidents/timeline.py:12:    IncidentStatus.RESOLVED: "INCIDENT_RESOLVED",
+backend/app/incidents/timeline.py:13:    IncidentStatus.FAILED_RECOVERY: "RECOVERY_FAILED",
+backend/app/incidents/metrics.py:33:    detected_at: datetime | None,
+backend/app/incidents/metrics.py:38:    MTTD = detected_at - failure_started_at
+backend/app/incidents/metrics.py:42:        detected_at,
+backend/app/incidents/metrics.py:47:    detected_at: datetime | None,
+backend/app/incidents/metrics.py:48:    acknowledged_at: datetime | None,
+backend/app/incidents/metrics.py:53:    MTTA = acknowledged_at - detected_at
+backend/app/incidents/metrics.py:56:        detected_at,
+backend/app/incidents/metrics.py:57:        acknowledged_at,
+backend/app/incidents/metrics.py:62:    detected_at: datetime | None,
+backend/app/incidents/metrics.py:63:    resolved_at: datetime | None,
+backend/app/incidents/metrics.py:68:    MTTR = resolved_at - detected_at
+backend/app/incidents/metrics.py:71:        detected_at,
+backend/app/incidents/metrics.py:72:        resolved_at,
+backend/app/incidents/metrics.py:78:    resolved_at: datetime | None,
+backend/app/incidents/metrics.py:83:    Impact duration = resolved_at - failure_started_at
+backend/app/incidents/metrics.py:87:        resolved_at,
+backend/app/incidents/metrics.py:94:    detected_at: datetime | None,
+backend/app/incidents/metrics.py:95:    acknowledged_at: datetime | None,
+backend/app/incidents/metrics.py:96:    resolved_at: datetime | None,
+backend/app/incidents/metrics.py:104:            detected_at,
+backend/app/incidents/metrics.py:107:            detected_at,
+backend/app/incidents/metrics.py:108:            acknowledged_at,
+backend/app/incidents/metrics.py:111:            detected_at,
+backend/app/incidents/metrics.py:112:            resolved_at,
+backend/app/incidents/metrics.py:116:            resolved_at,
+backend/app/incidents/schemas.py.sprint5.bak:28:    resolved_at: datetime | None = None
+backend/app/ai_analyzer.py:155:            "issue": "Security vulnerabilities were detected.",
+backend/app/ai_analyzer.py:174:            "why_it_matters": "Low coverage increases risk of undetected bugs.",
+backend/app/sonar_service.py:214:                "resolved": "false",
+backend/app/reliability/alert_service.py:27:    ReliabilityAlertStatus.ACKNOWLEDGED,
+backend/app/reliability/alert_service.py:180:    resolved_at = datetime.now(timezone.utc)
+backend/app/reliability/alert_service.py:184:            ReliabilityAlertStatus.RESOLVED
+backend/app/reliability/alert_service.py:186:        alert.resolved_at = resolved_at
+backend/app/reliability/alert_service.py:224:    resolved_count = 0
+backend/app/reliability/alert_service.py:230:        resolved_count += (
+backend/app/reliability/alert_service.py:241:    return resolved_count
+backend/app/reliability/alert_service.py:252:    Find an existing OPEN or ACKNOWLEDGED alert for the
+backend/app/reliability/alert_service.py:302:    # managed by this SLO are resolved.
+backend/app/reliability/alert_service.py:312:    # Any previously active alert was resolved above.
+backend/app/reliability/query_service.py:30:    ReliabilityAlertStatus.ACKNOWLEDGED,
+backend/app/reliability/query_service.py:324:        "resolved_at": alert.resolved_at,
+backend/app/reliability/query_service.py:351:    - OPEN and ACKNOWLEDGED alerts are both active.
+backend/app/reliability/query_service.py:566:    OPEN and ACKNOWLEDGED filtering is applied to the service
+backend/app/reliability/schemas.py:119:    resolved_at: datetime | None = None
+backend/tests/test_incident_deployment_correlation_service.py:146:    detected_at = datetime.now(timezone.utc)
+backend/tests/test_incident_deployment_correlation_service.py:155:        created_at=detected_at - timedelta(minutes=45),
+backend/tests/test_incident_deployment_correlation_service.py:162:        created_at=detected_at - timedelta(minutes=10),
+backend/tests/test_incident_deployment_correlation_service.py:173:        created_at=detected_at,
+backend/tests/test_incident_deployment_correlation_service.py:230:        event.metadata_json["incident_detected_at"],
+backend/tests/test_incident_deployment_correlation_service.py:296:    detected_at = datetime.now(timezone.utc)
+backend/tests/test_incident_deployment_correlation_service.py:305:        created_at=detected_at - timedelta(minutes=61),
+backend/tests/test_incident_deployment_correlation_service.py:313:        created_at=detected_at,
+backend/tests/test_incident_deployment_correlation_repository.py:88:    detected_at: datetime,
+backend/tests/test_incident_deployment_correlation_repository.py:94:        detected_at=detected_at,
+backend/tests/test_incident_deployment_correlation_repository.py:102:    detected_at = datetime.now(timezone.utc)
+backend/tests/test_incident_deployment_correlation_repository.py:114:        created_at=detected_at - timedelta(minutes=40),
+backend/tests/test_incident_deployment_correlation_repository.py:121:        created_at=detected_at - timedelta(minutes=10),
+backend/tests/test_incident_deployment_correlation_repository.py:129:        detected_at=detected_at,
+backend/tests/test_incident_deployment_correlation_repository.py:140:    detected_at = datetime.now(timezone.utc)
+backend/tests/test_incident_deployment_correlation_repository.py:166:        created_at=detected_at - timedelta(minutes=5),
+backend/tests/test_incident_deployment_correlation_repository.py:174:        detected_at=detected_at,
+backend/tests/test_incident_deployment_correlation_repository.py:183:    detected_at = datetime.now(timezone.utc)
+backend/tests/test_incident_deployment_correlation_repository.py:195:        created_at=detected_at - timedelta(minutes=5),
+backend/tests/test_incident_deployment_correlation_repository.py:203:        detected_at=detected_at,
+backend/tests/test_incident_deployment_correlation_repository.py:212:    detected_at = datetime.now(timezone.utc)
+backend/tests/test_incident_deployment_correlation_repository.py:224:        created_at=detected_at + timedelta(seconds=1),
+backend/tests/test_incident_deployment_correlation_repository.py:232:        detected_at=detected_at,
+backend/tests/test_incident_deployment_correlation_repository.py:241:    detected_at = datetime.now(timezone.utc)
+backend/tests/test_incident_deployment_correlation_repository.py:253:        created_at=detected_at - timedelta(minutes=61),
+backend/tests/test_incident_deployment_correlation_repository.py:261:        detected_at=detected_at,
+backend/tests/test_incident_deployment_correlation_repository.py:270:    detected_at = datetime.now(timezone.utc)
+backend/tests/test_incident_deployment_correlation_repository.py:282:        created_at=detected_at - timedelta(
+backend/tests/test_incident_deployment_correlation_repository.py:292:        detected_at=detected_at,
+backend/tests/test_incident_deployment_correlation_repository.py:302:    detected_at = datetime.now(timezone.utc)
+backend/tests/test_incident_deployment_correlation_repository.py:315:        detected_at=detected_at,
+backend/tests/test_incident_deduplication_repository.py:49:    detected_at: datetime,
+backend/tests/test_incident_deduplication_repository.py:50:    status: IncidentStatus = IncidentStatus.DETECTED,
+backend/tests/test_incident_deduplication_repository.py:51:    resolved_at: datetime | None = None,
+backend/tests/test_incident_deduplication_repository.py:61:        failure_started_at=detected_at,
+backend/tests/test_incident_deduplication_repository.py:62:        detected_at=detected_at,
+backend/tests/test_incident_deduplication_repository.py:63:        resolved_at=resolved_at,
+backend/tests/test_incident_deduplication_repository.py:90:        detected_at=alert_time - timedelta(minutes=10),
+backend/tests/test_incident_deduplication_repository.py:120:        detected_at=boundary_time,
+backend/tests/test_incident_deduplication_repository.py:149:        detected_at=alert_time - timedelta(minutes=31),
+backend/tests/test_incident_deduplication_repository.py:161:def test_does_not_return_resolved_incident_inside_window(
+backend/tests/test_incident_deduplication_repository.py:177:        detected_at=alert_time - timedelta(minutes=5),
+backend/tests/test_incident_deduplication_repository.py:178:        status=IncidentStatus.RESOLVED,
+backend/tests/test_incident_deduplication_repository.py:179:        resolved_at=alert_time - timedelta(minutes=1),
+backend/tests/test_incident_deduplication_repository.py:212:        detected_at=alert_time - timedelta(minutes=5),
+backend/tests/test_incident_metric_snapshot_service.py:213:    detected_at = datetime.now(timezone.utc)
+backend/tests/test_incident_metric_snapshot_service.py:223:        evaluated_at=detected_at - timedelta(minutes=10),
+backend/tests/test_incident_metric_snapshot_service.py:232:        evaluated_at=detected_at - timedelta(minutes=8),
+backend/tests/test_incident_metric_snapshot_service.py:241:        evaluated_at=detected_at - timedelta(minutes=6),
+backend/tests/test_incident_metric_snapshot_service.py:252:        evaluated_at=detected_at + timedelta(minutes=2),
+backend/tests/test_incident_metric_snapshot_service.py:259:        evaluated_at=detected_at - timedelta(minutes=5),
+backend/tests/test_incident_metric_snapshot_service.py:271:        evaluated_at=detected_at + timedelta(minutes=3),
+backend/tests/test_incident_metric_snapshot_service.py:282:        created_at=detected_at,
+backend/tests/test_incident_metric_snapshot_service.py:359:    detected_at = datetime.now(timezone.utc)
+backend/tests/test_incident_metric_snapshot_service.py:370:        evaluated_at=detected_at - timedelta(minutes=2),
+backend/tests/test_incident_metric_snapshot_service.py:376:        evaluated_at=detected_at - timedelta(minutes=1),
+backend/tests/test_incident_metric_snapshot_service.py:387:        created_at=detected_at,
+backend/tests/test_incident_metric_snapshot_service.py:416:        evaluated_at=detected_at + timedelta(minutes=5),
+backend/tests/test_incident_metric_snapshot_service.py:422:        evaluated_at=detected_at + timedelta(minutes=5),
+backend/tests/test_incident_metric_snapshot_service.py:477:    detected_at = datetime.now(timezone.utc)
+backend/tests/test_incident_metric_snapshot_service.py:484:        created_at=detected_at,
+
+========================================
+9. ACKNOWLEDGE, ASSIGN AND RESOLVE ROUTES
+========================================
+backend/app/incidents/transitions.py:11:        IncidentStatus.ACKNOWLEDGED,
+backend/app/incidents/transitions.py:13:    IncidentStatus.ACKNOWLEDGED: {
+backend/app/incidents/transitions.py:19:        IncidentStatus.RESOLVED,
+backend/app/incidents/transitions.py:23:        IncidentStatus.RESOLVED,
+backend/app/incidents/transitions.py:26:        IncidentStatus.RESOLVED,
+backend/app/incidents/transitions.py:34:    IncidentStatus.RESOLVED: set(),
+backend/app/incidents/repository.py:18:    IncidentAssignment,
+backend/app/incidents/repository.py:96:    assigned_to_user_id: str | None = None,
+backend/app/incidents/repository.py:128:    if assigned_to_user_id is not None:
+backend/app/incidents/repository.py:130:            Incident.current_assignee_id == assigned_to_user_id,
+backend/app/incidents/repository.py:312:        IncidentStatus.RESOLVED,
+backend/app/incidents/repository.py:342:            Incident.resolved_at.is_(None),
+backend/app/incidents/repository.py:389:def get_latest_active_assignment(
+backend/app/incidents/repository.py:392:) -> IncidentAssignment | None:
+backend/app/incidents/repository.py:394:    Return the latest active assignment for an incident.
+backend/app/incidents/repository.py:398:        select(IncidentAssignment)
+backend/app/incidents/repository.py:400:            IncidentAssignment.incident_id == incident_id,
+backend/app/incidents/repository.py:401:            IncidentAssignment.is_active.is_(True),
+backend/app/incidents/repository.py:404:            IncidentAssignment.assigned_at.desc(),
+backend/app/incidents/repository.py:405:            IncidentAssignment.id.desc(),
+backend/app/incidents/repository.py:413:def get_incident_assignments(
+backend/app/incidents/repository.py:416:) -> list[IncidentAssignment]:
+backend/app/incidents/repository.py:418:    Return complete assignment history, newest first.
+backend/app/incidents/repository.py:422:        select(IncidentAssignment)
+backend/app/incidents/repository.py:424:            IncidentAssignment.incident_id == incident_id,
+backend/app/incidents/repository.py:427:            IncidentAssignment.assigned_at.desc(),
+backend/app/incidents/repository.py:428:            IncidentAssignment.id.desc(),
+backend/app/incidents/repository.py:658:def create_assignment(
+backend/app/incidents/repository.py:662:    assigned_to_user_id: str,
+backend/app/incidents/repository.py:663:    assigned_by_user_id: str | None = None,
+backend/app/incidents/repository.py:664:    assignment_note: str | None = None,
+backend/app/incidents/repository.py:665:    assigned_at: datetime | None = None,
+backend/app/incidents/repository.py:666:) -> IncidentAssignment:
+backend/app/incidents/repository.py:668:    Create an active incident assignment.
+backend/app/incidents/repository.py:673:        "assigned_to_user_id": assigned_to_user_id,
+backend/app/incidents/repository.py:674:        "assigned_by_user_id": assigned_by_user_id,
+backend/app/incidents/repository.py:675:        "assignment_note": assignment_note,
+backend/app/incidents/repository.py:679:    if assigned_at is not None:
+backend/app/incidents/repository.py:680:        values["assigned_at"] = assigned_at
+backend/app/incidents/repository.py:682:    assignment = IncidentAssignment(**values)
+backend/app/incidents/repository.py:684:    db.add(assignment)
+backend/app/incidents/repository.py:687:    return assignment
+backend/app/incidents/repository.py:690:def close_active_assignment(
+backend/app/incidents/repository.py:694:    unassigned_at: datetime,
+backend/app/incidents/repository.py:695:) -> IncidentAssignment | None:
+backend/app/incidents/repository.py:697:    Close the latest active assignment for an incident.
+backend/app/incidents/repository.py:700:    assignment = get_latest_active_assignment(
+backend/app/incidents/repository.py:705:    if assignment is None:
+backend/app/incidents/repository.py:708:    assignment.is_active = False
+backend/app/incidents/repository.py:709:    assignment.unassigned_at = unassigned_at
+backend/app/incidents/repository.py:711:    db.add(assignment)
+backend/app/incidents/repository.py:714:    return assignment
+backend/app/incidents/consumer.py:22:    ReliabilityAlertStatus.ACKNOWLEDGED,
+backend/app/incidents/consumer.py:107:    4. Ignore stale resolved alerts that were never linked.
+backend/app/incidents/consumer.py:148:    # was later resolved.
+backend/app/incidents/incident_router.py:18:    IncidentAcknowledgeRequest,
+backend/app/incidents/incident_router.py:19:    IncidentAssignmentRequest,
+backend/app/incidents/incident_router.py:20:    IncidentAssignmentResponse,
+backend/app/incidents/incident_router.py:67:    assigned_to_user_id: str | None = Query(default=None),
+backend/app/incidents/incident_router.py:78:        assigned_to_user_id=assigned_to_user_id,
+backend/app/incidents/incident_router.py:117:    "/{incident_id}/acknowledge",
+backend/app/incidents/incident_router.py:120:def acknowledge_incident_endpoint(
+backend/app/incidents/incident_router.py:122:    request: IncidentAcknowledgeRequest | None = None,
+backend/app/incidents/incident_router.py:126:        result = incident_service.acknowledge_incident(
+backend/app/incidents/incident_router.py:129:            request=request or IncidentAcknowledgeRequest(),
+backend/app/incidents/incident_router.py:141:    "/{incident_id}/resolve",
+backend/app/incidents/incident_router.py:144:def resolve_incident_endpoint(
+backend/app/incidents/incident_router.py:149:        status=IncidentStatus.RESOLVED,
+backend/app/incidents/incident_router.py:192:    "/{incident_id}/assign",
+backend/app/incidents/incident_router.py:193:    response_model=IncidentAssignmentResponse,
+backend/app/incidents/incident_router.py:195:def assign_incident_endpoint(
+backend/app/incidents/incident_router.py:197:    request: IncidentAssignmentRequest,
+backend/app/incidents/incident_router.py:200:    result = incident_service.assign_incident(
+backend/app/incidents/schemas.py:55:    resolved_at: datetime | None = None
+backend/app/incidents/schemas.py:104:# Assignment requests and responses
+backend/app/incidents/schemas.py:108:class IncidentAssignmentRequest(RequestSchema):
+backend/app/incidents/schemas.py:109:    assigned_to_user_id: str = Field(
+backend/app/incidents/schemas.py:113:    assignment_note: str | None = Field(
+backend/app/incidents/schemas.py:119:class IncidentAssignmentResponse(ResponseSchema):
+backend/app/incidents/schemas.py:123:    assigned_to_user_id: str | None = None
+backend/app/incidents/schemas.py:124:    assigned_to_user: OperatorSummaryResponse | None = None
+backend/app/incidents/schemas.py:126:    assigned_by_user_id: str | None = None
+backend/app/incidents/schemas.py:127:    assigned_by_user: OperatorSummaryResponse | None = None
+backend/app/incidents/schemas.py:129:    assignment_note: str | None = None
+backend/app/incidents/schemas.py:131:    assigned_at: datetime
+backend/app/incidents/schemas.py:132:    unassigned_at: datetime | None = None
+backend/app/incidents/schemas.py:149:    resolution_summary: str | None = Field(
+backend/app/incidents/schemas.py:163:class IncidentAcknowledgeRequest(RequestSchema):
+backend/app/incidents/schemas.py:164:    assigned_to_user_id: str | None = Field(
+backend/app/incidents/schemas.py:225:    acknowledged_at: datetime | None = None
+backend/app/incidents/schemas.py:226:    resolved_at: datetime | None = None
+backend/app/incidents/schemas.py:267:    assigned_operator: OperatorSummaryResponse | None = None
+backend/app/incidents/schemas.py:271:    acknowledged_at: datetime | None = None
+backend/app/incidents/schemas.py:272:    resolved_at: datetime | None = None
+backend/app/incidents/schemas.py:305:    current_assignment: IncidentAssignmentResponse | None = None
+backend/app/incidents/schemas.py:307:    assignment_history: list[IncidentAssignmentResponse] = Field(
+backend/app/incidents/schemas.py:320:    resolution_summary: str | None = None
+backend/app/incidents/router.py:10:    acknowledge_incident,
+backend/app/incidents/router.py:11:    resolve_incident,
+backend/app/incidents/router.py:61:@router.post("/{incident_id}/acknowledge", response_model=IncidentOut)
+backend/app/incidents/router.py:62:def acknowledge(
+backend/app/incidents/router.py:67:        incident = acknowledge_incident(db, incident_id)
+backend/app/incidents/router.py:73:@router.post("/{incident_id}/resolve", response_model=IncidentOut)
+backend/app/incidents/router.py:74:def resolve(
+backend/app/incidents/router.py:79:        incident = resolve_incident(db, incident_id)
+backend/app/incidents/service.py:31:    IncidentAcknowledgeRequest,
+backend/app/incidents/service.py:32:    IncidentAssignmentRequest,
+backend/app/incidents/service.py:33:    IncidentAssignmentResponse,
+backend/app/incidents/service.py:51:    IncidentAssignment,
+backend/app/incidents/service.py:134:        resolved_at=alert.resolved_at,
+backend/app/incidents/service.py:159:def _assignment_response(
+backend/app/incidents/service.py:160:    assignment: IncidentAssignment | None,
+backend/app/incidents/service.py:161:) -> IncidentAssignmentResponse | None:
+backend/app/incidents/service.py:162:    if assignment is None:
+backend/app/incidents/service.py:165:    return IncidentAssignmentResponse(
+backend/app/incidents/service.py:166:        id=assignment.id,
+backend/app/incidents/service.py:167:        incident_id=assignment.incident_id,
+backend/app/incidents/service.py:168:        assigned_to_user_id=assignment.assigned_to_user_id,
+backend/app/incidents/service.py:169:        assigned_to_user=_operator_response(assignment.assigned_to_user),
+backend/app/incidents/service.py:170:        assigned_by_user_id=assignment.assigned_by_user_id,
+backend/app/incidents/service.py:171:        assigned_by_user=_operator_response(assignment.assigned_by_user),
+backend/app/incidents/service.py:172:        assignment_note=assignment.assignment_note,
+backend/app/incidents/service.py:173:        assigned_at=assignment.assigned_at,
+backend/app/incidents/service.py:174:        unassigned_at=assignment.unassigned_at,
+backend/app/incidents/service.py:175:        is_active=assignment.is_active,
+backend/app/incidents/service.py:239:        acknowledged_at=incident.acknowledged_at,
+backend/app/incidents/service.py:240:        resolved_at=incident.resolved_at,
+backend/app/incidents/service.py:247:        acknowledged_at=incident.acknowledged_at,
+backend/app/incidents/service.py:248:        resolved_at=incident.resolved_at,
+backend/app/incidents/service.py:277:        assigned_operator=_operator_response(incident.current_assignee),
+backend/app/incidents/service.py:280:        acknowledged_at=incident.acknowledged_at,
+backend/app/incidents/service.py:281:        resolved_at=incident.resolved_at,
+backend/app/incidents/service.py:310:    assigned_to_user_id: str | None = None,
+backend/app/incidents/service.py:320:        assigned_to_user_id=assigned_to_user_id,
+backend/app/incidents/service.py:480:    current_assignment = repository.get_latest_active_assignment(
+backend/app/incidents/service.py:484:    assignments = repository.get_incident_assignments(
+backend/app/incidents/service.py:523:        current_assignment=_assignment_response(current_assignment),
+backend/app/incidents/service.py:524:        assignment_history=[
+backend/app/incidents/service.py:526:            for assignment in assignments
+backend/app/incidents/service.py:527:            if (response := _assignment_response(assignment)) is not None
+backend/app/incidents/service.py:532:        resolution_summary=incident.resolution_summary,
+backend/app/incidents/service.py:1046:        requested_status == IncidentStatus.ACKNOWLEDGED
+backend/app/incidents/service.py:1047:        and incident.acknowledged_at is None
+backend/app/incidents/service.py:1049:        field_updates["acknowledged_at"] = occurred_at
+backend/app/incidents/service.py:1063:    if requested_status == IncidentStatus.RESOLVED:
+backend/app/incidents/service.py:1064:        field_updates["resolved_at"] = occurred_at
+backend/app/incidents/service.py:1066:    if request.resolution_summary is not None:
+backend/app/incidents/service.py:1067:        field_updates["resolution_summary"] = request.resolution_summary
+backend/app/incidents/service.py:1154:def acknowledge_incident(
+backend/app/incidents/service.py:1157:    request: IncidentAcknowledgeRequest,
+backend/app/incidents/service.py:1173:            status=IncidentStatus.ACKNOWLEDGED,
+backend/app/incidents/service.py:1185:        if request.assigned_to_user_id is not None:
+backend/app/incidents/service.py:1186:            repository.close_active_assignment(
+backend/app/incidents/service.py:1189:                unassigned_at=now,
+backend/app/incidents/service.py:1192:            repository.create_assignment(
+backend/app/incidents/service.py:1195:                assigned_to_user_id=(request.assigned_to_user_id),
+backend/app/incidents/service.py:1196:                assigned_by_user_id=actor_user_id,
+backend/app/incidents/service.py:1197:                assignment_note=("Assigned during incident acknowledgement"),
+backend/app/incidents/service.py:1198:                assigned_at=now,
+backend/app/incidents/service.py:1204:                current_assignee_id=(request.assigned_to_user_id),
+backend/app/incidents/service.py:1210:                event_type="OPERATOR_ASSIGNED",
+backend/app/incidents/service.py:1212:                message=("Incident assigned during acknowledgement."),
+backend/app/incidents/service.py:1215:                    "assigned_to_user_id": (request.assigned_to_user_id),
+backend/app/incidents/service.py:1222:                action="INCIDENT_ASSIGNED",
+backend/app/incidents/service.py:1227:                    assigned_to_user_id=(request.assigned_to_user_id),
+backend/app/incidents/service.py:1228:                    assignment_source="ACKNOWLEDGEMENT",
+backend/app/incidents/service.py:1245:def assign_incident(
+backend/app/incidents/service.py:1248:    request: IncidentAssignmentRequest,
+backend/app/incidents/service.py:1250:    assigned_by_user_id: str | None = None,
+backend/app/incidents/service.py:1251:) -> IncidentAssignmentResponse | None:
+backend/app/incidents/service.py:1263:        repository.close_active_assignment(
+backend/app/incidents/service.py:1266:            unassigned_at=now,
+backend/app/incidents/service.py:1269:        assignment = repository.create_assignment(
+backend/app/incidents/service.py:1272:            assigned_to_user_id=(request.assigned_to_user_id),
+backend/app/incidents/service.py:1273:            assigned_by_user_id=assigned_by_user_id,
+backend/app/incidents/service.py:1274:            assignment_note=request.assignment_note,
+backend/app/incidents/service.py:1275:            assigned_at=now,
+backend/app/incidents/service.py:1281:            current_assignee_id=(request.assigned_to_user_id),
+backend/app/incidents/service.py:1287:            event_type="OPERATOR_ASSIGNED",
+backend/app/incidents/service.py:1290:                request.assignment_note
+backend/app/incidents/service.py:1291:                or ("Incident assigned to operator " f"{request.assigned_to_user_id}.")
+backend/app/incidents/service.py:1293:            actor_user_id=assigned_by_user_id,
+backend/app/incidents/service.py:1295:                "assigned_to_user_id": (request.assigned_to_user_id),
+backend/app/incidents/service.py:1302:            action="INCIDENT_ASSIGNED",
+backend/app/incidents/service.py:1305:            actor_id=assigned_by_user_id,
+backend/app/incidents/service.py:1307:                assigned_to_user_id=(request.assigned_to_user_id),
+backend/app/incidents/service.py:1308:                assignment_note=request.assignment_note,
+backend/app/incidents/service.py:1313:        db.refresh(assignment)
+backend/app/incidents/service.py:1315:        response = _assignment_response(assignment)
+backend/app/incidents/service.py:1318:            raise RuntimeError("Assignment was committed but not returned")
+backend/app/incidents/timeline.py:8:    IncidentStatus.ACKNOWLEDGED: "INCIDENT_ACKNOWLEDGED",
+backend/app/incidents/timeline.py:12:    IncidentStatus.RESOLVED: "INCIDENT_RESOLVED",
+backend/app/incidents/metrics.py:48:    acknowledged_at: datetime | None,
+backend/app/incidents/metrics.py:51:    Calculate Mean Time to Acknowledge.
+backend/app/incidents/metrics.py:53:    MTTA = acknowledged_at - detected_at
+backend/app/incidents/metrics.py:57:        acknowledged_at,
+backend/app/incidents/metrics.py:63:    resolved_at: datetime | None,
+backend/app/incidents/metrics.py:66:    Calculate Mean Time to Resolve.
+backend/app/incidents/metrics.py:68:    MTTR = resolved_at - detected_at
+backend/app/incidents/metrics.py:72:        resolved_at,
+backend/app/incidents/metrics.py:78:    resolved_at: datetime | None,
+backend/app/incidents/metrics.py:83:    Impact duration = resolved_at - failure_started_at
+backend/app/incidents/metrics.py:87:        resolved_at,
+backend/app/incidents/metrics.py:95:    acknowledged_at: datetime | None,
+backend/app/incidents/metrics.py:96:    resolved_at: datetime | None,
+backend/app/incidents/metrics.py:108:            acknowledged_at,
+backend/app/incidents/metrics.py:112:            resolved_at,
+backend/app/incidents/metrics.py:116:            resolved_at,
+backend/app/incidents/schemas.py.sprint5.bak:28:    resolved_at: datetime | None = None
+backend/tests/test_incident_deduplication_repository.py:51:    resolved_at: datetime | None = None,
+backend/tests/test_incident_deduplication_repository.py:63:        resolved_at=resolved_at,
+backend/tests/test_incident_deduplication_repository.py:161:def test_does_not_return_resolved_incident_inside_window(
+backend/tests/test_incident_deduplication_repository.py:178:        status=IncidentStatus.RESOLVED,
+backend/tests/test_incident_deduplication_repository.py:179:        resolved_at=alert_time - timedelta(minutes=1),
+
+========================================
+10. RBAC DEPENDENCY
+========================================
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+
+from app.auth.security import decode_access_token
+from app.database import SessionLocal
+from app.models import User
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+
+def get_db():
+    db = SessionLocal()
+
+    try:
+        yield db
+
+    finally:
+        db.close()
+
+
+def get_user_primary_role(user: User) -> str:
+    if not user.roles:
+        return "viewer"
+
+    return user.roles[0].name
+
+
+def get_current_user(token: str = Depends(oauth2_scheme), db=Depends(get_db)) -> User:
+    payload = decode_access_token(token)
+
+    user_id = payload.get("sub")
+
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication token",
+        )
+
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+        )
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User is inactive",
+        )
+
+    return user
+
+
+def require_roles(*allowed_roles: str):
+    def checker(current_user: User = Depends(get_current_user)) -> User:
+        user_role = get_user_primary_role(current_user)
+
+        if user_role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions",
+            )
+
+        return current_user
+
+    return checker
+========================================
+11. ROLE REFERENCES
+========================================
+backend/app/main.py:12:from app.auth.dependencies import require_roles
+backend/app/main.py:107:    current_user: User = Depends(require_roles("admin", "developer")),
+backend/app/incidents/schemas.py:38:class OperatorSummaryResponse(ResponseSchema):
+backend/app/incidents/schemas.py:89:    actor: OperatorSummaryResponse | None = None
+backend/app/incidents/schemas.py:124:    assigned_to_user: OperatorSummaryResponse | None = None
+backend/app/incidents/schemas.py:127:    assigned_by_user: OperatorSummaryResponse | None = None
+backend/app/incidents/schemas.py:192:    author: OperatorSummaryResponse | None = None
+backend/app/incidents/schemas.py:267:    assigned_operator: OperatorSummaryResponse | None = None
+backend/app/incidents/schemas.py:303:    creator: OperatorSummaryResponse | None = None
+backend/app/incidents/service.py:43:    OperatorSummaryResponse,
+backend/app/incidents/service.py:94:def _operator_response(user: Any) -> OperatorSummaryResponse | None:
+backend/app/incidents/service.py:98:    return OperatorSummaryResponse(
+backend/app/incidents/service.py:169:        assigned_to_user=_operator_response(assignment.assigned_to_user),
+backend/app/incidents/service.py:171:        assigned_by_user=_operator_response(assignment.assigned_by_user),
+backend/app/incidents/service.py:186:        author=_operator_response(comment.author),
+backend/app/incidents/service.py:222:        actor=_operator_response(event.actor_user),
+backend/app/incidents/service.py:277:        assigned_operator=_operator_response(incident.current_assignee),
+backend/app/incidents/service.py:522:        creator=_operator_response(incident.creator),
+backend/app/incidents/service.py:1086:        source=("OPERATOR" if actor_user_id is not None else "SYSTEM"),
+backend/app/incidents/service.py:1210:                event_type="OPERATOR_ASSIGNED",
+backend/app/incidents/service.py:1211:                source="OPERATOR",
+backend/app/incidents/service.py:1287:            event_type="OPERATOR_ASSIGNED",
+backend/app/incidents/service.py:1288:            source="OPERATOR",
+backend/app/incidents/service.py:1291:                or ("Incident assigned to operator " f"{request.assigned_to_user_id}.")
+backend/app/incidents/service.py:1354:            source=("OPERATOR" if author_user_id is not None else "SYSTEM"),
+backend/app/auth/dependencies.py:24:        return "viewer"
+backend/app/auth/dependencies.py:57:def require_roles(*allowed_roles: str):
+backend/app/auth/router.py:11:ALLOWED_ROLES = ["admin", "developer", "viewer"]
+backend/app/auth/router.py:53:        requested_role = "admin" if user_count == 0 else "viewer"
+
+========================================
+12. AUDIT IMPLEMENTATION
+========================================
+backend/app/models.py:416:class AuditEvent(Base):
+backend/app/models.py:417:    __tablename__ = "audit_events"
+backend/app/models.py.bak:351:class AuditEvent(Base):
+backend/app/models.py.bak:352:    __tablename__ = "audit_events"
+backend/app/events/consumer.py:31:    "pipeline.events,deployment.events,kubernetes.events,audit.events,telemetry.alerts",
+backend/app/events/handlers.py:36:    elif record.topic == "audit.events":
+backend/app/events/handlers.py:37:        handle_audit_event(db, record)
+backend/app/events/handlers.py:128:def handle_audit_event(db: Session, record: EventRecord) -> None:
+backend/app/events/constants.py:11:TOPIC_AUDIT_EVENTS = "audit.events"
+backend/app/events/constants.py:56:# Audit / incident / remediation events
+backend/app/events/constants.py:57:AUDIT_EVENT_CREATED = "AUDIT_EVENT_CREATED"
+backend/app/events/constants.py:92:    # Audit / incident / remediation events
+backend/app/events/constants.py:93:    AUDIT_EVENT_CREATED: TOPIC_AUDIT_EVENTS,
+backend/app/schemas.py:88:class AuditEventResponse(BaseModel):
+backend/app/incidents/repository.py:12:    AuditEvent,
+backend/app/incidents/repository.py:820:def create_audit_event(
+backend/app/incidents/repository.py:828:) -> AuditEvent:
+backend/app/incidents/repository.py:830:    Create an audit event.
+backend/app/incidents/repository.py:832:    AuditEvent.details is currently a text column. The service layer should
+backend/app/incidents/repository.py:836:    audit_event = AuditEvent(
+backend/app/incidents/repository.py:844:    db.add(audit_event)
+backend/app/incidents/repository.py:847:    return audit_event
+backend/app/incidents/service.py:804:                repository.create_audit_event(
+backend/app/incidents/service.py:826:            repository.create_audit_event(
+backend/app/incidents/service.py:881:                repository.create_audit_event(
+backend/app/incidents/service.py:928:                repository.create_audit_event(
+backend/app/incidents/service.py:1101:    repository.create_audit_event(
+backend/app/incidents/service.py:1220:            repository.create_audit_event(
+backend/app/incidents/service.py:1300:        repository.create_audit_event(
+backend/app/incidents/service.py:1362:        repository.create_audit_event(
+backend/app/incidents/service.py:1441:        repository.create_audit_event(
+backend/app/control_plane/routes.py:10:from app.audit.service import create_audit_event
+backend/app/control_plane/routes.py:13:    AuditEvent,
+backend/app/control_plane/routes.py:21:    AuditEventResponse,
+backend/app/control_plane/routes.py:53:    create_audit_event(
+backend/app/control_plane/routes.py:112:    create_audit_event(
+backend/app/control_plane/routes.py:206:    create_audit_event(
+backend/app/control_plane/routes.py:259:    create_audit_event(
+backend/app/control_plane/routes.py:347:    create_audit_event(
+backend/app/control_plane/routes.py:382:@router.get("/audit-events", response_model=list[AuditEventResponse])
+backend/app/control_plane/routes.py:383:def list_audit_events(db: Session = Depends(get_db)):
+backend/app/control_plane/routes.py:385:        db.query(AuditEvent)
+backend/app/control_plane/routes.py:386:        .order_by(AuditEvent.created_at.desc())
+backend/app/audit/service.py:7:from app.models import AuditEvent
+backend/app/audit/service.py:10:def create_audit_event(
+backend/app/audit/service.py:17:) -> AuditEvent:
+backend/app/audit/service.py:18:    audit_event = AuditEvent(
+backend/app/audit/service.py:27:    db.add(audit_event)
+backend/app/audit/service.py:28:    return audit_event
+
+========================================
+13. INCIDENT TESTS
+========================================
+backend/tests/__pycache__/test_incident_deduplication_repository.cpython-311.pyc
+backend/tests/__pycache__/test_incident_deduplication_repository.cpython-311-pytest-9.1.1.pyc
+backend/tests/__pycache__/test_incident_deduplication_service.cpython-311.pyc
+backend/tests/__pycache__/test_incident_deduplication_service.cpython-311-pytest-9.1.1.pyc
+backend/tests/__pycache__/test_incident_deployment_correlation_repository.cpython-311.pyc
+backend/tests/__pycache__/test_incident_deployment_correlation_service.cpython-311.pyc
+backend/tests/__pycache__/test_incident_metric_snapshot_service.cpython-311.pyc
+backend/tests/__pycache__/test_incident_rules.cpython-311.pyc
+backend/tests/__pycache__/test_incident_rules.cpython-311-pytest-9.1.1.pyc
+backend/tests/test_incident_deduplication_repository.py
+backend/tests/test_incident_deduplication_service.py
+backend/tests/test_incident_deployment_correlation_repository.py
+backend/tests/test_incident_deployment_correlation_service.py
+backend/tests/test_incident_metric_snapshot_service.py
+backend/tests/test_incident_rules.py
+
+========================================
+14. RECENT INCIDENT MIGRATIONS
+========================================
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:60:        sa.Column("resolved_at", sa.DateTime(), nullable=True),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:327:            "resolved_at",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:78:    "incident_assignments",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:244:        sa.Column("acknowledged_at", sa.DateTime(timezone=True), nullable=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:264:        sa.Column("current_assignee_id", sa.String(length=36), nullable=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:268:        sa.Column("resolution_summary", sa.Text(), nullable=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:387:        SET acknowledged_at = updated_at AT TIME ZONE 'UTC'
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:395:        SET resolution_summary =
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:397:                resolution_summary,
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:499:        ALTER COLUMN resolved_at TYPE timestamptz
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:500:        USING resolved_at AT TIME ZONE 'UTC'
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:567:        "fk_incidents_current_assignee_id_users",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:570:        ["current_assignee_id"],
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:673:        "incident_assignments",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:703:            name="fk_incident_assignments_incident_id_incidents",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:709:            name="fk_incident_assignments_assigned_to_user_id_users",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:715:            name="fk_incident_assignments_assigned_by_user_id_users",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:718:        sa.PrimaryKeyConstraint("id", name="pk_incident_assignments"),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:916:        "ix_incidents_current_assignee_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:918:        ["current_assignee_id"],
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:942:        "ix_incident_assignments_incident_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:943:        "incident_assignments",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1012:        "ix_incident_assignments_incident_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1013:        table_name="incident_assignments",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1030:        "ix_incidents_current_assignee_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1046:    op.drop_table("incident_assignments")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1072:        "fk_incidents_current_assignee_id_users",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1171:        ALTER COLUMN resolved_at TYPE timestamp
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1172:        USING resolved_at AT TIME ZONE 'UTC'
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1237:    op.drop_column("incidents", "resolution_summary")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1238:    op.drop_column("incidents", "current_assignee_id")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1241:    op.drop_column("incidents", "acknowledged_at")

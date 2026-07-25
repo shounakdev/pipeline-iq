@@ -146,6 +146,7 @@ def seed_roles(db):
     required_roles = [
         "admin",
         "developer",
+        "operator",
         "viewer",
     ]
 

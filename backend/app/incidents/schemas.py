@@ -1,26 +1,17 @@
+from __future__ import annotations
+
+import math
 from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field, field_validator
 
-from app.models import IncidentSeverity, IncidentStatus
-
-
-class ResponseSchema(BaseModel):
-    """
-    Common configuration for schemas returned by the incident APIs.
-    """
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class RequestSchema(BaseModel):
-    """
-    Common configuration for incident request bodies.
-    """
-
-    model_config = ConfigDict(extra="forbid")
+from app.incidents.enums import (
+    IncidentSeverity,
+    IncidentStatus,
+)
+from app.schemas import RequestSchema, ResponseSchema
 
 
 # ---------------------------------------------------------------------------
@@ -70,7 +61,7 @@ class DeploymentSummaryResponse(ResponseSchema):
 
 
 # ---------------------------------------------------------------------------
-# Timeline responses
+# Timeline event responses
 # ---------------------------------------------------------------------------
 
 
@@ -101,10 +92,85 @@ class IncidentTimelineEventResponse(ResponseSchema):
 
 
 # ---------------------------------------------------------------------------
-# Assignment requests and responses
+# Incident action requests
 # ---------------------------------------------------------------------------
 
 
+class IncidentAcknowledgeRequest(RequestSchema):
+    note: str | None = Field(
+        default=None,
+        max_length=5000,
+    )
+    assign_to_self: bool = False
+
+    @field_validator("note")
+    @classmethod
+    def reject_blank_note(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is not None and not value.strip():
+            raise ValueError("Note cannot be blank")
+
+        return value
+
+
+class IncidentAssignRequest(RequestSchema):
+    assigned_to_user_id: str = Field(
+        min_length=1,
+        max_length=255,
+    )
+    note: str | None = Field(
+        default=None,
+        max_length=5000,
+    )
+
+    @field_validator("assigned_to_user_id")
+    @classmethod
+    def reject_blank_user_id(
+        cls,
+        value: str,
+    ) -> str:
+        if not value.strip():
+            raise ValueError(
+                "assigned_to_user_id cannot be blank"
+            )
+
+        return value
+
+    @field_validator("note")
+    @classmethod
+    def reject_blank_note(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is not None and not value.strip():
+            raise ValueError("Note cannot be blank")
+
+        return value
+
+
+class IncidentStatusUpdateRequest(RequestSchema):
+    status: IncidentStatus
+    reason: str = Field(
+        min_length=1,
+        max_length=5000,
+    )
+
+    @field_validator("reason")
+    @classmethod
+    def reject_blank_reason(
+        cls,
+        value: str,
+    ) -> str:
+        if not value.strip():
+            raise ValueError("Reason cannot be blank")
+
+        return value
+
+
+# Existing assignment request retained for compatibility with code that still
+# uses assignment_note instead of the Sprint 7J note field.
 class IncidentAssignmentRequest(RequestSchema):
     assigned_to_user_id: str = Field(
         min_length=1,
@@ -114,6 +180,70 @@ class IncidentAssignmentRequest(RequestSchema):
         default=None,
         max_length=4000,
     )
+
+    @field_validator("assigned_to_user_id")
+    @classmethod
+    def reject_blank_user_id(
+        cls,
+        value: str,
+    ) -> str:
+        value = value.strip()
+
+        if not value:
+            raise ValueError(
+                "assigned_to_user_id cannot be blank"
+            )
+
+        return value
+
+    @field_validator("assignment_note")
+    @classmethod
+    def reject_blank_assignment_note(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is None:
+            return None
+
+        value = value.strip()
+
+        if not value:
+            raise ValueError(
+                "Assignment note cannot be blank"
+            )
+
+        return value
+
+
+class IncidentResolveRequest(RequestSchema):
+    resolution_summary: str = Field(
+        min_length=1,
+        max_length=10_000,
+    )
+    note: str | None = Field(
+        default=None,
+        max_length=4000,
+    )
+
+    @field_validator("resolution_summary")
+    @classmethod
+    def validate_resolution_summary(
+        cls,
+        value: str,
+    ) -> str:
+        value = value.strip()
+
+        if not value:
+            raise ValueError(
+                "resolution_summary cannot be empty"
+            )
+
+        return value
+
+
+# ---------------------------------------------------------------------------
+# Assignment responses
+# ---------------------------------------------------------------------------
 
 
 class IncidentAssignmentResponse(ResponseSchema):
@@ -134,45 +264,6 @@ class IncidentAssignmentResponse(ResponseSchema):
 
 
 # ---------------------------------------------------------------------------
-# Incident update requests
-# ---------------------------------------------------------------------------
-
-
-class IncidentStatusUpdateRequest(RequestSchema):
-    status: IncidentStatus
-
-    note: str | None = Field(
-        default=None,
-        max_length=4000,
-    )
-
-    resolution_summary: str | None = Field(
-        default=None,
-        max_length=10000,
-    )
-    rca_summary: str | None = Field(
-        default=None,
-        max_length=10000,
-    )
-    remediation_summary: str | None = Field(
-        default=None,
-        max_length=10000,
-    )
-
-
-class IncidentAcknowledgeRequest(RequestSchema):
-    assigned_to_user_id: str | None = Field(
-        default=None,
-        min_length=1,
-        max_length=36,
-    )
-    note: str | None = Field(
-        default=None,
-        max_length=4000,
-    )
-
-
-# ---------------------------------------------------------------------------
 # Comment requests and responses
 # ---------------------------------------------------------------------------
 
@@ -180,8 +271,19 @@ class IncidentAcknowledgeRequest(RequestSchema):
 class IncidentCommentCreateRequest(RequestSchema):
     comment: str = Field(
         min_length=1,
-        max_length=10000,
+        max_length=10_000,
     )
+
+    @field_validator("comment")
+    @classmethod
+    def reject_blank_comment(
+        cls,
+        value: str,
+    ) -> str:
+        if not value.strip():
+            raise ValueError("Comment cannot be blank")
+
+        return value
 
 
 class IncidentCommentResponse(ResponseSchema):
@@ -239,12 +341,49 @@ class IncidentCalculatedMetricsResponse(ResponseSchema):
     )
 
 
+class IncidentMetricsResponse(ResponseSchema):
+    incident_id: UUID
+
+    metric_snapshot: list[IncidentMetricResponse] = Field(
+        default_factory=list,
+    )
+
+    mttd_seconds: int | None = None
+    mtta_seconds: int | None = None
+    mttr_seconds: int | None = None
+
+    mttd_display: str | None = None
+    mtta_display: str | None = None
+    mttr_display: str | None = None
+
+    alert_threshold: float | None = None
+    triggered_value: float | None = None
+    error_budget_status: str | None = None
+
+
+class IncidentMetricsSummaryResponse(ResponseSchema):
+    average_mttd_seconds: float | None
+    average_mtta_seconds: float | None
+    average_mttr_seconds: float | None
+
+    average_mttd_display: str | None
+    average_mtta_display: str | None
+    average_mttr_display: str | None
+
+    open_incident_count: int
+    resolved_incident_count: int
+
+    sev_1_incident_count: int
+    sev_2_incident_count: int
+    sev_3_incident_count: int
+
+
 # ---------------------------------------------------------------------------
 # Incident list and detail responses
 # ---------------------------------------------------------------------------
 
 
-class IncidentListResponse(ResponseSchema):
+class IncidentListItemResponse(ResponseSchema):
     incident_id: UUID
 
     # Temporary compatibility field for the current Sprint 5 frontend.
@@ -257,7 +396,7 @@ class IncidentListResponse(ResponseSchema):
     severity: IncidentSeverity
     status: IncidentStatus
 
-    # These represent the new primary_service_id relationship in a
+    # These represent the primary_service_id relationship in a
     # frontend-friendly form.
     service_id: str
     service_name: str | None = None
@@ -267,16 +406,56 @@ class IncidentListResponse(ResponseSchema):
     assigned_operator: OperatorSummaryResponse | None = None
     suspected_deployment_id: UUID | None = None
 
+    failure_started_at: datetime | None = None
     detected_at: datetime
     acknowledged_at: datetime | None = None
     resolved_at: datetime | None = None
+
+    mttd_seconds: int | None = None
+    mtta_seconds: int | None = None
+    mttr_seconds: int | None = None
+
+    mttd_display: str | None = None
+    mtta_display: str | None = None
+    mttr_display: str | None = None
 
     created_at: datetime
     updated_at: datetime
 
 
+class IncidentListResponse(ResponseSchema):
+    items: list[IncidentListItemResponse] = Field(
+        default_factory=list,
+    )
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        items: list[IncidentListItemResponse],
+        total: int,
+        page: int,
+        page_size: int,
+    ) -> "IncidentListResponse":
+        return cls(
+            items=items,
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=(
+                math.ceil(total / page_size)
+                if total > 0
+                else 0
+            ),
+        )
+
+
 class IncidentDetailResponse(ResponseSchema):
-    incident: IncidentListResponse
+    incident: IncidentListItemResponse
 
     description: str | None = None
     deduplication_key: str
@@ -298,6 +477,14 @@ class IncidentDetailResponse(ResponseSchema):
     failure_started_at: datetime | None = None
     investigation_started_at: datetime | None = None
     remediation_started_at: datetime | None = None
+
+    mttd_seconds: int | None = None
+    mtta_seconds: int | None = None
+    mttr_seconds: int | None = None
+
+    mttd_display: str | None = None
+    mtta_display: str | None = None
+    mttr_display: str | None = None
 
     created_by: str | None = None
     creator: OperatorSummaryResponse | None = None
@@ -328,12 +515,6 @@ class IncidentDetailResponse(ResponseSchema):
 
 class IncidentTimelineResponse(ResponseSchema):
     incident_id: UUID
-    incident_number: str
-
-    timeline: list[IncidentTimelineEventResponse] = Field(
+    events: list[IncidentTimelineEventResponse] = Field(
         default_factory=list,
     )
-
-    calculated_incident_metrics: (
-        IncidentCalculatedMetricsResponse | None
-    ) = None
