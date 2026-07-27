@@ -1,0 +1,19 @@
+# Sprint 8B Starting State
+
+Captured at:
+2026-07-25T17:22:46+05:30
+
+## Branch
+sprint-8
+
+## Commit
+ccc238038cf576fbf9a9eeb0fbb7e659802cdd56
+
+## Working tree
+?? backend/app/rca/
+?? evidence/
+
+## Alembic current
+
+## Alembic heads
+7a2aae75fdfd (head)

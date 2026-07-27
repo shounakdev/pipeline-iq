@@ -1,0 +1,475 @@
+202-    DEGRADED = "DEGRADED"
+203-    UNHEALTHY = "UNHEALTHY"
+204-    UNKNOWN = "UNKNOWN"
+205-
+206-
+207:class ServiceHealthSnapshot(Base):
+208-    __tablename__ = "service_health_snapshots"
+209-
+210-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+211-
+212-    service_id = Column(
+213-        String,
+214-        ForeignKey("services.id"),
+215-        nullable=False,
+216-        index=True,
+217-    )
+218-    service_name = Column(String, nullable=False, index=True)
+219-
+220-    environment = Column(String, nullable=False, default="staging")
+221-    status = Column(
+222-        SQLEnum(ServiceHealthStatus),
+223-        nullable=False,
+224-        default=ServiceHealthStatus.UNKNOWN,
+225-    )
+226-
+227-    latency_ms = Column(Float, nullable=True)
+228-    error_rate = Column(Float, nullable=True)
+229-    cpu_usage = Column(Float, nullable=True)
+230-    memory_usage = Column(Float, nullable=True)
+231-
+232-    pod_restart_count = Column(Integer, nullable=True)
+233-    replica_count = Column(Integer, nullable=True)
+234-    available_replicas = Column(Integer, nullable=True)
+235-
+236-    source = Column(String, nullable=False, default="prometheus")
+237-
+238-    created_at = Column(
+239-        DateTime(timezone=True),
+240-        server_default=func.now(),
+241-        nullable=False,
+242-    )
+243-
+244-    service = relationship("Service", back_populates="health_snapshots")
+245-
+246-
+247-class Environment(Base):
+248-    __tablename__ = "environments"
+249-
+250-    id = Column(String, primary_key=True, default=generate_uuid)
+251-    service_id = Column(String, ForeignKey("services.id"), nullable=False)
+252-    name = Column(String, nullable=False)
+253-    is_active = Column(Boolean, default=True)
+254-    created_at = Column(DateTime, default=datetime.utcnow)
+255-
+256-    service = relationship("Service", back_populates="environments")
+257-
+258-
+259-class Repository(Base):
+260-    __tablename__ = "repositories"
+261-
+262-    id = Column(String, primary_key=True, default=generate_uuid)
+263-    service_id = Column(String, ForeignKey("services.id"), nullable=False)
+264-    provider = Column(String, nullable=True)
+265-    repo_url = Column(Text, nullable=False)
+266-    default_branch = Column(String, default="main")
+267-    created_at = Column(DateTime, default=datetime.utcnow)
+268-
+269-    service = relationship("Service", back_populates="repositories")
+270-    pipeline_runs = relationship("PipelineRun", back_populates="repository")
+271-
+272-
+273-class PipelineRun(Base):
+274-    __tablename__ = "pipeline_runs"
+275-
+276-    id = Column(String, primary_key=True, index=True)
+277-
+278-    service_id = Column(String, ForeignKey("services.id"), nullable=True)
+279-    repo_id = Column(String, ForeignKey("repositories.id"), nullable=True)
+280-
+281-    repo_url = Column(String, nullable=False)
+282-    branch = Column(String, default="main")
+283-
+284-    status = Column(String, default="PENDING")
+285-    stage = Column(String, default="QUEUED")
+286-    failure_reason = Column(Text, nullable=True)
+287-
+288-    commit_sha = Column(String, nullable=True)
+289-    commit_message = Column(Text, nullable=True)
+290-
+291-    build_status = Column(String, default="NOT_STARTED")
+292-    test_status = Column(String, default="NOT_STARTED")
+293-    sonar_status = Column(String, default="NOT_STARTED")
+294-    trivy_status = Column(String, default="NOT_STARTED")
+295-
+296-    coverage = Column(Float, nullable=True)
+297-    bugs = Column(Integer, default=0)
+298-    vulnerabilities = Column(Integer, default=0)
+299-    code_smells = Column(Integer, default=0)
+300-    duplicated_lines_density = Column(Float, nullable=True)
+301-
+302-    quality_gate = Column(String, nullable=True)
+303-    sonar_report_url = Column(String, nullable=True)
+304-    sonar_issues = Column(MutableList.as_mutable(JSON), default=list, nullable=False)
+305-
+306-    trivy_critical = Column(Integer, default=0)
+307-    trivy_high = Column(Integer, default=0)
+308-    trivy_medium = Column(Integer, default=0)
+309-    trivy_low = Column(Integer, default=0)
+310-    trivy_unknown = Column(Integer, default=0)
+311-    trivy_total = Column(Integer, default=0)
+312-    trivy_report = Column(MutableDict.as_mutable(JSON), nullable=True)
+313-
+314-    risk_score = Column(Float, nullable=True)
+315-    risk_level = Column(String, nullable=True)
+316-    risk_summary = Column(Text, nullable=True)
+317-
+318-    ai_summary = Column(Text, nullable=True)
+319-    recommendations = Column(MutableList.as_mutable(JSON), default=list, nullable=False)
+320-
+321-    logs = Column(MutableList.as_mutable(JSON), default=list, nullable=False)
+322-
+323-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+324-    started_at = Column(DateTime(timezone=True), nullable=True)
+325-    finished_at = Column(DateTime(timezone=True), nullable=True)
+326-    duration_seconds = Column(Float, nullable=True)
+327-
+328-    service = relationship("Service", back_populates="pipeline_runs")
+329-    repository = relationship("Repository", back_populates="pipeline_runs")
+330-
+331-
+332-class Deployment(Base):
+333-    __tablename__ = "deployments"
+334-
+335-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+336-
+337-    service_id = Column(String(36), ForeignKey("services.id"), nullable=False)
+338-    pipeline_run_id = Column(String(36), ForeignKey("pipeline_runs.id"), nullable=True)
+339-    environment_id = Column(String(36), ForeignKey("environments.id"), nullable=True)
+340-
+341-    commit_sha = Column(String(100), nullable=True)
+342-    image_tag = Column(String(255), nullable=False)
+343-    deployment_version = Column(String(50), nullable=True)
+344-
+345-    argo_sync_status = Column(String(50), nullable=True, default="UNKNOWN")
+346-    kubernetes_rollout_status = Column(String(50), nullable=True, default="UNKNOWN")
+347-
+348-    previous_revision = Column(String(100), nullable=True)
+349-
+350-    namespace = Column(String(100), nullable=True)
+351-    cluster_name = Column(String(100), nullable=True, default="kind-platformiq")
+352-    service_name = Column(String(150), nullable=True)
+353-    argo_application_name = Column(String(150), nullable=True)
+354-
+355-    pod_count = Column(Integer, nullable=True, default=0)
+356-    restart_count = Column(Integer, nullable=True, default=0)
+357-    failure_reason = Column(Text, nullable=True)
+--
+1318-    WARNING = "WARNING"
+1319-    BREACHED = "BREACHED"
+1320-    EXHAUSTED = "EXHAUSTED"
+1321-
+1322-
+1323:class ReliabilityAlertType(str, enum.Enum):
+1324-    SLO_BREACH = "SLO_BREACH"
+1325-    ERROR_BUDGET_BURN = "ERROR_BUDGET_BURN"
+1326-    ERROR_BUDGET_EXHAUSTED = "ERROR_BUDGET_EXHAUSTED"
+1327-    LATENCY_BREACH = "LATENCY_BREACH"
+1328-    AVAILABILITY_BREACH = "AVAILABILITY_BREACH"
+1329-    ERROR_RATE_BREACH = "ERROR_RATE_BREACH"
+1330-
+1331-
+1332:class ReliabilityAlertStatus(str, enum.Enum):
+1333-    OPEN = "OPEN"
+1334-    ACKNOWLEDGED = "ACKNOWLEDGED"
+1335-    RESOLVED = "RESOLVED"
+1336-    FALSE_POSITIVE = "FALSE_POSITIVE"
+1337-
+1338-
+1339:class SLODefinition(Base):
+1340-    __tablename__ = "slo_definitions"
+1341-
+1342-    id = Column(
+1343-        String(36),
+1344-        primary_key=True,
+1345-        default=generate_uuid,
+1346-    )
+1347-
+1348-    service_id = Column(
+1349-        String(36),
+1350-        ForeignKey("services.id", ondelete="CASCADE"),
+1351-        nullable=False,
+1352-        index=True,
+1353-    )
+1354-
+1355-    metric_type = Column(
+1356-        SQLEnum(SLOMetricType, name="slo_metric_type"),
+1357-        nullable=False,
+1358-    )
+1359-
+1360-    target_value = Column(Float, nullable=False)
+1361-
+1362-    window_minutes = Column(
+1363-        Integer,
+1364-        nullable=False,
+1365-        default=60,
+1366-        server_default="60",
+1367-    )
+1368-
+1369-    severity_on_breach = Column(
+1370-        SQLEnum(
+1371-            ReliabilitySeverity,
+1372-            name="reliability_severity",
+1373-        ),
+1374-        nullable=False,
+1375-        default=ReliabilitySeverity.HIGH,
+1376-        server_default=ReliabilitySeverity.HIGH.value,
+1377-    )
+1378-
+1379-    enabled = Column(
+1380-        Boolean,
+1381-        nullable=False,
+1382-        default=True,
+1383-        server_default="true",
+1384-    )
+1385-
+1386-    created_at = Column(
+1387-        DateTime(timezone=True),
+1388-        nullable=False,
+1389-        server_default=func.now(),
+1390-    )
+1391-
+1392-    updated_at = Column(
+1393-        DateTime(timezone=True),
+1394-        nullable=False,
+1395-        server_default=func.now(),
+1396-        onupdate=func.now(),
+1397-    )
+1398-
+1399-    service = relationship("Service")
+1400-
+1401-    measurements = relationship(
+1402-        "SLOMeasurement",
+1403-        back_populates="slo_definition",
+1404-        cascade="all, delete-orphan",
+1405-    )
+1406-
+1407-    error_budget_statuses = relationship(
+1408-        "ErrorBudgetStatus",
+1409-        back_populates="slo_definition",
+1410-        cascade="all, delete-orphan",
+1411-    )
+1412-
+1413-    alerts = relationship(
+1414-        "ReliabilityAlert",
+1415-        back_populates="slo_definition",
+1416-        cascade="all, delete-orphan",
+1417-    )
+1418-
+1419-
+1420:class SLOMeasurement(Base):
+1421-    __tablename__ = "slo_measurements"
+1422-
+1423-    id = Column(
+1424-        String(36),
+1425-        primary_key=True,
+1426-        default=generate_uuid,
+1427-    )
+1428-
+1429-    slo_definition_id = Column(
+1430-        String(36),
+1431-        ForeignKey("slo_definitions.id", ondelete="CASCADE"),
+1432-        nullable=False,
+1433-        index=True,
+1434-    )
+1435-
+1436-    service_id = Column(
+1437-        String(36),
+1438-        ForeignKey("services.id", ondelete="CASCADE"),
+1439-        nullable=False,
+1440-        index=True,
+1441-    )
+1442-
+1443-    metric_type = Column(
+1444-        SQLEnum(SLOMetricType, name="slo_metric_type"),
+1445-        nullable=False,
+1446-    )
+1447-
+1448-    measured_value = Column(Float, nullable=False)
+1449-    target_value = Column(Float, nullable=False)
+1450-    is_breached = Column(Boolean, nullable=False)
+1451-    window_minutes = Column(Integer, nullable=False)
+1452-
+1453-    source = Column(
+1454-        String(50),
+1455-        nullable=False,
+1456-        default="PROMETHEUS",
+1457-        server_default="PROMETHEUS",
+1458-    )
+1459-
+1460-    evaluated_at = Column(
+1461-        DateTime(timezone=True),
+1462-        nullable=False,
+1463-        server_default=func.now(),
+1464-        index=True,
+1465-    )
+1466-
+1467-    created_at = Column(
+1468-        DateTime(timezone=True),
+1469-        nullable=False,
+1470-        server_default=func.now(),
+1471-    )
+1472-
+1473-    slo_definition = relationship(
+1474-        "SLODefinition",
+1475-        back_populates="measurements",
+1476-    )
+1477-
+1478-    service = relationship("Service")
+1479-
+1480-
+1481:class ErrorBudgetStatus(Base):
+1482-    __tablename__ = "error_budget_statuses"
+1483-
+1484-    id = Column(
+1485-        String(36),
+1486-        primary_key=True,
+1487-        default=generate_uuid,
+1488-    )
+1489-
+1490-    slo_definition_id = Column(
+1491-        String(36),
+1492-        ForeignKey("slo_definitions.id", ondelete="CASCADE"),
+1493-        nullable=False,
+1494-        index=True,
+1495-    )
+1496-
+1497-    service_id = Column(
+1498-        String(36),
+1499-        ForeignKey("services.id", ondelete="CASCADE"),
+1500-        nullable=False,
+1501-        index=True,
+1502-    )
+1503-
+1504-    target_percentage = Column(Float, nullable=False)
+1505-    allowed_failure_percentage = Column(Float, nullable=False)
+1506-
+1507-    consumed_percentage = Column(
+1508-        Float,
+1509-        nullable=False,
+1510-        default=0.0,
+1511-        server_default="0",
+1512-    )
+1513-
+1514-    remaining_percentage = Column(
+1515-        Float,
+1516-        nullable=False,
+1517-        default=100.0,
+1518-        server_default="100",
+1519-    )
+1520-
+1521-    burn_rate = Column(
+1522-        Float,
+1523-        nullable=False,
+1524-        default=0.0,
+1525-        server_default="0",
+1526-    )
+1527-
+1528-    status = Column(
+1529-        SQLEnum(ErrorBudgetState, name="error_budget_state"),
+1530-        nullable=False,
+1531-        default=ErrorBudgetState.HEALTHY,
+1532-        server_default=ErrorBudgetState.HEALTHY.value,
+1533-    )
+1534-
+1535-    window_minutes = Column(Integer, nullable=False)
+1536-
+1537-    evaluated_at = Column(
+1538-        DateTime(timezone=True),
+1539-        nullable=False,
+1540-        server_default=func.now(),
+1541-        index=True,
+1542-    )
+1543-
+1544-    created_at = Column(
+1545-        DateTime(timezone=True),
+1546-        nullable=False,
+1547-        server_default=func.now(),
+1548-    )
+1549-
+1550-    slo_definition = relationship(
+1551-        "SLODefinition",
+1552-        back_populates="error_budget_statuses",
+1553-    )
+1554-
+1555-    service = relationship("Service")
+1556-
+1557-
+1558:class ReliabilityAlert(Base):
+1559-    __tablename__ = "reliability_alerts"
+1560-
+1561-    id = Column(
+1562-        String(36),
+1563-        primary_key=True,
+1564-        default=generate_uuid,
+1565-    )
+1566-
+1567-    service_id = Column(
+1568-        String(36),
+1569-        ForeignKey("services.id", ondelete="CASCADE"),
+1570-        nullable=False,
+1571-        index=True,
+1572-    )
+1573-
+1574-    slo_definition_id = Column(
+1575-        String(36),
+1576-        ForeignKey("slo_definitions.id", ondelete="CASCADE"),
+1577-        nullable=False,
+1578-        index=True,
+1579-    )
+1580-
+1581-    alert_type = Column(
+1582-        SQLEnum(
+1583-            ReliabilityAlertType,
+1584-            name="reliability_alert_type",
+1585-        ),
+1586-        nullable=False,
+1587-    )
+1588-
+1589-    severity = Column(
+1590-        SQLEnum(
+1591-            ReliabilitySeverity,
+1592-            name="reliability_severity",
+1593-        ),
+1594-        nullable=False,
+1595-    )
+1596-
+1597-    triggered_value = Column(Float, nullable=False)
+1598-    threshold_value = Column(Float, nullable=False)
+1599-
+1600-    deployment_id = Column(
+1601-        UUID(as_uuid=True),
+1602-        ForeignKey("deployments.id", ondelete="SET NULL"),
+1603-        nullable=True,
+1604-        index=True,
+1605-    )
+1606-
+1607-    status = Column(
+1608-        SQLEnum(
+1609-            ReliabilityAlertStatus,
+1610-            name="reliability_alert_status",
+1611-        ),
+1612-        nullable=False,
+1613-        default=ReliabilityAlertStatus.OPEN,
+1614-        server_default=ReliabilityAlertStatus.OPEN.value,
+1615-    )
+1616-
+1617-    created_at = Column(
+1618-        DateTime(timezone=True),
+1619-        nullable=False,
+1620-        server_default=func.now(),
+1621-    )
+1622-
+1623-    resolved_at = Column(
+1624-        DateTime(timezone=True),
+1625-        nullable=True,
+1626-    )
+1627-
+1628-    service = relationship("Service")
+1629-
+1630-    slo_definition = relationship(
+1631-        "SLODefinition",
+1632-        back_populates="alerts",
+1633-    )
+1634-
+1635-    deployment = relationship("Deployment")

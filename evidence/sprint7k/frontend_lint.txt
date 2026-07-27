@@ -1,0 +1,10 @@
+
+> frontend@0.1.0 lint
+> eslint
+
+
+/home/shounak/Desktop/Projects/intelligent-cicd-platform/frontend/app/events/page.tsx
+  54:4  warning  React Hook useEffect has a missing dependency: 'loadEvents'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 1 problem (0 errors, 1 warning)
+

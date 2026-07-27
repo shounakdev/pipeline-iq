@@ -1,0 +1,41 @@
+276-
+277-
+278-
+279:  prometheus:
+280:    image: prom/prometheus:latest
+281-    container_name: platformiq-prometheus
+282-    volumes:
+283-      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+284-    ports:
+285-      - "9090:9090"
+286-    networks:
+287-      - platformiq-net
+288-
+289:  grafana:
+290:    image: grafana/grafana:latest
+291-    container_name: platformiq-grafana
+292-    ports:
+293-      - "3002:3000"
+294-    volumes:
+295-      - ./observability/grafana/datasources:/etc/grafana/provisioning/datasources
+296-      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards
+297-    environment:
+298-      - GF_SECURITY_ADMIN_USER=admin
+299-      - GF_SECURITY_ADMIN_PASSWORD=admin
+300-    networks:
+301-      - platformiq-net
+302-
+303:  loki:
+304:    image: grafana/loki:2.9.8
+305-    container_name: platformiq-loki
+306-    ports:
+307-      - "3100:3100"
+308-    command: -config.file=/etc/loki/loki-config.yml
+309-    volumes:
+310-      - ./observability/loki/loki-config.yml:/etc/loki/loki-config.yml
+311-    networks:
+312-      - platformiq-net
+313-
+314-  promtail:
+315-    image: grafana/promtail:2.9.8
+316-    container_name: platformiq-promtail

@@ -1,0 +1,144 @@
+109-      KUBECONFIG: /root/.kube/config
+110-      KUBERNETES_NAMESPACE: platformiq-demo
+111-      PLATFORMIQ_ENVIRONMENT: staging
+112-
+113-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/cicd_db
+114:      REDIS_URL: redis://redis:6379/0
+115-
+116-      KAFKA_BOOTSTRAP_SERVERS: platformiq-kafka:9092
+117-      KAFKA_CONSUMER_GROUP_ID: platformiq-event-consumers
+118-      KAFKA_CONSUMER_TOPICS: pipeline.events,deployment.events,kubernetes.events,audit.events,telemetry.alerts
+119-      KAFKA_CONSUMER_BATCH_SIZE: 25
+120-      DEAD_LETTER_TOPIC: dead-letter.events
+121-      KAFKA_CLIENT_ID: platformiq-backend
+122-
+123:      CELERY_BROKER_URL: redis://redis:6379/0
+124-      PGSSLMODE: disable
+125-
+126-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+127-      OPENAI_MODEL: ${OPENAI_MODEL:-}
+128-
+129-      SONARQUBE_URL: http://sonarqube:9000
+130-      SONARQUBE_HOST_URL: http://sonarqube:9000
+131-      SONARQUBE_BROWSER_URL: http://localhost:9000
+132-      SONARQUBE_TOKEN: ${SONARQUBE_TOKEN:-}
+133-      SONARQUBE_PROJECT_KEY: ${SONARQUBE_PROJECT_KEY:-cicd-demo}
+134-    depends_on:
+135-      postgres:
+136-        condition: service_started
+137-      redis:
+138-        condition: service_started
+139-      sonarqube:
+140-        condition: service_started
+141-      platformiq-kafka:
+142-        condition: service_healthy
+143-      platformiq-kafka-init:
+144-        condition: service_completed_successfully
+145-    volumes:
+146-      - ./kubeconfig-docker.yaml:/root/.kube/config:ro
+147-    networks:
+148-      - platformiq-net
+149-      - kind
+150-
+151:  worker:
+152-    build:
+153-      context: ./backend
+154-    env_file:
+155-      - .env
+156:    container_name: cicd_worker
+157-    command: >
+158:      celery
+159:      -A app.celery_app:celery_app
+160:      worker
+161-      --loglevel=INFO
+162:      --queues=pipeline_queue
+163-    environment:
+164-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/cicd_db
+165:      REDIS_URL: redis://redis:6379/0
+166-
+167-      KUBECONFIG: /root/.kube/config
+168-      KUBERNETES_NAMESPACE: platformiq-demo
+169-      PLATFORMIQ_ENVIRONMENT: staging
+170-
+171-      KAFKA_BOOTSTRAP_SERVERS: platformiq-kafka:9092
+172:      KAFKA_CLIENT_ID: platformiq-worker
+173-
+174-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+175-      OPENAI_MODEL: ${OPENAI_MODEL:-}
+176-
+177-      PGSSLMODE: disable
+178:      CELERY_BROKER_URL: redis://redis:6379/0
+179-
+180-      SONARQUBE_URL: http://sonarqube:9000
+181-      SONARQUBE_HOST_URL: http://sonarqube:9000
+182-      SONARQUBE_BROWSER_URL: http://localhost:9000
+183-      SONARQUBE_TOKEN: ${SONARQUBE_TOKEN:-}
+184-      SONARQUBE_PROJECT_KEY: ${SONARQUBE_PROJECT_KEY:-cicd-demo}
+185-    depends_on:
+186-      postgres:
+187-        condition: service_started
+188-      redis:
+189-        condition: service_started
+190-      backend:
+191-        condition: service_started
+192-      sonarqube:
+193-        condition: service_started
+194-      platformiq-kafka:
+195-        condition: service_healthy
+196-      platformiq-kafka-init:
+197-        condition: service_completed_successfully
+198-    volumes:
+199-      - ./kubeconfig-docker.yaml:/root/.kube/config:ro
+200-    networks:
+201-      - platformiq-net
+202-      - kind
+203-
+204:  platformiq-celery-beat:
+205-    build:
+206-      context: ./backend
+207-    env_file:
+208-      - .env
+209:    container_name: platformiq-celery-beat
+210-    command: >
+211:      celery
+212:      -A app.celery_app:celery_app
+213:      beat
+214-      --loglevel=INFO
+215-    environment:
+216-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/cicd_db
+217:      REDIS_URL: redis://redis:6379/0
+218-
+219-      KAFKA_BOOTSTRAP_SERVERS: platformiq-kafka:9092
+220:      KAFKA_CLIENT_ID: platformiq-celery-beat
+221-
+222:      CELERY_BROKER_URL: redis://redis:6379/0
+223-      PGSSLMODE: disable
+224-
+225-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+226-      OPENAI_MODEL: ${OPENAI_MODEL:-}
+227-
+228-      SONARQUBE_URL: http://sonarqube:9000
+229-      SONARQUBE_HOST_URL: http://sonarqube:9000
+230-      SONARQUBE_BROWSER_URL: http://localhost:9000
+231-      SONARQUBE_TOKEN: ${SONARQUBE_TOKEN:-}
+232-      SONARQUBE_PROJECT_KEY: ${SONARQUBE_PROJECT_KEY:-cicd-demo}
+233-    depends_on:
+234-      postgres:
+235-        condition: service_started
+236-      redis:
+237-        condition: service_started
+238-      platformiq-kafka:
+239-        condition: service_healthy
+240-      platformiq-kafka-init:
+241-        condition: service_completed_successfully
+242-    networks:
+243-      - platformiq-net
+244-
+245-  sonarqube_db:
+246-    image: postgres:16
+247-    container_name: cicd_sonarqube_db
+248-    environment:
+249-      POSTGRES_USER: sonar
+250-      POSTGRES_PASSWORD: sonar
+251-      POSTGRES_DB: sonarqube
+252-    volumes:

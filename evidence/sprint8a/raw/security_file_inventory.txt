@@ -1,0 +1,9 @@
+backend/app/auth/__init__.py
+backend/app/auth/security.py
+backend/app/auth/dependencies.py
+backend/app/auth/schemas.py
+backend/app/auth/router.py
+backend/app/audit/__init__.py
+backend/app/audit/service.py
+backend/app/shared/__init__.py
+backend/app/shared/log_sanitizer.py

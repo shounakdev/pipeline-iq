@@ -1,0 +1,396 @@
+backend/app/reliability/alert_service.py:11:    ErrorBudgetStatus,
+backend/app/reliability/alert_service.py:17:    SLODefinition,
+backend/app/reliability/alert_service.py:18:    SLOMeasurement,
+backend/app/reliability/alert_service.py:107:    measurement: SLOMeasurement,
+backend/app/reliability/alert_service.py:108:    error_budget: ErrorBudgetStatus | None,
+backend/app/reliability/alert_service.py:118:    if error_budget is not None:
+backend/app/reliability/alert_service.py:120:            error_budget.status
+backend/app/reliability/alert_service.py:123:        if state == ErrorBudgetState.EXHAUSTED:
+backend/app/reliability/alert_service.py:126:                .ERROR_BUDGET_EXHAUSTED
+backend/app/reliability/alert_service.py:130:            state == ErrorBudgetState.BREACHED
+backend/app/reliability/alert_service.py:131:            or error_budget.burn_rate
+backend/app/reliability/alert_service.py:198:    measurement: SLOMeasurement,
+backend/app/reliability/alert_service.py:209:    ERROR_BUDGET_EXHAUSTED -> healthy
+backend/app/reliability/alert_service.py:210:    ERROR_BUDGET_EXHAUSTED -> ERROR_BUDGET_BURN
+backend/app/reliability/alert_service.py:219:        ReliabilityAlertType.ERROR_BUDGET_EXHAUSTED,
+backend/app/reliability/alert_service.py:282:    slo_definition: SLODefinition,
+backend/app/reliability/alert_service.py:283:    measurement: SLOMeasurement,
+backend/app/reliability/alert_service.py:284:    error_budget: ErrorBudgetStatus | None,
+backend/app/reliability/alert_service.py:297:        error_budget=error_budget,
+backend/app/reliability/alert_service.py:321:        measurement.measured_value
+backend/app/reliability/alert_service.py:324:        measurement.target_value
+backend/app/reliability/alert_service.py:416:        "window_minutes": int(
+backend/app/reliability/alert_service.py:417:            measurement.window_minutes
+backend/app/reliability/alert_service.py:424:        "error_budget_remaining": (
+backend/app/reliability/alert_service.py:426:                error_budget.remaining_percentage
+backend/app/reliability/alert_service.py:428:            if error_budget is not None
+backend/app/reliability/alert_service.py:431:        "error_budget_consumed": (
+backend/app/reliability/alert_service.py:433:                error_budget.consumed_percentage
+backend/app/reliability/alert_service.py:435:            if error_budget is not None
+backend/app/reliability/alert_service.py:438:        "burn_rate": (
+backend/app/reliability/alert_service.py:439:            float(error_budget.burn_rate)
+backend/app/reliability/alert_service.py:440:            if error_budget is not None
+backend/app/reliability/alert_service.py:443:        "error_budget_status": (
+backend/app/reliability/alert_service.py:445:                error_budget.status
+backend/app/reliability/alert_service.py:447:            if error_budget is not None
+backend/app/reliability/alert_service.py:452:                error_budget.burn_rate
+backend/app/reliability/alert_service.py:455:            if error_budget is not None
+backend/app/reliability/query_service.py:9:    ErrorBudgetStatus,
+backend/app/reliability/query_service.py:13:    SLODefinition,
+backend/app/reliability/query_service.py:14:    SLOMeasurement,
+backend/app/reliability/query_service.py:21:    ReliabilitySLODefinitionSummary,
+backend/app/reliability/query_service.py:60:) -> SLOMeasurement | None:
+backend/app/reliability/query_service.py:65:        db.query(SLOMeasurement)
+backend/app/reliability/query_service.py:67:            SLOMeasurement.slo_definition_id
+backend/app/reliability/query_service.py:71:            SLOMeasurement.evaluated_at.desc(),
+backend/app/reliability/query_service.py:72:            SLOMeasurement.created_at.desc(),
+backend/app/reliability/query_service.py:78:def _get_latest_error_budget(
+backend/app/reliability/query_service.py:81:) -> ErrorBudgetStatus | None:
+backend/app/reliability/query_service.py:86:        db.query(ErrorBudgetStatus)
+backend/app/reliability/query_service.py:88:            ErrorBudgetStatus.slo_definition_id
+backend/app/reliability/query_service.py:92:            ErrorBudgetStatus.evaluated_at.desc(),
+backend/app/reliability/query_service.py:93:            ErrorBudgetStatus.created_at.desc(),
+backend/app/reliability/query_service.py:128:    error_budget: object | None = None,
+backend/app/reliability/query_service.py:140:        if getattr(slo, "measured_value", None) is not None
+backend/app/reliability/query_service.py:149:    error_budget_states = {
+backend/app/reliability/query_service.py:153:                "error_budget_state",
+backend/app/reliability/query_service.py:160:    if error_budget is not None:
+backend/app/reliability/query_service.py:161:        error_budgets = (
+backend/app/reliability/query_service.py:162:            error_budget
+backend/app/reliability/query_service.py:164:                error_budget,
+backend/app/reliability/query_service.py:167:            else (error_budget,)
+backend/app/reliability/query_service.py:170:        for budget in error_budgets:
+backend/app/reliability/query_service.py:184:            error_budget_states.add(
+backend/app/reliability/query_service.py:188:    error_budget_states.discard("")
+backend/app/reliability/query_service.py:191:        "BREACHED" in slo_states
+backend/app/reliability/query_service.py:192:        or error_budget_states.intersection(
+backend/app/reliability/query_service.py:193:            {"BREACHED", "EXHAUSTED"}
+backend/app/reliability/query_service.py:196:        return "BREACHED"
+backend/app/reliability/query_service.py:200:        or "WARNING" in error_budget_states
+backend/app/reliability/query_service.py:348:    - Breached measurement means that individual SLO is BREACHED.
+backend/app/reliability/query_service.py:358:        db.query(SLODefinition)
+backend/app/reliability/query_service.py:360:            SLODefinition.service_id == service_id,
+backend/app/reliability/query_service.py:361:            SLODefinition.enabled.is_(True),
+backend/app/reliability/query_service.py:364:            SLODefinition.created_at.asc()
+backend/app/reliability/query_service.py:372:    evaluated_error_budgets: list[
+backend/app/reliability/query_service.py:373:        ErrorBudgetStatus
+backend/app/reliability/query_service.py:386:        error_budget = _get_latest_error_budget(
+backend/app/reliability/query_service.py:393:            measured_value = None
+backend/app/reliability/query_service.py:397:                "BREACHED"
+backend/app/reliability/query_service.py:401:            measured_value = float(
+backend/app/reliability/query_service.py:402:                measurement.measured_value
+backend/app/reliability/query_service.py:408:            if error_budget is not None:
+backend/app/reliability/query_service.py:409:                evaluated_error_budgets.append(
+backend/app/reliability/query_service.py:410:                    error_budget
+backend/app/reliability/query_service.py:421:                target_value=float(
+backend/app/reliability/query_service.py:422:                    slo_definition.target_value
+backend/app/reliability/query_service.py:424:                measured_value=measured_value,
+backend/app/reliability/query_service.py:427:                error_budget_state=(
+backend/app/reliability/query_service.py:428:                    error_budget.status
+backend/app/reliability/query_service.py:429:                    if error_budget is not None
+backend/app/reliability/query_service.py:438:            error_budget=evaluated_error_budgets,
+backend/app/reliability/query_service.py:485:def get_service_error_budget(
+backend/app/reliability/query_service.py:490:    Return only the newest ErrorBudgetStatus for each SLO definition.
+backend/app/reliability/query_service.py:501:        db.query(SLODefinition)
+backend/app/reliability/query_service.py:503:            SLODefinition.service_id
+backend/app/reliability/query_service.py:507:            SLODefinition.created_at.asc()
+backend/app/reliability/query_service.py:519:        error_budget = _get_latest_error_budget(
+backend/app/reliability/query_service.py:524:        if error_budget is None:
+backend/app/reliability/query_service.py:535:                target_percentage=float(
+backend/app/reliability/query_service.py:536:                    error_budget.target_percentage
+backend/app/reliability/query_service.py:539:                    error_budget.remaining_percentage
+backend/app/reliability/query_service.py:542:                    error_budget.consumed_percentage
+backend/app/reliability/query_service.py:544:                burn_rate=float(
+backend/app/reliability/query_service.py:545:                    error_budget.burn_rate
+backend/app/reliability/query_service.py:547:                status=error_budget.status,
+backend/app/reliability/query_service.py:549:                    error_budget.evaluated_at
+backend/app/reliability/query_service.py:606:            db.query(SLODefinition)
+backend/app/reliability/query_service.py:608:                SLODefinition.id
+backend/app/reliability/query_service.py:630:            ReliabilitySLODefinitionSummary(
+backend/app/reliability/query_service.py:638:                target_value=float(
+backend/app/reliability/query_service.py:639:                    slo_definition.target_value
+backend/app/reliability/query_service.py:641:                window_minutes=(
+backend/app/reliability/query_service.py:642:                    slo_definition.window_minutes
+backend/app/reliability/schemas.py:22:    target_value: float
+backend/app/reliability/schemas.py:23:    window_minutes: int = Field(
+backend/app/reliability/schemas.py:34:    def validate_target_value(self):
+backend/app/reliability/schemas.py:36:            if not 0 < self.target_value <= 100:
+backend/app/reliability/schemas.py:38:                    "Availability target_value must be greater "
+backend/app/reliability/schemas.py:43:            if not 0 <= self.target_value <= 100:
+backend/app/reliability/schemas.py:45:                    "Error-rate target_value must be between "
+backend/app/reliability/schemas.py:50:            if self.target_value <= 0:
+backend/app/reliability/schemas.py:52:                    "P95 latency target_value must be greater "
+backend/app/reliability/schemas.py:65:    target_value: float
+backend/app/reliability/schemas.py:66:    window_minutes: int
+backend/app/reliability/schemas.py:79:    target_value: float
+backend/app/reliability/schemas.py:80:    measured_value: float
+backend/app/reliability/schemas.py:82:    window_minutes: int
+backend/app/reliability/schemas.py:90:    target_value: float
+backend/app/reliability/schemas.py:91:    measured_value: float | None = None
+backend/app/reliability/schemas.py:94:        "BREACHED",
+backend/app/reliability/schemas.py:98:    error_budget_state: ErrorBudgetState | None = None
+backend/app/reliability/schemas.py:135:    target_percentage: float
+backend/app/reliability/schemas.py:138:    burn_rate: float
+backend/app/reliability/schemas.py:148:class ReliabilitySLODefinitionSummary(BaseModel):
+backend/app/reliability/schemas.py:152:    target_value: float
+backend/app/reliability/schemas.py:153:    window_minutes: int
+backend/app/reliability/schemas.py:161:        ReliabilitySLODefinitionSummary | None
+backend/app/reliability/router.py:11:    get_service_error_budget,
+backend/app/reliability/router.py:119:def read_service_error_budget(
+backend/app/reliability/router.py:124:        return get_service_error_budget(
+backend/app/reliability/prometheus_client.py:81:    window_minutes: int,
+backend/app/reliability/prometheus_client.py:86:    if window_minutes <= 0:
+backend/app/reliability/prometheus_client.py:88:            "window_minutes must be greater than zero"
+backend/app/reliability/prometheus_client.py:217:    window_minutes: int,
+backend/app/reliability/prometheus_client.py:219:    _validate_inputs(service_name, window_minutes)
+backend/app/reliability/prometheus_client.py:241:        f"[{window_minutes}m]"
+backend/app/reliability/prometheus_client.py:252:        f"[{window_minutes}m]"
+backend/app/reliability/prometheus_client.py:266:    window_minutes: int,
+backend/app/reliability/prometheus_client.py:268:    _validate_inputs(service_name, window_minutes)
+backend/app/reliability/prometheus_client.py:290:        f"[{window_minutes}m]"
+backend/app/reliability/prometheus_client.py:301:        f"[{window_minutes}m]"
+backend/app/reliability/prometheus_client.py:315:    window_minutes: int,
+backend/app/reliability/prometheus_client.py:317:    _validate_inputs(service_name, window_minutes)
+backend/app/reliability/prometheus_client.py:336:        f"[{window_minutes}m]"
+backend/app/reliability/slo_service.py:3:from app.models import Service, SLODefinition
+backend/app/reliability/slo_service.py:22:) -> SLODefinition:
+backend/app/reliability/slo_service.py:23:    slo_definition = SLODefinition(
+backend/app/reliability/slo_service.py:26:        target_value=payload.target_value,
+backend/app/reliability/slo_service.py:27:        window_minutes=payload.window_minutes,
+backend/app/reliability/slo_service.py:46:) -> list[SLODefinition]:
+backend/app/reliability/slo_service.py:48:        db.query(SLODefinition)
+backend/app/reliability/slo_service.py:49:        .filter(SLODefinition.service_id == service_id)
+backend/app/reliability/slo_service.py:50:        .order_by(SLODefinition.created_at.desc())
+backend/app/reliability/slo_service.py:58:) -> list[SLODefinition]:
+backend/app/reliability/slo_service.py:60:        db.query(SLODefinition)
+backend/app/reliability/slo_service.py:62:            SLODefinition.service_id == service_id,
+backend/app/reliability/slo_service.py:63:            SLODefinition.enabled.is_(True),
+backend/app/reliability/slo_service.py:65:        .order_by(SLODefinition.created_at.asc())
+backend/app/reliability/slo_service.py:73:) -> SLODefinition | None:
+backend/app/reliability/slo_service.py:75:        db.query(SLODefinition)
+backend/app/reliability/slo_service.py:76:        .filter(SLODefinition.id == slo_definition_id)
+backend/app/reliability/tasks.py:114:                "target=%.3f breached=%s",
+backend/app/reliability/tasks.py:117:                result["measured_value"],
+backend/app/reliability/tasks.py:118:                result["target_value"],
+backend/app/reliability/slo_engine.py:8:    SLODefinition,
+backend/app/reliability/slo_engine.py:9:    SLOMeasurement,
+backend/app/reliability/slo_engine.py:15:from app.reliability.error_budget import (
+backend/app/reliability/slo_engine.py:16:    create_error_budget_status,
+backend/app/reliability/slo_engine.py:23:from app.models import SLODefinition
+backend/app/reliability/slo_engine.py:43:    measured_value: float,
+backend/app/reliability/slo_engine.py:44:    target_value: float,
+backend/app/reliability/slo_engine.py:47:        return measured_value < target_value
+backend/app/reliability/slo_engine.py:53:        return measured_value > target_value
+backend/app/reliability/slo_engine.py:62:) -> list[SLODefinition]:
+backend/app/reliability/slo_engine.py:69:        db.query(SLODefinition)
+backend/app/reliability/slo_engine.py:70:        .filter(SLODefinition.enabled.is_(True))
+backend/app/reliability/slo_engine.py:76:    slo_definition: SLODefinition,
+backend/app/reliability/slo_engine.py:112:    measured_value = metric_getter(
+backend/app/reliability/slo_engine.py:114:        slo_definition.window_minutes,
+backend/app/reliability/slo_engine.py:119:        measured_value=measured_value,
+backend/app/reliability/slo_engine.py:120:        target_value=(
+backend/app/reliability/slo_engine.py:121:            slo_definition.target_value
+backend/app/reliability/slo_engine.py:125:    measurement = SLOMeasurement(
+backend/app/reliability/slo_engine.py:129:        measured_value=measured_value,
+backend/app/reliability/slo_engine.py:130:        target_value=(
+backend/app/reliability/slo_engine.py:131:            slo_definition.target_value
+backend/app/reliability/slo_engine.py:134:        window_minutes=(
+backend/app/reliability/slo_engine.py:135:            slo_definition.window_minutes
+backend/app/reliability/slo_engine.py:140:    error_budget = None
+backend/app/reliability/slo_engine.py:151:        error_budget = (
+backend/app/reliability/slo_engine.py:152:            create_error_budget_status(
+backend/app/reliability/slo_engine.py:168:            error_budget=error_budget,
+backend/app/reliability/slo_engine.py:177:        if error_budget is not None:
+backend/app/reliability/slo_engine.py:178:            db.refresh(error_budget)
+backend/app/reliability/slo_engine.py:198:        "target_value": (
+backend/app/reliability/slo_engine.py:199:            slo_definition.target_value
+backend/app/reliability/slo_engine.py:201:        "measured_value": measured_value,
+backend/app/reliability/slo_engine.py:203:        "window_minutes": (
+backend/app/reliability/slo_engine.py:204:            slo_definition.window_minutes
+backend/app/reliability/slo_engine.py:212:        "error_budget_status_id": (
+backend/app/reliability/slo_engine.py:213:            error_budget.id
+backend/app/reliability/slo_engine.py:214:            if error_budget is not None
+backend/app/reliability/slo_engine.py:217:        "error_budget_remaining": (
+backend/app/reliability/slo_engine.py:218:            error_budget.remaining_percentage
+backend/app/reliability/slo_engine.py:219:            if error_budget is not None
+backend/app/reliability/slo_engine.py:222:        "error_budget_consumed": (
+backend/app/reliability/slo_engine.py:223:            error_budget.consumed_percentage
+backend/app/reliability/slo_engine.py:224:            if error_budget is not None
+backend/app/reliability/slo_engine.py:227:        "burn_rate": (
+backend/app/reliability/slo_engine.py:228:            error_budget.burn_rate
+backend/app/reliability/slo_engine.py:229:            if error_budget is not None
+backend/app/reliability/slo_engine.py:232:        "error_budget_state": (
+backend/app/reliability/slo_engine.py:233:            error_budget.status
+backend/app/reliability/slo_engine.py:234:            if error_budget is not None
+backend/app/reliability/error_budget.py:7:    ErrorBudgetStatus,
+backend/app/reliability/error_budget.py:8:    SLODefinition,
+backend/app/reliability/error_budget.py:9:    SLOMeasurement,
+backend/app/reliability/error_budget.py:19:    target_percentage: float
+backend/app/reliability/error_budget.py:24:    burn_rate: float
+backend/app/reliability/error_budget.py:29:def classify_error_budget(
+backend/app/reliability/error_budget.py:37:    0 < remaining < 20    -> BREACHED
+backend/app/reliability/error_budget.py:38:    remaining <= 0        -> EXHAUSTED
+backend/app/reliability/error_budget.py:41:        return ErrorBudgetState.EXHAUSTED
+backend/app/reliability/error_budget.py:44:        return ErrorBudgetState.BREACHED
+backend/app/reliability/error_budget.py:52:def calculate_availability_error_budget(
+backend/app/reliability/error_budget.py:53:    target_percentage: float,
+backend/app/reliability/error_budget.py:56:    target_percentage = float(target_percentage)
+backend/app/reliability/error_budget.py:59:    if not 0 < target_percentage < 100:
+backend/app/reliability/error_budget.py:61:            "Availability target must be greater than 0 "
+backend/app/reliability/error_budget.py:71:        100.0 - target_percentage
+backend/app/reliability/error_budget.py:98:    burn_rate = consumed_percentage / 100.0
+backend/app/reliability/error_budget.py:100:    status = classify_error_budget(
+backend/app/reliability/error_budget.py:105:        target_percentage=target_percentage,
+backend/app/reliability/error_budget.py:114:        burn_rate=burn_rate,
+backend/app/reliability/error_budget.py:117:            burn_rate >= RAPID_BURN_THRESHOLD
+backend/app/reliability/error_budget.py:122:def create_error_budget_status(
+backend/app/reliability/error_budget.py:125:    slo_definition: SLODefinition,
+backend/app/reliability/error_budget.py:126:    measurement: SLOMeasurement,
+backend/app/reliability/error_budget.py:127:) -> ErrorBudgetStatus | None:
+backend/app/reliability/error_budget.py:143:        calculate_availability_error_budget(
+backend/app/reliability/error_budget.py:144:            target_percentage=(
+backend/app/reliability/error_budget.py:145:                slo_definition.target_value
+backend/app/reliability/error_budget.py:148:                measurement.measured_value
+backend/app/reliability/error_budget.py:153:    status = ErrorBudgetStatus(
+backend/app/reliability/error_budget.py:156:        target_percentage=(
+backend/app/reliability/error_budget.py:157:            calculation.target_percentage
+backend/app/reliability/error_budget.py:168:        burn_rate=calculation.burn_rate,
+backend/app/reliability/error_budget.py:170:        window_minutes=(
+backend/app/reliability/error_budget.py:171:            slo_definition.window_minutes
+backend/app/incidents/repository.py:18:    ErrorBudgetStatus,
+backend/app/incidents/repository.py:28:    SLOMeasurement,
+backend/app/incidents/repository.py:84:    """Return the assignment target user without changing the session."""
+backend/app/incidents/repository.py:260:    correlation_window_minutes: int,
+backend/app/incidents/repository.py:267:    and falls inside the configured lookback window.
+backend/app/incidents/repository.py:277:    if correlation_window_minutes <= 0:
+backend/app/incidents/repository.py:279:            "Deployment correlation window must be greater than zero"
+backend/app/incidents/repository.py:283:        minutes=correlation_window_minutes,
+backend/app/incidents/repository.py:315:) -> list[SLOMeasurement]:
+backend/app/incidents/repository.py:325:        select(SLOMeasurement)
+backend/app/incidents/repository.py:327:            SLOMeasurement.service_id == service_id,
+backend/app/incidents/repository.py:328:            SLOMeasurement.evaluated_at <= captured_before,
+backend/app/incidents/repository.py:331:            SLOMeasurement.evaluated_at.desc(),
+backend/app/incidents/repository.py:332:            SLOMeasurement.created_at.desc(),
+backend/app/incidents/repository.py:333:            SLOMeasurement.id.desc(),
+backend/app/incidents/repository.py:341:    latest_by_metric: dict[str, SLOMeasurement] = {}
+backend/app/incidents/repository.py:355:def get_latest_error_budget_status_for_snapshot(
+backend/app/incidents/repository.py:361:) -> ErrorBudgetStatus | None:
+backend/app/incidents/repository.py:367:        select(ErrorBudgetStatus)
+backend/app/incidents/repository.py:369:            ErrorBudgetStatus.service_id == service_id,
+backend/app/incidents/repository.py:370:            ErrorBudgetStatus.slo_definition_id
+backend/app/incidents/repository.py:372:            ErrorBudgetStatus.evaluated_at <= captured_before,
+backend/app/incidents/repository.py:375:            ErrorBudgetStatus.evaluated_at.desc(),
+backend/app/incidents/repository.py:376:            ErrorBudgetStatus.created_at.desc(),
+backend/app/incidents/repository.py:377:            ErrorBudgetStatus.id.desc(),
+backend/app/incidents/repository.py:392:    Find a matching non-terminal incident inside the correlation window.
+backend/app/incidents/schemas.py:361:    error_budget_status: str | None = None
+backend/app/incidents/service.py:618:            value=float(measurement.measured_value),
+backend/app/incidents/service.py:629:                "target_value": float(
+backend/app/incidents/service.py:630:                    measurement.target_value
+backend/app/incidents/service.py:635:                "window_minutes": int(
+backend/app/incidents/service.py:636:                    measurement.window_minutes
+backend/app/incidents/service.py:647:    error_budget = (
+backend/app/incidents/service.py:648:        repository.get_latest_error_budget_status_for_snapshot(
+backend/app/incidents/service.py:658:    if error_budget is None:
+backend/app/incidents/service.py:666:        value=float(error_budget.remaining_percentage),
+backend/app/incidents/service.py:669:        captured_at=error_budget.evaluated_at,
+backend/app/incidents/service.py:672:            "error_budget_status_id": str(
+backend/app/incidents/service.py:673:                error_budget.id
+backend/app/incidents/service.py:676:                error_budget.slo_definition_id
+backend/app/incidents/service.py:679:                error_budget.service_id
+backend/app/incidents/service.py:682:                _enum_value(error_budget.status)
+backend/app/incidents/service.py:684:            "target_percentage": float(
+backend/app/incidents/service.py:685:                error_budget.target_percentage
+backend/app/incidents/service.py:688:                error_budget.allowed_failure_percentage
+backend/app/incidents/service.py:691:                error_budget.consumed_percentage
+backend/app/incidents/service.py:694:                error_budget.remaining_percentage
+backend/app/incidents/service.py:696:            "burn_rate": float(
+backend/app/incidents/service.py:697:                error_budget.burn_rate
+backend/app/incidents/service.py:699:            "window_minutes": int(
+backend/app/incidents/service.py:700:                error_budget.window_minutes
+backend/app/incidents/service.py:703:                error_budget.evaluated_at
+backend/app/incidents/service.py:883:def _latest_error_budget_status(
+backend/app/incidents/service.py:935:        error_budget_status=_latest_error_budget_status(
+backend/app/incidents/service.py:1030:            correlation_window_minutes=(
+backend/app/incidents/service.py:1044:            measured_value=float(alert.triggered_value),
+backend/app/incidents/service.py:1052:            error_budget_exhausted=(
+backend/app/incidents/service.py:1053:                alert_type_value == "ERROR_BUDGET_EXHAUSTED"
+backend/app/incidents/service.py:1271:                        "correlation_window_minutes": (
+backend/app/incidents/service.py:1310:                        "correlation_window_minutes": (
+backend/app/incidents/service.py:1933:        target_user = repository.get_user_by_id(
+backend/app/incidents/service.py:1938:        if target_user is None:
+backend/app/incidents/service.py:2003:        target_display_name = (
+backend/app/incidents/service.py:2004:            target_user.full_name
+backend/app/incidents/service.py:2005:            or target_user.email
+backend/app/incidents/service.py:2016:                or f"Incident assigned to {target_display_name}."
+backend/app/incidents/service.py:2024:                "assigned_to_user_email": target_user.email,
+backend/app/incidents/service.py:2046:                "assigned_to_user_email": target_user.email,
+backend/app/incidents/rules.py:154:    measured_value: float | None = None,
+backend/app/incidents/rules.py:160:    error_budget_exhausted: bool = False,
+backend/app/incidents/rules.py:198:        and measured_value is not None
+backend/app/incidents/rules.py:202:        latency_ratio = measured_value / threshold_value
+backend/app/incidents/rules.py:209:        "measured_value": measured_value,
+backend/app/incidents/rules.py:215:        "error_budget_exhausted": error_budget_exhausted,
+backend/app/incidents/rules.py:306:        error_budget_exhausted
+backend/app/incidents/rules.py:307:        or normalised_alert_type == "ERROR_BUDGET_EXHAUSTED"
+backend/app/incidents/rules.py:311:            reason_code="ERROR_BUDGET_EXHAUSTED",
+backend/app/incidents/rules.py:380:    measured_value: float | None = None,
+backend/app/incidents/rules.py:386:    error_budget_exhausted: bool = False,
+backend/app/incidents/rules.py:396:        measured_value=measured_value,
+backend/app/incidents/rules.py:402:        error_budget_exhausted=error_budget_exhausted,
+backend/app/models.py:1319:    BREACHED = "BREACHED"
+backend/app/models.py:1320:    EXHAUSTED = "EXHAUSTED"
+backend/app/models.py:1326:    ERROR_BUDGET_EXHAUSTED = "ERROR_BUDGET_EXHAUSTED"
+backend/app/models.py:1339:class SLODefinition(Base):
+backend/app/models.py:1360:    target_value = Column(Float, nullable=False)
+backend/app/models.py:1362:    window_minutes = Column(
+backend/app/models.py:1402:        "SLOMeasurement",
+backend/app/models.py:1407:    error_budget_statuses = relationship(
+backend/app/models.py:1408:        "ErrorBudgetStatus",
+backend/app/models.py:1420:class SLOMeasurement(Base):
+backend/app/models.py:1448:    measured_value = Column(Float, nullable=False)
+backend/app/models.py:1449:    target_value = Column(Float, nullable=False)
+backend/app/models.py:1451:    window_minutes = Column(Integer, nullable=False)
+backend/app/models.py:1474:        "SLODefinition",
+backend/app/models.py:1481:class ErrorBudgetStatus(Base):
+backend/app/models.py:1482:    __tablename__ = "error_budget_statuses"
+backend/app/models.py:1504:    target_percentage = Column(Float, nullable=False)
+backend/app/models.py:1521:    burn_rate = Column(
+backend/app/models.py:1529:        SQLEnum(ErrorBudgetState, name="error_budget_state"),
+backend/app/models.py:1535:    window_minutes = Column(Integer, nullable=False)
+backend/app/models.py:1551:        "SLODefinition",
+backend/app/models.py:1552:        back_populates="error_budget_statuses",
+backend/app/models.py:1631:        "SLODefinition",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:38:error_budget_state_enum = postgresql.ENUM(
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:41:    "BREACHED",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:42:    "EXHAUSTED",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:43:    name="error_budget_state",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:50:    "ERROR_BUDGET_EXHAUSTED",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:73:    error_budget_state_enum.create(bind, checkfirst=True)
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:86:        sa.Column("target_value", sa.Float(), nullable=False),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:88:            "window_minutes",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:146:        sa.Column("measured_value", sa.Float(), nullable=False),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:147:        sa.Column("target_value", sa.Float(), nullable=False),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:149:        sa.Column("window_minutes", sa.Integer(), nullable=False),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:203:        "error_budget_statuses",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:211:        sa.Column("target_percentage", sa.Float(), nullable=False),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:230:            "burn_rate",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:237:            error_budget_state_enum,
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:241:        sa.Column("window_minutes", sa.Integer(), nullable=False),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:268:        "ix_error_budget_statuses_slo_definition_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:269:        "error_budget_statuses",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:275:        "ix_error_budget_statuses_service_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:276:        "error_budget_statuses",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:282:        "ix_error_budget_statuses_evaluated_at",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:283:        "error_budget_statuses",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:389:        "ix_error_budget_statuses_evaluated_at",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:390:        table_name="error_budget_statuses",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:393:        "ix_error_budget_statuses_service_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:394:        table_name="error_budget_statuses",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:397:        "ix_error_budget_statuses_slo_definition_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:398:        table_name="error_budget_statuses",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:400:    op.drop_table("error_budget_statuses")
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:424:    error_budget_state_enum.drop(bind, checkfirst=True)
+backend/alembic/env.py:35:target_metadata = Base.metadata
+backend/alembic/env.py:43:        target_metadata=target_metadata,
+backend/alembic/env.py:65:            target_metadata=target_metadata,

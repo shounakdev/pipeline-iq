@@ -1,0 +1,483 @@
+backend/app/incidents/transitions.py:4:perform database queries, commits, timeline creation, audit logging, or HTTP
+backend/app/incidents/repository.py:20:    IncidentAlertLink,
+backend/app/incidents/repository.py:21:    IncidentAssignment,
+backend/app/incidents/repository.py:23:    IncidentMetric,
+backend/app/incidents/repository.py:26:    IncidentTimelineEvent,
+backend/app/incidents/repository.py:38:def get_incidents_for_metrics(
+backend/app/incidents/repository.py:108:    reliability_alert_id: str,
+backend/app/incidents/repository.py:109:) -> IncidentAlertLink | None:
+backend/app/incidents/repository.py:118:        select(IncidentAlertLink)
+backend/app/incidents/repository.py:120:            IncidentAlertLink.reliability_alert_id
+backend/app/incidents/repository.py:121:            == reliability_alert_id,
+backend/app/incidents/repository.py:124:            IncidentAlertLink.linked_at.asc(),
+backend/app/incidents/repository.py:196:                IncidentAssignment.incident_id,
+backend/app/incidents/repository.py:199:                IncidentAssignment.assigned_to_user_id
+backend/app/incidents/repository.py:201:                IncidentAssignment.is_active.is_(True),
+backend/app/incidents/repository.py:254:def find_suspected_deployment(
+backend/app/incidents/repository.py:406:            IncidentAlertLink,
+backend/app/incidents/repository.py:408:                IncidentAlertLink.reliability_alert_id
+backend/app/incidents/repository.py:413:            IncidentAlertLink.incident_id == Incident.id,
+backend/app/incidents/repository.py:456:            IncidentAlertLink,
+backend/app/incidents/repository.py:458:                IncidentAlertLink.reliability_alert_id
+backend/app/incidents/repository.py:463:            IncidentAlertLink.incident_id == incident_id,
+backend/app/incidents/repository.py:466:            IncidentAlertLink.is_triggering_alert.desc(),
+backend/app/incidents/repository.py:467:            IncidentAlertLink.linked_at.asc(),
+backend/app/incidents/repository.py:479:) -> IncidentAssignment | None:
+backend/app/incidents/repository.py:485:        select(IncidentAssignment)
+backend/app/incidents/repository.py:487:            IncidentAssignment.incident_id == incident_id,
+backend/app/incidents/repository.py:488:            IncidentAssignment.is_active.is_(True),
+backend/app/incidents/repository.py:491:            IncidentAssignment.assigned_at.desc(),
+backend/app/incidents/repository.py:492:            IncidentAssignment.id.desc(),
+backend/app/incidents/repository.py:500:def get_incident_assignments(
+backend/app/incidents/repository.py:503:) -> list[IncidentAssignment]:
+backend/app/incidents/repository.py:509:        select(IncidentAssignment)
+backend/app/incidents/repository.py:511:            IncidentAssignment.incident_id == incident_id,
+backend/app/incidents/repository.py:514:            IncidentAssignment.assigned_at.desc(),
+backend/app/incidents/repository.py:515:            IncidentAssignment.id.desc(),
+backend/app/incidents/repository.py:548:def get_incident_metrics(
+backend/app/incidents/repository.py:551:) -> list[IncidentMetric]:
+backend/app/incidents/repository.py:557:        select(IncidentMetric)
+backend/app/incidents/repository.py:559:            IncidentMetric.incident_id == incident_id,
+backend/app/incidents/repository.py:562:            IncidentMetric.captured_at.asc(),
+backend/app/incidents/repository.py:563:            IncidentMetric.id.asc(),
+backend/app/incidents/repository.py:572:def get_incident_timeline(
+backend/app/incidents/repository.py:575:) -> list[IncidentTimelineEvent]:
+backend/app/incidents/repository.py:577:    Return the incident timeline in chronological order.
+backend/app/incidents/repository.py:581:        select(IncidentTimelineEvent)
+backend/app/incidents/repository.py:583:            IncidentTimelineEvent.incident_id == incident_id,
+backend/app/incidents/repository.py:586:            IncidentTimelineEvent.occurred_at.asc(),
+backend/app/incidents/repository.py:587:            IncidentTimelineEvent.id.asc(),
+backend/app/incidents/repository.py:706:    reliability_alert_id: str,
+backend/app/incidents/repository.py:708:) -> IncidentAlertLink:
+backend/app/incidents/repository.py:716:    existing_statement = select(IncidentAlertLink).where(
+backend/app/incidents/repository.py:717:        IncidentAlertLink.incident_id == incident_id,
+backend/app/incidents/repository.py:719:            IncidentAlertLink.reliability_alert_id
+backend/app/incidents/repository.py:720:            == reliability_alert_id
+backend/app/incidents/repository.py:739:    alert_link = IncidentAlertLink(
+backend/app/incidents/repository.py:741:        reliability_alert_id=reliability_alert_id,
+backend/app/incidents/repository.py:759:) -> IncidentAssignment:
+backend/app/incidents/repository.py:775:    assignment = IncidentAssignment(**values)
+backend/app/incidents/repository.py:788:) -> IncidentAssignment | None:
+backend/app/incidents/repository.py:815:) -> IncidentAssignment | None:
+backend/app/incidents/repository.py:854:def create_timeline_event(
+backend/app/incidents/repository.py:865:    deployment_id: UUID | None = None,
+backend/app/incidents/repository.py:868:) -> IncidentTimelineEvent:
+backend/app/incidents/repository.py:870:    Create and flush an immutable incident timeline event.
+backend/app/incidents/repository.py:875:    timeline_event = IncidentTimelineEvent(
+backend/app/incidents/repository.py:885:        deployment_id=deployment_id,
+backend/app/incidents/repository.py:890:    db.add(timeline_event)
+backend/app/incidents/repository.py:893:    return timeline_event
+backend/app/incidents/repository.py:907:) -> IncidentMetric:
+backend/app/incidents/repository.py:925:    metric = IncidentMetric(**values)
+backend/app/incidents/consumer.py:42:    alert_id is the Sprint 7D field. reliability_alert_id is
+backend/app/incidents/consumer.py:48:        or payload.get("reliability_alert_id")
+backend/app/incidents/consumer.py:95:def process_reliability_alert_event(
+backend/app/incidents/incident_router.py:36:    IncidentMetricsResponse,
+backend/app/incidents/incident_router.py:37:    IncidentMetricsSummaryResponse,
+backend/app/incidents/incident_router.py:107:# runtime-timeline endpoints.
+backend/app/incidents/incident_router.py:110:    tags=["runtime-timeline"],
+backend/app/incidents/incident_router.py:184:# attempt to interpret "metrics" as an incident UUID.
+backend/app/incidents/incident_router.py:186:    "/metrics/summary",
+backend/app/incidents/incident_router.py:187:    response_model=IncidentMetricsSummaryResponse,
+backend/app/incidents/incident_router.py:189:def get_incident_metrics_summary_endpoint(
+backend/app/incidents/incident_router.py:195:    """Return aggregate metrics across incidents."""
+backend/app/incidents/incident_router.py:197:    return incident_service.get_incident_metrics_summary(
+backend/app/incidents/incident_router.py:311:    "/{incident_id}/timeline",
+backend/app/incidents/incident_router.py:314:def get_incident_timeline_endpoint(
+backend/app/incidents/incident_router.py:321:    """Return the chronological timeline for an incident."""
+backend/app/incidents/incident_router.py:323:    return incident_service.get_incident_timeline(
+backend/app/incidents/incident_router.py:330:    "/{incident_id}/metrics",
+backend/app/incidents/incident_router.py:331:    response_model=IncidentMetricsResponse,
+backend/app/incidents/incident_router.py:333:def get_incident_metrics_endpoint(
+backend/app/incidents/incident_router.py:342:    return incident_service.get_incident_metrics(
+backend/app/incidents/incident_router.py:416:    "/{service_id}/runtime-timeline",
+backend/app/incidents/incident_router.py:419:def get_service_runtime_timeline_endpoint(
+backend/app/incidents/incident_router.py:429:    """Return the combined runtime timeline for a service."""
+backend/app/incidents/incident_router.py:431:    return incident_service.get_service_runtime_timeline(
+backend/app/incidents/schemas.py:43:    deployment_id: UUID | None = None
+backend/app/incidents/schemas.py:68:class IncidentTimelineEventResponse(ResponseSchema):
+backend/app/incidents/schemas.py:85:    deployment_id: UUID | None = None
+backend/app/incidents/schemas.py:174:class IncidentAssignmentRequest(RequestSchema):
+backend/app/incidents/schemas.py:249:class IncidentAssignmentResponse(ResponseSchema):
+backend/app/incidents/schemas.py:307:class IncidentMetricResponse(ResponseSchema):
+backend/app/incidents/schemas.py:344:class IncidentMetricsResponse(ResponseSchema):
+backend/app/incidents/schemas.py:347:    metric_snapshot: list[IncidentMetricResponse] = Field(
+backend/app/incidents/schemas.py:364:class IncidentMetricsSummaryResponse(ResponseSchema):
+backend/app/incidents/schemas.py:407:    suspected_deployment_id: UUID | None = None
+backend/app/incidents/schemas.py:475:    suspected_deployment: DeploymentSummaryResponse | None = None
+backend/app/incidents/schemas.py:492:    current_assignment: IncidentAssignmentResponse | None = None
+backend/app/incidents/schemas.py:494:    assignment_history: list[IncidentAssignmentResponse] = Field(
+backend/app/incidents/schemas.py:500:    metric_snapshot: list[IncidentMetricResponse] = Field(
+backend/app/incidents/schemas.py:503:    timeline_summary: list[IncidentTimelineEventResponse] = Field(
+backend/app/incidents/schemas.py:511:    calculated_incident_metrics: (
+backend/app/incidents/schemas.py:518:    events: list[IncidentTimelineEventResponse] = Field(
+backend/app/incidents/router.py:14:    build_incident_timeline,
+backend/app/incidents/router.py:85:@router.get("/{incident_id}/timeline", response_model=list[TimelineItemOut])
+backend/app/incidents/router.py:86:def get_incident_timeline(
+backend/app/incidents/router.py:95:    return build_incident_timeline(db, incident)
+backend/app/incidents/router.py:114:@service_router.get("/{service_id}/runtime-timeline", response_model=list[TimelineItemOut])
+backend/app/incidents/router.py:115:def get_service_runtime_timeline(
+backend/app/incidents/router.py:127:    timeline = []
+backend/app/incidents/router.py:130:        timeline.extend(build_incident_timeline(db, incident))
+backend/app/incidents/router.py:132:    timeline.sort(key=lambda item: item["timestamp"])
+backend/app/incidents/router.py:134:    return timeline
+backend/app/incidents/service.py:3:Coordinates incident repositories, pure business rules, timeline creation,
+backend/app/incidents/service.py:27:from app.incidents.metrics import (
+backend/app/incidents/service.py:28:    calculate_incident_metrics,
+backend/app/incidents/service.py:41:    IncidentAssignmentRequest,
+backend/app/incidents/service.py:42:    IncidentMetricsSummaryResponse,
+backend/app/incidents/service.py:43:    IncidentAssignmentResponse,
+backend/app/incidents/service.py:50:    IncidentMetricResponse,
+backend/app/incidents/service.py:51:    IncidentMetricsResponse,
+backend/app/incidents/service.py:53:    IncidentTimelineEventResponse,
+backend/app/incidents/service.py:59:from app.incidents.timeline import (
+backend/app/incidents/service.py:62:    get_timeline_event_type,
+backend/app/incidents/service.py:66:    IncidentAssignment,
+backend/app/incidents/service.py:68:    IncidentMetric,
+backend/app/incidents/service.py:71:    IncidentTimelineEvent,
+backend/app/incidents/service.py:186:def get_incident_metrics_summary(
+backend/app/incidents/service.py:188:) -> IncidentMetricsSummaryResponse:
+backend/app/incidents/service.py:189:    incidents = repository.get_incidents_for_metrics(db)
+backend/app/incidents/service.py:205:        metrics = calculate_incident_metrics(
+backend/app/incidents/service.py:212:        if metrics["mttd_seconds"] is not None:
+backend/app/incidents/service.py:213:            mttd_values.append(metrics["mttd_seconds"])
+backend/app/incidents/service.py:215:        if metrics["mtta_seconds"] is not None:
+backend/app/incidents/service.py:216:            mtta_values.append(metrics["mtta_seconds"])
+backend/app/incidents/service.py:218:        if metrics["mttr_seconds"] is not None:
+backend/app/incidents/service.py:219:            mttr_values.append(metrics["mttr_seconds"])
+backend/app/incidents/service.py:236:    return IncidentMetricsSummaryResponse(
+backend/app/incidents/service.py:316:        deployment_id=alert.deployment_id,
+backend/app/incidents/service.py:345:    assignment: IncidentAssignment | None,
+backend/app/incidents/service.py:346:) -> IncidentAssignmentResponse | None:
+backend/app/incidents/service.py:350:    return IncidentAssignmentResponse(
+backend/app/incidents/service.py:379:    metric: IncidentMetric,
+backend/app/incidents/service.py:380:) -> IncidentMetricResponse:
+backend/app/incidents/service.py:381:    return IncidentMetricResponse(
+backend/app/incidents/service.py:395:def _timeline_event_response(
+backend/app/incidents/service.py:396:    event: IncidentTimelineEvent,
+backend/app/incidents/service.py:397:) -> IncidentTimelineEventResponse:
+backend/app/incidents/service.py:398:    return IncidentTimelineEventResponse(
+backend/app/incidents/service.py:410:        deployment_id=event.deployment_id,
+backend/app/incidents/service.py:418:def _incident_metrics_values(
+backend/app/incidents/service.py:421:    return calculate_incident_metrics(
+backend/app/incidents/service.py:429:def _calculated_metrics_response(
+backend/app/incidents/service.py:432:    """Build the legacy nested metrics object for API compatibility."""
+backend/app/incidents/service.py:433:    metrics = _incident_metrics_values(incident)
+backend/app/incidents/service.py:441:        mttd_seconds=metrics["mttd_seconds"],
+backend/app/incidents/service.py:442:        mtta_seconds=metrics["mtta_seconds"],
+backend/app/incidents/service.py:443:        mttr_seconds=metrics["mttr_seconds"],
+backend/app/incidents/service.py:475:        suspected_deployment_id=(
+backend/app/incidents/service.py:476:            incident.suspected_deployment_id
+backend/app/incidents/service.py:487:        update=_incident_metrics_values(incident),
+backend/app/incidents/service.py:713:    current_assignment: IncidentAssignment | None,
+backend/app/incidents/service.py:714:    assignments: list[IncidentAssignment],
+backend/app/incidents/service.py:716:    metric_snapshot: list[IncidentMetric],
+backend/app/incidents/service.py:717:    timeline_events: list[IncidentTimelineEvent],
+backend/app/incidents/service.py:719:    """Build the complete detail payload and calculated metrics."""
+backend/app/incidents/service.py:720:    timeline_responses = [
+backend/app/incidents/service.py:721:        _timeline_event_response(event)
+backend/app/incidents/service.py:722:        for event in timeline_events
+backend/app/incidents/service.py:745:        "suspected_deployment": _deployment_response(
+backend/app/incidents/service.py:746:            incident.suspected_deployment
+backend/app/incidents/service.py:762:            for assignment in assignments
+backend/app/incidents/service.py:776:        "calculated_incident_metrics": (
+backend/app/incidents/service.py:777:            _calculated_metrics_response(incident)
+backend/app/incidents/service.py:785:    if "timeline_summary" in model_fields:
+backend/app/incidents/service.py:786:        payload["timeline_summary"] = timeline_responses
+backend/app/incidents/service.py:788:    if "latest_timeline_events" in model_fields:
+backend/app/incidents/service.py:789:        payload["latest_timeline_events"] = (
+backend/app/incidents/service.py:790:            timeline_responses[-10:]
+backend/app/incidents/service.py:802:        update=_incident_metrics_values(incident),
+backend/app/incidents/service.py:822:    assignments = repository.get_incident_assignments(
+backend/app/incidents/service.py:830:    metrics = repository.get_incident_metrics(
+backend/app/incidents/service.py:834:    timeline_events = repository.get_incident_timeline(
+backend/app/incidents/service.py:843:        assignments=assignments,
+backend/app/incidents/service.py:845:        metric_snapshot=metrics,
+backend/app/incidents/service.py:846:        timeline_events=timeline_events,
+backend/app/incidents/service.py:849:def get_incident_timeline(
+backend/app/incidents/service.py:858:    events = repository.get_incident_timeline(
+backend/app/incidents/service.py:866:            _timeline_event_response(event)
+backend/app/incidents/service.py:872:    snapshots: list[IncidentMetric],
+backend/app/incidents/service.py:884:    snapshots: list[IncidentMetric],
+backend/app/incidents/service.py:899:def get_incident_metrics(
+backend/app/incidents/service.py:902:) -> IncidentMetricsResponse:
+backend/app/incidents/service.py:908:    snapshots = repository.get_incident_metrics(
+backend/app/incidents/service.py:913:    calculated = calculate_incident_metrics(
+backend/app/incidents/service.py:920:    return IncidentMetricsResponse(
+backend/app/incidents/service.py:957:    Automatic timeline and audit records are attributed to the system.
+backend/app/incidents/service.py:970:        # return the existing incident without creating duplicate timeline,
+backend/app/incidents/service.py:1025:        suspected_deployment = repository.find_suspected_deployment(
+backend/app/incidents/service.py:1050:                suspected_deployment is not None
+backend/app/incidents/service.py:1068:        should_capture_alert_metrics = True
+backend/app/incidents/service.py:1096:                suspected_deployment_id=(
+backend/app/incidents/service.py:1097:                    suspected_deployment.id
+backend/app/incidents/service.py:1098:                    if suspected_deployment is not None
+backend/app/incidents/service.py:1113:                reliability_alert_id=alert.id,
+backend/app/incidents/service.py:1127:            repository.create_timeline_event(
+backend/app/incidents/service.py:1145:            repository.create_timeline_event(
+backend/app/incidents/service.py:1171:            # This event is emitted only after a new IncidentAlertLink is
+backend/app/incidents/service.py:1174:            repository.create_timeline_event(
+backend/app/incidents/service.py:1185:                deployment_id=alert.deployment_id,
+backend/app/incidents/service.py:1199:            if suspected_deployment is not None:
+backend/app/incidents/service.py:1201:                    suspected_deployment.deployment_version
+backend/app/incidents/service.py:1202:                    or suspected_deployment.image_tag
+backend/app/incidents/service.py:1203:                    or str(suspected_deployment.id)
+backend/app/incidents/service.py:1206:                    suspected_deployment.deployed_at
+backend/app/incidents/service.py:1207:                    or suspected_deployment.created_at
+backend/app/incidents/service.py:1212:                repository.create_timeline_event(
+backend/app/incidents/service.py:1222:                    deployment_id=suspected_deployment.id,
+backend/app/incidents/service.py:1226:                        "deployment_id": str(
+backend/app/incidents/service.py:1227:                            suspected_deployment.id
+backend/app/incidents/service.py:1230:                            suspected_deployment.deployment_version
+backend/app/incidents/service.py:1232:                        "image_tag": suspected_deployment.image_tag,
+backend/app/incidents/service.py:1237:                repository.create_timeline_event(
+backend/app/incidents/service.py:1250:                    deployment_id=suspected_deployment.id,
+backend/app/incidents/service.py:1252:                        "classification": "suspected_deployment",
+backend/app/incidents/service.py:1255:                        "deployment_id": str(
+backend/app/incidents/service.py:1256:                            suspected_deployment.id
+backend/app/incidents/service.py:1260:                                suspected_deployment.created_at
+backend/app/incidents/service.py:1265:                                suspected_deployment.deployed_at
+backend/app/incidents/service.py:1287:                        "classification": "suspected_deployment",
+backend/app/incidents/service.py:1289:                        "deployment_id": str(
+backend/app/incidents/service.py:1290:                            suspected_deployment.id
+backend/app/incidents/service.py:1296:                                suspected_deployment.created_at
+backend/app/incidents/service.py:1301:                                suspected_deployment.deployed_at
+backend/app/incidents/service.py:1348:            should_capture_alert_metrics = (
+backend/app/incidents/service.py:1352:            if should_capture_alert_metrics:
+backend/app/incidents/service.py:1356:                    reliability_alert_id=alert.id,
+backend/app/incidents/service.py:1365:                repository.create_timeline_event(
+backend/app/incidents/service.py:1384:                # inserted a new IncidentAlertLink.
+backend/app/incidents/service.py:1385:                repository.create_timeline_event(
+backend/app/incidents/service.py:1396:                    deployment_id=alert.deployment_id,
+backend/app/incidents/service.py:1440:                repository.create_timeline_event(
+backend/app/incidents/service.py:1452:                    deployment_id=alert.deployment_id,
+backend/app/incidents/service.py:1488:        if should_capture_alert_metrics:
+backend/app/incidents/service.py:1610:    timeline_metadata: dict[str, Any] | None = None,
+backend/app/incidents/service.py:1615:    Every successful call creates exactly one timeline event and exactly one
+backend/app/incidents/service.py:1706:    repository.create_timeline_event(
+backend/app/incidents/service.py:1709:        event_type=get_timeline_event_type(
+backend/app/incidents/service.py:1721:        metadata_json=timeline_metadata or {},
+backend/app/incidents/service.py:1808:    actor, writes one timeline event and one audit event, and commits once.
+backend/app/incidents/service.py:1843:        # Validation happens inside this helper before any status, timeline,
+backend/app/incidents/service.py:1852:            timeline_metadata={
+backend/app/incidents/service.py:1899:    request: IncidentAssignRequest | IncidentAssignmentRequest,
+backend/app/incidents/service.py:2009:        repository.create_timeline_event(
+backend/app/incidents/service.py:2090:        repository.create_timeline_event(
+backend/app/incidents/service.py:2154:) -> IncidentMetricResponse:
+backend/app/incidents/service.py:2176:        repository.create_timeline_event(
+backend/app/incidents/service.py:2222:def get_service_runtime_timeline(
+backend/app/incidents/service.py:2230:    """Build the compatibility runtime timeline without router-level SQL."""
+backend/app/incidents/service.py:2243:    timeline: list[dict[str, Any]] = []
+backend/app/incidents/service.py:2246:        events = repository.get_incident_timeline(
+backend/app/incidents/service.py:2252:            timeline.append(
+backend/app/incidents/service.py:2254:                    "source": (event.source or "incident_timeline_events"),
+backend/app/incidents/service.py:2264:                        "deployment_id": (
+backend/app/incidents/service.py:2265:                            str(event.deployment_id) if event.deployment_id else None
+backend/app/incidents/service.py:2282:        timeline.append(
+backend/app/incidents/service.py:2310:    timeline.sort(
+backend/app/incidents/service.py:2317:        "timeline": timeline,
+backend/app/incidents/incident_service.py:13:Do not add database queries, transaction management, timeline generation,
+backend/app/incidents/timeline.py:43:def get_status_timeline_event_type(status: IncidentStatus) -> str:
+backend/app/incidents/timeline.py:50:def get_status_timeline_message(
+backend/app/incidents/timeline.py:75:def get_timeline_event_type(status) -> str:
+backend/app/incidents/timeline.py:77:    Return the canonical timeline event type for an incident status.
+backend/app/incidents/metrics.py:7:class IncidentMetricsValues(TypedDict):
+backend/app/incidents/metrics.py:8:    """Calculated incident response metrics and display values."""
+backend/app/incidents/metrics.py:159:def calculate_incident_metrics(
+backend/app/incidents/metrics.py:165:) -> IncidentMetricsValues:
+backend/app/incidents/metrics.py:167:    Calculate the response-time metrics for one incident.
+backend/app/models.py:380:    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+backend/app/models.py:404:    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+backend/app/models.py:466:    "ix_event_records_release_timeline",
+backend/app/models.py:661:            "reliability_alerts.id",
+backend/app/models.py:667:    suspected_deployment_id = Column(
+backend/app/models.py:799:    suspected_deployment = relationship(
+backend/app/models.py:801:        foreign_keys=[suspected_deployment_id],
+backend/app/models.py:815:        "IncidentTimelineEvent",
+backend/app/models.py:819:            "IncidentTimelineEvent.occurred_at, "
+backend/app/models.py:820:            "IncidentTimelineEvent.id"
+backend/app/models.py:824:    assignments = relationship(
+backend/app/models.py:825:        "IncidentAssignment",
+backend/app/models.py:836:    metrics = relationship(
+backend/app/models.py:837:        "IncidentMetric",
+backend/app/models.py:842:    alert_links = relationship(
+backend/app/models.py:843:        "IncidentAlertLink",
+backend/app/models.py:904:class IncidentTimelineEvent(Base):
+backend/app/models.py:905:    __tablename__ = "incident_timeline_events"
+backend/app/models.py:958:            "reliability_alerts.id",
+backend/app/models.py:964:    deployment_id = Column(
+backend/app/models.py:1007:        foreign_keys=[deployment_id],
+backend/app/models.py:1021:            "ix_incident_timeline_incident_occurred_id",
+backend/app/models.py:1027:            "ix_incident_timeline_event_type",
+backend/app/models.py:1038:# incident_timeline_events.
+backend/app/models.py:1039:IncidentEvent = IncidentTimelineEvent
+backend/app/models.py:1042:class IncidentAssignment(Base):
+backend/app/models.py:1043:    __tablename__ = "incident_assignments"
+backend/app/models.py:1098:        back_populates="assignments",
+backend/app/models.py:1166:class IncidentMetric(Base):
+backend/app/models.py:1167:    __tablename__ = "incident_metrics"
+backend/app/models.py:1231:        back_populates="metrics",
+backend/app/models.py:1235:class IncidentAlertLink(Base):
+backend/app/models.py:1236:    __tablename__ = "incident_alert_links"
+backend/app/models.py:1254:    reliability_alert_id = Column(
+backend/app/models.py:1257:            "reliability_alerts.id",
+backend/app/models.py:1279:        back_populates="alert_links",
+backend/app/models.py:1282:    reliability_alert = relationship(
+backend/app/models.py:1289:            "reliability_alert_id",
+backend/app/models.py:1293:            "reliability_alert_id",
+backend/app/models.py:1294:            name="uq_incident_alert_links_reliability_alert_id",
+backend/app/models.py:1559:    __tablename__ = "reliability_alerts"
+backend/app/models.py:1584:            name="reliability_alert_type",
+backend/app/models.py:1600:    deployment_id = Column(
+backend/app/models.py:1610:            name="reliability_alert_status",
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:53:        sa.Column("deployment_id", postgresql.UUID(as_uuid=True), nullable=False),
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:60:        sa.ForeignKeyConstraint(["deployment_id"], ["deployments.id"]),
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:67:        sa.Column("deployment_id", postgresql.UUID(as_uuid=True), nullable=False),
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:78:        sa.ForeignKeyConstraint(["deployment_id"], ["deployments.id"]),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:47:reliability_alert_type_enum = postgresql.ENUM(
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:54:    name="reliability_alert_type",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:58:reliability_alert_status_enum = postgresql.ENUM(
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:63:    name="reliability_alert_status",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:74:    reliability_alert_type_enum.create(bind, checkfirst=True)
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:75:    reliability_alert_status_enum.create(bind, checkfirst=True)
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:289:        "reliability_alerts",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:299:            reliability_alert_type_enum,
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:310:            "deployment_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:316:            reliability_alert_status_enum,
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:342:            ["deployment_id"],
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:350:        "ix_reliability_alerts_service_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:351:        "reliability_alerts",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:357:        "ix_reliability_alerts_slo_definition_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:358:        "reliability_alerts",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:364:        "ix_reliability_alerts_deployment_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:365:        "reliability_alerts",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:366:        ["deployment_id"],
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:375:        "ix_reliability_alerts_deployment_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:376:        table_name="reliability_alerts",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:379:        "ix_reliability_alerts_slo_definition_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:380:        table_name="reliability_alerts",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:383:        "ix_reliability_alerts_service_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:384:        table_name="reliability_alerts",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:386:    op.drop_table("reliability_alerts")
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:422:    reliability_alert_status_enum.drop(bind, checkfirst=True)
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:423:    reliability_alert_type_enum.drop(bind, checkfirst=True)
+backend/alembic/versions/5ad43616ba03_add_reliability_alert_link_idempotency_.py:23:        "uq_incident_alert_links_reliability_alert_id",
+backend/alembic/versions/5ad43616ba03_add_reliability_alert_link_idempotency_.py:24:        "incident_alert_links",
+backend/alembic/versions/5ad43616ba03_add_reliability_alert_link_idempotency_.py:25:        ["reliability_alert_id"],
+backend/alembic/versions/5ad43616ba03_add_reliability_alert_link_idempotency_.py:33:        "uq_incident_alert_links_reliability_alert_id",
+backend/alembic/versions/5ad43616ba03_add_reliability_alert_link_idempotency_.py:34:        "incident_alert_links",
+backend/alembic/versions/9b9bb1e4597e_align_event_record_and_dead_letter_.py:52:    op.create_index('ix_event_records_release_timeline', 'event_records', ['correlation_id', 'timestamp'], unique=False)
+backend/alembic/versions/9b9bb1e4597e_align_event_record_and_dead_letter_.py:63:    op.drop_index('ix_event_records_release_timeline', table_name='event_records')
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:75:    "incident_alert_links",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:76:    "incident_metrics",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:78:    "incident_assignments",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:79:    "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:196:    # timeline table. The final index set is recreated at the end.
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:225:            "suspected_deployment_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:284:    op.rename_table("incident_events", "incident_timeline_events")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:287:        ALTER TABLE incident_timeline_events
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:289:        TO fk_incident_timeline_events_incident_id
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:293:        "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:301:        ALTER TABLE incident_timeline_events
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:308:        ALTER TABLE incident_timeline_events
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:315:        "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:323:        "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:327:        "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:331:        "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:335:        "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:339:        "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:341:            "deployment_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:347:        "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:352:    # 3. Backfill historical incident and timeline data.
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:405:    # matches a real reliability_alerts.id. Values such as evt_<uuid> are
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:411:        FROM reliability_alerts AS alert
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:432:        UPDATE incident_timeline_events
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:527:        ALTER TABLE incident_timeline_events
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:534:        ALTER TABLE incident_timeline_events
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:551:        "fk_incidents_triggering_alert_id_reliability_alerts",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:553:        "reliability_alerts",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:559:        "fk_incidents_suspected_deployment_id_deployments",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:562:        ["suspected_deployment_id"],
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:584:        "fk_incident_timeline_events_actor_user_id_users",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:585:        "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:592:        "fk_incident_timeline_events_alert_id_reliability_alerts",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:593:        "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:594:        "reliability_alerts",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:600:        "fk_incident_timeline_events_deployment_id_deployments",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:601:        "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:603:        ["deployment_id"],
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:655:        "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:662:        "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:673:        "incident_assignments",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:703:            name="fk_incident_assignments_incident_id_incidents",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:709:            name="fk_incident_assignments_assigned_to_user_id_users",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:715:            name="fk_incident_assignments_assigned_by_user_id_users",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:718:        sa.PrimaryKeyConstraint("id", name="pk_incident_assignments"),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:763:        "incident_metrics",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:800:            name="fk_incident_metrics_incident_id_incidents",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:803:        sa.PrimaryKeyConstraint("id", name="pk_incident_metrics"),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:807:        "incident_alert_links",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:819:            "reliability_alert_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:838:            name="fk_incident_alert_links_incident_id_incidents",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:842:            ["reliability_alert_id"],
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:843:            ["reliability_alerts.id"],
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:845:                "fk_incident_alert_links_reliability_alert_id_"
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:846:                "reliability_alerts"
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:850:        sa.PrimaryKeyConstraint("id", name="pk_incident_alert_links"),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:853:            "reliability_alert_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:863:        INSERT INTO incident_alert_links (
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:866:            reliability_alert_id,
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:878:        ON CONFLICT (incident_id, reliability_alert_id) DO NOTHING
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:929:        "ix_incident_timeline_incident_occurred_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:930:        "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:935:        "ix_incident_timeline_event_type",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:936:        "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:942:        "ix_incident_assignments_incident_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:943:        "incident_assignments",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:954:        "ix_incident_metrics_incident_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:955:        "incident_metrics",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:960:        "ix_incident_alert_links_incident_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:961:        "incident_alert_links",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:966:        "ix_incident_alert_links_reliability_alert_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:967:        "incident_alert_links",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:968:        ["reliability_alert_id"],
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:984:        FROM incident_timeline_events
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:996:        "ix_incident_alert_links_reliability_alert_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:997:        table_name="incident_alert_links",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1000:        "ix_incident_alert_links_incident_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1001:        table_name="incident_alert_links",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1004:        "ix_incident_metrics_incident_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1005:        table_name="incident_metrics",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1012:        "ix_incident_assignments_incident_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1013:        table_name="incident_assignments",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1017:        "ix_incident_timeline_event_type",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1018:        table_name="incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1021:        "ix_incident_timeline_incident_occurred_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1022:        table_name="incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1043:    op.drop_table("incident_alert_links")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1044:    op.drop_table("incident_metrics")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1046:    op.drop_table("incident_assignments")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1048:    # Remove new timeline foreign keys and columns.
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1050:        "fk_incident_timeline_events_deployment_id_deployments",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1051:        "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1055:        "fk_incident_timeline_events_alert_id_reliability_alerts",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1056:        "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1060:        "fk_incident_timeline_events_actor_user_id_users",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1061:        "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1077:        "fk_incidents_suspected_deployment_id_deployments",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1082:        "fk_incidents_triggering_alert_id_reliability_alerts",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1152:    op.drop_column("incident_timeline_events", "to_status")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1153:    op.drop_column("incident_timeline_events", "from_status")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1189:        ALTER TABLE incident_timeline_events
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1196:    op.drop_column("incident_timeline_events", "occurred_at")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1197:    op.drop_column("incident_timeline_events", "deployment_id")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1198:    op.drop_column("incident_timeline_events", "alert_id")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1199:    op.drop_column("incident_timeline_events", "actor_user_id")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1200:    op.drop_column("incident_timeline_events", "source")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1204:        ALTER TABLE incident_timeline_events
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1210:        "incident_timeline_events",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1218:        ALTER TABLE incident_timeline_events
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1226:        ALTER TABLE incident_timeline_events
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1227:        RENAME CONSTRAINT fk_incident_timeline_events_incident_id
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1231:    op.rename_table("incident_timeline_events", "incident_events")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1245:    op.drop_column("incidents", "suspected_deployment_id")

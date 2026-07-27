@@ -1,0 +1,427 @@
+8:    Column,
+10:    Enum as SQLEnum,
+12:    ForeignKey,
+15:    JSON,
+23:from sqlalchemy.dialects.postgresql import JSONB, UUID
+30:class Pipeline(Base):
+33:    id = Column(String, primary_key=True, index=True)
+35:    repo_url = Column(Text, nullable=False)
+36:    branch = Column(String, nullable=False, default="main")
+37:    status = Column(String, nullable=False, default="PENDING")
+39:    progress = Column(Integer, default=0)
+40:    error_message = Column(Text, nullable=True)
+42:    stage = Column(String, default="QUEUED")
+43:    failure_reason = Column(Text, nullable=True)
+45:    commit_sha = Column(String, nullable=True)
+46:    commit_message = Column(Text, nullable=True)
+48:    build_status = Column(String, default="NOT_STARTED")
+49:    test_status = Column(String, default="NOT_STARTED")
+50:    sonar_status = Column(String, default="NOT_STARTED")
+51:    trivy_status = Column(String, default="NOT_STARTED")
+53:    created_at = Column(DateTime, default=datetime.utcnow)
+54:    updated_at = Column(DateTime, default=datetime.utcnow)
+56:    started_at = Column(DateTime, nullable=True)
+57:    finished_at = Column(DateTime, nullable=True)
+58:    duration_seconds = Column(Float, nullable=True)
+60:    quality_score = Column(Float, nullable=True)
+61:    coverage = Column(Float, nullable=True)
+63:    bugs = Column(Integer, default=0)
+64:    vulnerabilities = Column(Integer, default=0)
+65:    code_smells = Column(Integer, default=0)
+66:    duplicated_lines_density = Column(Float, nullable=True)
+67:    quality_gate = Column(String, nullable=True)
+68:    sonar_report_url = Column(Text, nullable=True)
+69:    sonar_issues = Column(JSON, nullable=True)
+71:    trivy_critical = Column(Integer, default=0)
+72:    trivy_high = Column(Integer, default=0)
+73:    trivy_medium = Column(Integer, default=0)
+74:    trivy_low = Column(Integer, default=0)
+75:    trivy_unknown = Column(Integer, default=0)
+76:    trivy_total = Column(Integer, default=0)
+77:    trivy_report = Column(JSON, nullable=True)
+79:    risk_score = Column(Float, nullable=True)
+80:    risk_level = Column(String, nullable=True)
+81:    risk_summary = Column(Text, nullable=True)
+83:    ai_summary = Column(Text, nullable=True)
+84:    recommendations = Column(JSON, nullable=True)
+100:class PipelineLog(Base):
+103:    id = Column(Integer, primary_key=True, index=True)
+104:    pipeline_id = Column(String, ForeignKey("pipelines.id"))
+105:    log_text = Column(Text, nullable=False)
+106:    timestamp = Column(DateTime, default=datetime.utcnow)
+111:class Analysis(Base):
+114:    id = Column(Integer, primary_key=True, index=True)
+115:    pipeline_id = Column(String, ForeignKey("pipelines.id"))
+117:    failure_reason = Column(Text, nullable=True)
+118:    confidence = Column(Float, nullable=True)
+119:    suggestion = Column(Text, nullable=True)
+121:    final_status = Column(String, nullable=True)
+122:    report_json = Column(Text, nullable=True)
+124:    created_at = Column(DateTime, default=datetime.utcnow)
+136:    Column("user_id", String, ForeignKey("users.id"), primary_key=True),
+137:    Column("role_id", String, ForeignKey("roles.id"), primary_key=True),
+141:class User(Base):
+144:    id = Column(String, primary_key=True, default=generate_uuid)
+145:    email = Column(String, unique=True, index=True, nullable=False)
+146:    password_hash = Column(String, nullable=True)
+147:    full_name = Column(String, nullable=True)
+148:    is_active = Column(Boolean, default=True)
+149:    created_at = Column(DateTime, default=datetime.utcnow)
+155:class Role(Base):
+158:    id = Column(String, primary_key=True, default=generate_uuid)
+159:    name = Column(String, unique=True, index=True, nullable=False)
+160:    created_at = Column(DateTime, default=datetime.utcnow)
+165:class Project(Base):
+168:    id = Column(String, primary_key=True, default=generate_uuid)
+169:    name = Column(String, nullable=False)
+170:    description = Column(Text, nullable=True)
+171:    created_by = Column(String, ForeignKey("users.id"), nullable=True)
+172:    created_at = Column(DateTime, default=datetime.utcnow)
+178:class Service(Base):
+181:    id = Column(String, primary_key=True, default=generate_uuid)
+182:    project_id = Column(String, ForeignKey("projects.id"), nullable=False)
+183:    name = Column(String, nullable=False)
+184:    description = Column(Text, nullable=True)
+185:    service_type = Column(String, nullable=True)
+186:    owner = Column(String, nullable=True)
+187:    created_at = Column(DateTime, default=datetime.utcnow)
+200:class ServiceHealthStatus(str, enum.Enum):
+207:class ServiceHealthSnapshot(Base):
+210:    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+212:    service_id = Column(
+214:        ForeignKey("services.id"),
+218:    service_name = Column(String, nullable=False, index=True)
+220:    environment = Column(String, nullable=False, default="staging")
+221:    status = Column(
+222:        SQLEnum(ServiceHealthStatus),
+227:    latency_ms = Column(Float, nullable=True)
+228:    error_rate = Column(Float, nullable=True)
+229:    cpu_usage = Column(Float, nullable=True)
+230:    memory_usage = Column(Float, nullable=True)
+232:    pod_restart_count = Column(Integer, nullable=True)
+233:    replica_count = Column(Integer, nullable=True)
+234:    available_replicas = Column(Integer, nullable=True)
+236:    source = Column(String, nullable=False, default="prometheus")
+238:    created_at = Column(
+247:class Environment(Base):
+250:    id = Column(String, primary_key=True, default=generate_uuid)
+251:    service_id = Column(String, ForeignKey("services.id"), nullable=False)
+252:    name = Column(String, nullable=False)
+253:    is_active = Column(Boolean, default=True)
+254:    created_at = Column(DateTime, default=datetime.utcnow)
+259:class Repository(Base):
+262:    id = Column(String, primary_key=True, default=generate_uuid)
+263:    service_id = Column(String, ForeignKey("services.id"), nullable=False)
+264:    provider = Column(String, nullable=True)
+265:    repo_url = Column(Text, nullable=False)
+266:    default_branch = Column(String, default="main")
+267:    created_at = Column(DateTime, default=datetime.utcnow)
+273:class PipelineRun(Base):
+276:    id = Column(String, primary_key=True, index=True)
+278:    service_id = Column(String, ForeignKey("services.id"), nullable=True)
+279:    repo_id = Column(String, ForeignKey("repositories.id"), nullable=True)
+281:    repo_url = Column(String, nullable=False)
+282:    branch = Column(String, default="main")
+284:    status = Column(String, default="PENDING")
+285:    stage = Column(String, default="QUEUED")
+286:    failure_reason = Column(Text, nullable=True)
+288:    commit_sha = Column(String, nullable=True)
+289:    commit_message = Column(Text, nullable=True)
+291:    build_status = Column(String, default="NOT_STARTED")
+292:    test_status = Column(String, default="NOT_STARTED")
+293:    sonar_status = Column(String, default="NOT_STARTED")
+294:    trivy_status = Column(String, default="NOT_STARTED")
+296:    coverage = Column(Float, nullable=True)
+297:    bugs = Column(Integer, default=0)
+298:    vulnerabilities = Column(Integer, default=0)
+299:    code_smells = Column(Integer, default=0)
+300:    duplicated_lines_density = Column(Float, nullable=True)
+302:    quality_gate = Column(String, nullable=True)
+303:    sonar_report_url = Column(String, nullable=True)
+304:    sonar_issues = Column(MutableList.as_mutable(JSON), default=list, nullable=False)
+306:    trivy_critical = Column(Integer, default=0)
+307:    trivy_high = Column(Integer, default=0)
+308:    trivy_medium = Column(Integer, default=0)
+309:    trivy_low = Column(Integer, default=0)
+310:    trivy_unknown = Column(Integer, default=0)
+311:    trivy_total = Column(Integer, default=0)
+312:    trivy_report = Column(MutableDict.as_mutable(JSON), nullable=True)
+314:    risk_score = Column(Float, nullable=True)
+315:    risk_level = Column(String, nullable=True)
+316:    risk_summary = Column(Text, nullable=True)
+318:    ai_summary = Column(Text, nullable=True)
+319:    recommendations = Column(MutableList.as_mutable(JSON), default=list, nullable=False)
+321:    logs = Column(MutableList.as_mutable(JSON), default=list, nullable=False)
+323:    created_at = Column(DateTime(timezone=True), server_default=func.now())
+324:    started_at = Column(DateTime(timezone=True), nullable=True)
+325:    finished_at = Column(DateTime(timezone=True), nullable=True)
+326:    duration_seconds = Column(Float, nullable=True)
+332:class Deployment(Base):
+335:    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+337:    service_id = Column(String(36), ForeignKey("services.id"), nullable=False)
+338:    pipeline_run_id = Column(String(36), ForeignKey("pipeline_runs.id"), nullable=True)
+339:    environment_id = Column(String(36), ForeignKey("environments.id"), nullable=True)
+341:    commit_sha = Column(String(100), nullable=True)
+342:    image_tag = Column(String(255), nullable=False)
+343:    deployment_version = Column(String(50), nullable=True)
+345:    argo_sync_status = Column(String(50), nullable=True, default="UNKNOWN")
+346:    kubernetes_rollout_status = Column(String(50), nullable=True, default="UNKNOWN")
+348:    previous_revision = Column(String(100), nullable=True)
+350:    namespace = Column(String(100), nullable=True)
+351:    cluster_name = Column(String(100), nullable=True, default="kind-platformiq")
+352:    service_name = Column(String(150), nullable=True)
+353:    argo_application_name = Column(String(150), nullable=True)
+355:    pod_count = Column(Integer, nullable=True, default=0)
+356:    restart_count = Column(Integer, nullable=True, default=0)
+357:    failure_reason = Column(Text, nullable=True)
+359:    created_at = Column(DateTime(timezone=True), server_default=func.now())
+360:    deployed_at = Column(DateTime(timezone=True), nullable=True)
+375:class KubernetesWorkload(Base):
+378:    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+380:    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+382:    workload_name = Column(String(150), nullable=False)
+383:    namespace = Column(String(100), nullable=False)
+384:    kind = Column(String(50), nullable=False)
+386:    desired_replicas = Column(Integer, nullable=True, default=0)
+387:    available_replicas = Column(Integer, nullable=True, default=0)
+388:    pod_count = Column(Integer, nullable=True, default=0)
+389:    restart_count = Column(Integer, nullable=True, default=0)
+391:    status = Column(String(50), nullable=True, default="UNKNOWN")
+392:    failure_reason = Column(Text, nullable=True)
+394:    created_at = Column(DateTime(timezone=True), server_default=func.now())
+399:class DeploymentRevision(Base):
+402:    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+404:    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+406:    revision = Column(String(100), nullable=True)
+407:    image_tag = Column(String(255), nullable=True)
+408:    commit_sha = Column(String(100), nullable=True)
+409:    status = Column(String(50), nullable=True)
+411:    created_at = Column(DateTime(timezone=True), server_default=func.now())
+412:    deployed_at = Column(DateTime(timezone=True), nullable=True)
+417:class AuditEvent(Base):
+420:    id = Column(String, primary_key=True, default=generate_uuid)
+421:    actor_id = Column(String, ForeignKey("users.id"), nullable=True)
+422:    action = Column(String, nullable=False)
+423:    entity_type = Column(String, nullable=True)
+424:    entity_id = Column(String, nullable=True)
+425:    details = Column(Text, nullable=True)
+426:    created_at = Column(DateTime, default=datetime.utcnow)
+429:class EventRecord(Base):
+432:    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+434:    event_id = Column(String, nullable=False, unique=True, index=True)
+435:    event_type = Column(String, nullable=False, index=True)
+436:    schema_version = Column(String, nullable=True)
+438:    topic = Column(String, nullable=False, index=True)
+439:    correlation_id = Column(String, nullable=True, index=True)
+440:    service_id = Column(String, nullable=True, index=True)
+441:    environment = Column(String, nullable=True, index=True)
+443:    timestamp = Column(DateTime(timezone=True), nullable=True, index=True)
+445:    payload = Column(JSON, nullable=False, default=dict)
+446:    raw_event = Column(JSON, nullable=False, default=dict)
+448:    processing_status = Column(
+454:    processing_error = Column(Text, nullable=True)
+456:    created_at = Column(
+462:    processed_at = Column(DateTime(timezone=True), nullable=True)
+472:class OutboxEvent(Base):
+475:    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+477:    event_id = Column(String, unique=True, index=True, nullable=False)
+478:    topic = Column(String, index=True, nullable=False)
+479:    event_type = Column(String, index=True, nullable=False)
+480:    schema_version = Column(String, nullable=False, default="1.0")
+482:    correlation_id = Column(String, index=True, nullable=True)
+483:    service_id = Column(String, index=True, nullable=True)
+484:    environment = Column(String, index=True, nullable=True)
+486:    payload = Column(JSONB, nullable=False, default=dict)
+488:    status = Column(String, index=True, nullable=False, default="PENDING")
+489:    retry_count = Column(Integer, nullable=False, default=0)
+490:    last_error = Column(Text, nullable=True)
+492:    published_at = Column(DateTime(timezone=True), nullable=True)
+494:    created_at = Column(
+500:    updated_at = Column(
+508:class ConsumerCheckpoint(Base):
+511:    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+513:    consumer_name = Column(String, nullable=False)
+514:    topic = Column(String, nullable=False)
+515:    partition = Column(Integer, nullable=False)
+516:    offset = Column(Integer, nullable=False)
+518:    updated_at = Column(
+535:class DeadLetterEvent(Base):
+538:    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+540:    event_id = Column(String, nullable=False, unique=True, index=True)
+541:    event_type = Column(String, nullable=True, index=True)
+542:    topic = Column(String, nullable=True, index=True)
+544:    correlation_id = Column(String, nullable=True, index=True)
+545:    service_id = Column(String, nullable=True, index=True)
+546:    environment = Column(String, nullable=True, index=True)
+548:    raw_event = Column(JSON, nullable=True)
+549:    payload = Column(JSON, nullable=True)
+551:    error_reason = Column(Text, nullable=False)
+552:    status = Column(String, nullable=False, default="OPEN", index=True)
+554:    retry_count = Column(Integer, nullable=False, default=0)
+556:    created_at = Column(
+562:    updated_at = Column(
+569:    last_retry_at = Column(DateTime(timezone=True), nullable=True)
+591:incident_severity_enum = SQLEnum(
+599:incident_status_enum = SQLEnum(
+607:class Incident(Base):
+610:    id = Column(
+616:    incident_number = Column(
+623:    title = Column(
+628:    description = Column(
+633:    severity = Column(
+640:    status = Column(
+647:    primary_service_id = Column(
+649:        ForeignKey("services.id", ondelete="SET NULL"),
+653:    environment = Column(
+658:    triggering_alert_id = Column(
+660:        ForeignKey(
+667:    suspected_deployment_id = Column(
+669:        ForeignKey(
+676:    deduplication_key = Column(
+681:    failure_started_at = Column(
+686:    detected_at = Column(
+692:    acknowledged_at = Column(
+697:    investigation_started_at = Column(
+702:    remediation_started_at = Column(
+707:    resolved_at = Column(
+712:    current_assignee_id = Column(
+714:        ForeignKey("users.id", ondelete="SET NULL"),
+718:    resolution_summary = Column(
+723:    rca_summary = Column(
+728:    remediation_summary = Column(
+733:    created_at = Column(
+739:    updated_at = Column(
+746:    created_by = Column(
+748:        ForeignKey("users.id", ondelete="SET NULL"),
+762:    service_id = Column(
+768:    correlation_id = Column(
+774:    triggered_by_event_id = Column(
+780:    started_at = Column(
+904:class IncidentTimelineEvent(Base):
+907:    id = Column(
+913:    incident_id = Column(
+915:        ForeignKey(
+922:    event_type = Column(
+927:    source = Column(
+934:    message = Column(
+939:    from_status = Column(
+944:    to_status = Column(
+949:    actor_user_id = Column(
+951:        ForeignKey("users.id", ondelete="SET NULL"),
+955:    alert_id = Column(
+957:        ForeignKey(
+964:    deployment_id = Column(
+966:        ForeignKey(
+973:    metadata_json = Column(
+974:        JSONB,
+978:    occurred_at = Column(
+984:    created_at = Column(
+1042:class IncidentAssignment(Base):
+1045:    id = Column(
+1051:    incident_id = Column(
+1053:        ForeignKey(
+1061:    assigned_to_user_id = Column(
+1063:        ForeignKey("users.id", ondelete="SET NULL"),
+1067:    assigned_by_user_id = Column(
+1069:        ForeignKey("users.id", ondelete="SET NULL"),
+1073:    assignment_note = Column(
+1078:    assigned_at = Column(
+1084:    unassigned_at = Column(
+1089:    is_active = Column(
+1112:class IncidentComment(Base):
+1115:    id = Column(
+1121:    incident_id = Column(
+1123:        ForeignKey(
+1131:    author_user_id = Column(
+1133:        ForeignKey("users.id", ondelete="SET NULL"),
+1137:    comment = Column(
+1142:    created_at = Column(
+1148:    updated_at = Column(
+1166:class IncidentMetric(Base):
+1169:    id = Column(
+1175:    incident_id = Column(
+1177:        ForeignKey(
+1185:    metric_type = Column(
+1190:    metric_name = Column(
+1195:    value = Column(
+1200:    unit = Column(
+1205:    source = Column(
+1212:    captured_at = Column(
+1218:    metadata_json = Column(
+1219:        JSONB,
+1223:    created_at = Column(
+1235:class IncidentAlertLink(Base):
+1238:    id = Column(
+1244:    incident_id = Column(
+1246:        ForeignKey(
+1254:    reliability_alert_id = Column(
+1256:        ForeignKey(
+1264:    linked_at = Column(
+1270:    is_triggering_alert = Column(
+1303:class SLOMetricType(str, enum.Enum):
+1309:class ReliabilitySeverity(str, enum.Enum):
+1316:class ErrorBudgetState(str, enum.Enum):
+1323:class ReliabilityAlertType(str, enum.Enum):
+1332:class ReliabilityAlertStatus(str, enum.Enum):
+1339:class SLODefinition(Base):
+1342:    id = Column(
+1348:    service_id = Column(
+1350:        ForeignKey("services.id", ondelete="CASCADE"),
+1355:    metric_type = Column(
+1356:        SQLEnum(SLOMetricType, name="slo_metric_type"),
+1360:    target_value = Column(Float, nullable=False)
+1362:    window_minutes = Column(
+1369:    severity_on_breach = Column(
+1370:        SQLEnum(
+1379:    enabled = Column(
+1386:    created_at = Column(
+1392:    updated_at = Column(
+1420:class SLOMeasurement(Base):
+1423:    id = Column(
+1429:    slo_definition_id = Column(
+1431:        ForeignKey("slo_definitions.id", ondelete="CASCADE"),
+1436:    service_id = Column(
+1438:        ForeignKey("services.id", ondelete="CASCADE"),
+1443:    metric_type = Column(
+1444:        SQLEnum(SLOMetricType, name="slo_metric_type"),
+1448:    measured_value = Column(Float, nullable=False)
+1449:    target_value = Column(Float, nullable=False)
+1450:    is_breached = Column(Boolean, nullable=False)
+1451:    window_minutes = Column(Integer, nullable=False)
+1453:    source = Column(
+1460:    evaluated_at = Column(
+1467:    created_at = Column(
+1481:class ErrorBudgetStatus(Base):
+1484:    id = Column(
+1490:    slo_definition_id = Column(
+1492:        ForeignKey("slo_definitions.id", ondelete="CASCADE"),
+1497:    service_id = Column(
+1499:        ForeignKey("services.id", ondelete="CASCADE"),
+1504:    target_percentage = Column(Float, nullable=False)
+1505:    allowed_failure_percentage = Column(Float, nullable=False)
+1507:    consumed_percentage = Column(
+1514:    remaining_percentage = Column(
+1521:    burn_rate = Column(
+1528:    status = Column(
+1529:        SQLEnum(ErrorBudgetState, name="error_budget_state"),
+1535:    window_minutes = Column(Integer, nullable=False)
+1537:    evaluated_at = Column(
+1544:    created_at = Column(
+1558:class ReliabilityAlert(Base):
+1561:    id = Column(
+1567:    service_id = Column(
+1569:        ForeignKey("services.id", ondelete="CASCADE"),
+1574:    slo_definition_id = Column(
+1576:        ForeignKey("slo_definitions.id", ondelete="CASCADE"),
+1581:    alert_type = Column(
+1582:        SQLEnum(
+1589:    severity = Column(
+1590:        SQLEnum(
+1597:    triggered_value = Column(Float, nullable=False)
+1598:    threshold_value = Column(Float, nullable=False)
+1600:    deployment_id = Column(
+1602:        ForeignKey("deployments.id", ondelete="SET NULL"),
+1607:    status = Column(
+1608:        SQLEnum(
+1617:    created_at = Column(
+1623:    resolved_at = Column(

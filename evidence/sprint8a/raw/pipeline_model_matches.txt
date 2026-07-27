@@ -1,0 +1,409 @@
+25-from sqlalchemy.orm import relationship, validates
+26-
+27-from app.database import Base
+28-
+29-
+30:class Pipeline(Base):
+31-    __tablename__ = "pipelines"
+32-
+33-    id = Column(String, primary_key=True, index=True)
+34-
+35-    repo_url = Column(Text, nullable=False)
+36-    branch = Column(String, nullable=False, default="main")
+37-    status = Column(String, nullable=False, default="PENDING")
+38-
+39-    progress = Column(Integer, default=0)
+40-    error_message = Column(Text, nullable=True)
+41-
+42-    stage = Column(String, default="QUEUED")
+43-    failure_reason = Column(Text, nullable=True)
+44-
+45-    commit_sha = Column(String, nullable=True)
+46-    commit_message = Column(Text, nullable=True)
+47-
+48-    build_status = Column(String, default="NOT_STARTED")
+49-    test_status = Column(String, default="NOT_STARTED")
+50-    sonar_status = Column(String, default="NOT_STARTED")
+51-    trivy_status = Column(String, default="NOT_STARTED")
+52-
+53-    created_at = Column(DateTime, default=datetime.utcnow)
+54-    updated_at = Column(DateTime, default=datetime.utcnow)
+55-
+56-    started_at = Column(DateTime, nullable=True)
+57-    finished_at = Column(DateTime, nullable=True)
+58-    duration_seconds = Column(Float, nullable=True)
+59-
+60-    quality_score = Column(Float, nullable=True)
+61-    coverage = Column(Float, nullable=True)
+62-
+63-    bugs = Column(Integer, default=0)
+64-    vulnerabilities = Column(Integer, default=0)
+65-    code_smells = Column(Integer, default=0)
+66-    duplicated_lines_density = Column(Float, nullable=True)
+67-    quality_gate = Column(String, nullable=True)
+68-    sonar_report_url = Column(Text, nullable=True)
+69-    sonar_issues = Column(JSON, nullable=True)
+70-
+71-    trivy_critical = Column(Integer, default=0)
+72-    trivy_high = Column(Integer, default=0)
+73-    trivy_medium = Column(Integer, default=0)
+74-    trivy_low = Column(Integer, default=0)
+75-    trivy_unknown = Column(Integer, default=0)
+76-    trivy_total = Column(Integer, default=0)
+77-    trivy_report = Column(JSON, nullable=True)
+78-
+79-    risk_score = Column(Float, nullable=True)
+80-    risk_level = Column(String, nullable=True)
+81-    risk_summary = Column(Text, nullable=True)
+82-
+83-    ai_summary = Column(Text, nullable=True)
+84-    recommendations = Column(JSON, nullable=True)
+85-
+86-    logs = relationship(
+87-        "PipelineLog",
+88-        back_populates="pipeline",
+89-        cascade="all, delete-orphan",
+90-    )
+91-
+92-    analysis = relationship(
+93-        "Analysis",
+94-        back_populates="pipeline",
+95-        uselist=False,
+96-        cascade="all, delete-orphan",
+97-    )
+98-
+99-
+100:class PipelineLog(Base):
+101-    __tablename__ = "logs"
+102-
+103-    id = Column(Integer, primary_key=True, index=True)
+104-    pipeline_id = Column(String, ForeignKey("pipelines.id"))
+105-    log_text = Column(Text, nullable=False)
+106-    timestamp = Column(DateTime, default=datetime.utcnow)
+107-
+108-    pipeline = relationship("Pipeline", back_populates="logs")
+109-
+110-
+111:class Analysis(Base):
+112-    __tablename__ = "analysis"
+113-
+114-    id = Column(Integer, primary_key=True, index=True)
+115-    pipeline_id = Column(String, ForeignKey("pipelines.id"))
+116-
+117-    failure_reason = Column(Text, nullable=True)
+118-    confidence = Column(Float, nullable=True)
+119-    suggestion = Column(Text, nullable=True)
+120-
+121-    final_status = Column(String, nullable=True)
+122-    report_json = Column(Text, nullable=True)
+123-
+124-    created_at = Column(DateTime, default=datetime.utcnow)
+125-
+126-    pipeline = relationship("Pipeline", back_populates="analysis")
+127-
+128-
+129-def generate_uuid():
+130-    return str(uuid.uuid4())
+131-
+132-
+133-user_roles = Table(
+134-    "user_roles",
+135-    Base.metadata,
+136-    Column("user_id", String, ForeignKey("users.id"), primary_key=True),
+137-    Column("role_id", String, ForeignKey("roles.id"), primary_key=True),
+138-)
+139-
+140-
+141-class User(Base):
+142-    __tablename__ = "users"
+143-
+144-    id = Column(String, primary_key=True, default=generate_uuid)
+145-    email = Column(String, unique=True, index=True, nullable=False)
+146-    password_hash = Column(String, nullable=True)
+147-    full_name = Column(String, nullable=True)
+148-    is_active = Column(Boolean, default=True)
+149-    created_at = Column(DateTime, default=datetime.utcnow)
+150-
+151-    roles = relationship("Role", secondary=user_roles, back_populates="users")
+152-    projects = relationship("Project", back_populates="creator")
+153-
+154-
+155-class Role(Base):
+156-    __tablename__ = "roles"
+157-
+158-    id = Column(String, primary_key=True, default=generate_uuid)
+159-    name = Column(String, unique=True, index=True, nullable=False)
+160-    created_at = Column(DateTime, default=datetime.utcnow)
+161-
+162-    users = relationship("User", secondary=user_roles, back_populates="roles")
+163-
+164-
+165-class Project(Base):
+166-    __tablename__ = "projects"
+167-
+168-    id = Column(String, primary_key=True, default=generate_uuid)
+169-    name = Column(String, nullable=False)
+170-    description = Column(Text, nullable=True)
+171-    created_by = Column(String, ForeignKey("users.id"), nullable=True)
+172-    created_at = Column(DateTime, default=datetime.utcnow)
+173-
+174-    creator = relationship("User", back_populates="projects")
+175-    services = relationship("Service", back_populates="project")
+176-
+177-
+178-class Service(Base):
+179-    __tablename__ = "services"
+180-
+181-    id = Column(String, primary_key=True, default=generate_uuid)
+182-    project_id = Column(String, ForeignKey("projects.id"), nullable=False)
+183-    name = Column(String, nullable=False)
+184-    description = Column(Text, nullable=True)
+185-    service_type = Column(String, nullable=True)
+186-    owner = Column(String, nullable=True)
+187-    created_at = Column(DateTime, default=datetime.utcnow)
+188-
+189-    project = relationship("Project", back_populates="services")
+190-    environments = relationship("Environment", back_populates="service")
+191-    repositories = relationship("Repository", back_populates="service")
+192-    pipeline_runs = relationship("PipelineRun", back_populates="service")
+193-    health_snapshots = relationship(
+194-        "ServiceHealthSnapshot",
+195-        back_populates="service",
+196-        cascade="all, delete-orphan",
+197-    )
+198-
+199-
+200-class ServiceHealthStatus(str, enum.Enum):
+201-    HEALTHY = "HEALTHY"
+202-    DEGRADED = "DEGRADED"
+203-    UNHEALTHY = "UNHEALTHY"
+204-    UNKNOWN = "UNKNOWN"
+205-
+206-
+207-class ServiceHealthSnapshot(Base):
+208-    __tablename__ = "service_health_snapshots"
+209-
+210-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+211-
+212-    service_id = Column(
+213-        String,
+214-        ForeignKey("services.id"),
+215-        nullable=False,
+216-        index=True,
+217-    )
+218-    service_name = Column(String, nullable=False, index=True)
+219-
+220-    environment = Column(String, nullable=False, default="staging")
+221-    status = Column(
+222-        SQLEnum(ServiceHealthStatus),
+223-        nullable=False,
+224-        default=ServiceHealthStatus.UNKNOWN,
+225-    )
+226-
+227-    latency_ms = Column(Float, nullable=True)
+228-    error_rate = Column(Float, nullable=True)
+229-    cpu_usage = Column(Float, nullable=True)
+230-    memory_usage = Column(Float, nullable=True)
+231-
+232-    pod_restart_count = Column(Integer, nullable=True)
+233-    replica_count = Column(Integer, nullable=True)
+234-    available_replicas = Column(Integer, nullable=True)
+235-
+236-    source = Column(String, nullable=False, default="prometheus")
+237-
+238-    created_at = Column(
+239-        DateTime(timezone=True),
+240-        server_default=func.now(),
+241-        nullable=False,
+242-    )
+243-
+244-    service = relationship("Service", back_populates="health_snapshots")
+245-
+246-
+247-class Environment(Base):
+248-    __tablename__ = "environments"
+249-
+250-    id = Column(String, primary_key=True, default=generate_uuid)
+251-    service_id = Column(String, ForeignKey("services.id"), nullable=False)
+252-    name = Column(String, nullable=False)
+253-    is_active = Column(Boolean, default=True)
+254-    created_at = Column(DateTime, default=datetime.utcnow)
+255-
+256-    service = relationship("Service", back_populates="environments")
+257-
+258-
+259-class Repository(Base):
+260-    __tablename__ = "repositories"
+261-
+262-    id = Column(String, primary_key=True, default=generate_uuid)
+263-    service_id = Column(String, ForeignKey("services.id"), nullable=False)
+264-    provider = Column(String, nullable=True)
+265-    repo_url = Column(Text, nullable=False)
+266-    default_branch = Column(String, default="main")
+267-    created_at = Column(DateTime, default=datetime.utcnow)
+268-
+269-    service = relationship("Service", back_populates="repositories")
+270-    pipeline_runs = relationship("PipelineRun", back_populates="repository")
+271-
+272-
+273:class PipelineRun(Base):
+274-    __tablename__ = "pipeline_runs"
+275-
+276-    id = Column(String, primary_key=True, index=True)
+277-
+278-    service_id = Column(String, ForeignKey("services.id"), nullable=True)
+279-    repo_id = Column(String, ForeignKey("repositories.id"), nullable=True)
+280-
+281-    repo_url = Column(String, nullable=False)
+282-    branch = Column(String, default="main")
+283-
+284-    status = Column(String, default="PENDING")
+285-    stage = Column(String, default="QUEUED")
+286-    failure_reason = Column(Text, nullable=True)
+287-
+288-    commit_sha = Column(String, nullable=True)
+289-    commit_message = Column(Text, nullable=True)
+290-
+291-    build_status = Column(String, default="NOT_STARTED")
+292-    test_status = Column(String, default="NOT_STARTED")
+293-    sonar_status = Column(String, default="NOT_STARTED")
+294-    trivy_status = Column(String, default="NOT_STARTED")
+295-
+296-    coverage = Column(Float, nullable=True)
+297-    bugs = Column(Integer, default=0)
+298-    vulnerabilities = Column(Integer, default=0)
+299-    code_smells = Column(Integer, default=0)
+300-    duplicated_lines_density = Column(Float, nullable=True)
+301-
+302-    quality_gate = Column(String, nullable=True)
+303-    sonar_report_url = Column(String, nullable=True)
+304-    sonar_issues = Column(MutableList.as_mutable(JSON), default=list, nullable=False)
+305-
+306-    trivy_critical = Column(Integer, default=0)
+307-    trivy_high = Column(Integer, default=0)
+308-    trivy_medium = Column(Integer, default=0)
+309-    trivy_low = Column(Integer, default=0)
+310-    trivy_unknown = Column(Integer, default=0)
+311-    trivy_total = Column(Integer, default=0)
+312-    trivy_report = Column(MutableDict.as_mutable(JSON), nullable=True)
+313-
+314-    risk_score = Column(Float, nullable=True)
+315-    risk_level = Column(String, nullable=True)
+316-    risk_summary = Column(Text, nullable=True)
+317-
+318-    ai_summary = Column(Text, nullable=True)
+319-    recommendations = Column(MutableList.as_mutable(JSON), default=list, nullable=False)
+320-
+321-    logs = Column(MutableList.as_mutable(JSON), default=list, nullable=False)
+322-
+323-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+324-    started_at = Column(DateTime(timezone=True), nullable=True)
+325-    finished_at = Column(DateTime(timezone=True), nullable=True)
+326-    duration_seconds = Column(Float, nullable=True)
+327-
+328-    service = relationship("Service", back_populates="pipeline_runs")
+329-    repository = relationship("Repository", back_populates="pipeline_runs")
+330-
+331-
+332-class Deployment(Base):
+333-    __tablename__ = "deployments"
+334-
+335-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+336-
+337-    service_id = Column(String(36), ForeignKey("services.id"), nullable=False)
+338-    pipeline_run_id = Column(String(36), ForeignKey("pipeline_runs.id"), nullable=True)
+339-    environment_id = Column(String(36), ForeignKey("environments.id"), nullable=True)
+340-
+341-    commit_sha = Column(String(100), nullable=True)
+342-    image_tag = Column(String(255), nullable=False)
+343-    deployment_version = Column(String(50), nullable=True)
+344-
+345-    argo_sync_status = Column(String(50), nullable=True, default="UNKNOWN")
+346-    kubernetes_rollout_status = Column(String(50), nullable=True, default="UNKNOWN")
+347-
+348-    previous_revision = Column(String(100), nullable=True)
+349-
+350-    namespace = Column(String(100), nullable=True)
+351-    cluster_name = Column(String(100), nullable=True, default="kind-platformiq")
+352-    service_name = Column(String(150), nullable=True)
+353-    argo_application_name = Column(String(150), nullable=True)
+354-
+355-    pod_count = Column(Integer, nullable=True, default=0)
+356-    restart_count = Column(Integer, nullable=True, default=0)
+357-    failure_reason = Column(Text, nullable=True)
+358-
+359-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+360-    deployed_at = Column(DateTime(timezone=True), nullable=True)
+361-
+362-    workloads = relationship(
+363-        "KubernetesWorkload",
+364-        back_populates="deployment",
+365-        cascade="all, delete-orphan",
+366-    )
+367-
+368-    revisions = relationship(
+369-        "DeploymentRevision",
+370-        back_populates="deployment",
+371-        cascade="all, delete-orphan",
+372-    )
+373-
+374-
+375-class KubernetesWorkload(Base):
+376-    __tablename__ = "kubernetes_workloads"
+377-
+378-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+379-
+380-    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+381-
+382-    workload_name = Column(String(150), nullable=False)
+383-    namespace = Column(String(100), nullable=False)
+384-    kind = Column(String(50), nullable=False)
+385-
+386-    desired_replicas = Column(Integer, nullable=True, default=0)
+387-    available_replicas = Column(Integer, nullable=True, default=0)
+388-    pod_count = Column(Integer, nullable=True, default=0)
+389-    restart_count = Column(Integer, nullable=True, default=0)
+390-
+391-    status = Column(String(50), nullable=True, default="UNKNOWN")
+392-    failure_reason = Column(Text, nullable=True)
+393-
+394-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+395-
+396-    deployment = relationship("Deployment", back_populates="workloads")
+397-
+398-
+399-class DeploymentRevision(Base):
+400-    __tablename__ = "deployment_revisions"
+401-
+402-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+403-
+404-    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+405-
+406-    revision = Column(String(100), nullable=True)
+407-    image_tag = Column(String(255), nullable=True)
+408-    commit_sha = Column(String(100), nullable=True)
+409-    status = Column(String(50), nullable=True)
+410-
+411-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+412-    deployed_at = Column(DateTime(timezone=True), nullable=True)
+413-
+414-    deployment = relationship("Deployment", back_populates="revisions")
+415-
+416-
+417-class AuditEvent(Base):
+418-    __tablename__ = "audit_events"
+419-
+420-    id = Column(String, primary_key=True, default=generate_uuid)
+421-    actor_id = Column(String, ForeignKey("users.id"), nullable=True)
+422-    action = Column(String, nullable=False)
+423-    entity_type = Column(String, nullable=True)
+424-    entity_id = Column(String, nullable=True)
+425-    details = Column(Text, nullable=True)
+426-    created_at = Column(DateTime, default=datetime.utcnow)
+427-
+428-
+429-class EventRecord(Base):
+430-    __tablename__ = "event_records"
+431-
+432-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+433-

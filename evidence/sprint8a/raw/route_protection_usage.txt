@@ -1,0 +1,101 @@
+backend/app/observability/health_router.py:41:    db: Session = Depends(get_db),
+backend/app/observability/health_router.py:84:def service_health(service_id: str, db: Session = Depends(get_db)):
+backend/app/observability/health_router.py:103:    db: Session = Depends(get_db),
+backend/app/observability/health_router.py:112:def health_summary(db: Session = Depends(get_db)):
+backend/app/deployments/router.py:103:    db: Session = Depends(get_db),
+backend/app/deployments/router.py:162:    db: Session = Depends(get_db),
+backend/app/deployments/router.py:175:    db: Session = Depends(get_db),
+backend/app/deployments/router.py:190:    db: Session = Depends(get_db),
+backend/app/deployments/router.py:210:    db: Session = Depends(get_db),
+backend/app/deployments/router.py:238:    db: Session = Depends(get_db),
+backend/app/main.py:20:from app.auth.dependencies import require_roles
+backend/app/main.py:172:    db: Session = Depends(get_db),
+backend/app/main.py:173:    current_user: User = Depends(
+backend/app/main.py:174:        require_roles("admin", "developer")
+backend/app/main.py:233:    db: Session = Depends(get_db),
+backend/app/main.py:357:    db: Session = Depends(get_db),
+backend/app/main.py:436:def get_metrics(db: Session = Depends(get_db)):
+backend/app/events/router.py:47:    db: Session = Depends(get_db),
+backend/app/events/router.py:70:def api_get_event(event_id: str, db: Session = Depends(get_db)):
+backend/app/events/router.py:80:def api_release_timeline(correlation_id: str, db: Session = Depends(get_db)):
+backend/app/events/router.py:95:    db: Session = Depends(get_db),
+backend/app/events/router.py:111:def api_retry_dead_letter_event(event_id: str, db: Session = Depends(get_db)):
+backend/app/incidents/incident_router.py:22:from app.auth.dependencies import require_roles
+backend/app/incidents/incident_router.py:149:    db: Session = Depends(get_db),
+backend/app/incidents/incident_router.py:150:    _current_user: User = Depends(
+backend/app/incidents/incident_router.py:151:        require_roles(*INCIDENT_READ_ROLES)
+backend/app/incidents/incident_router.py:190:    db: Session = Depends(get_db),
+backend/app/incidents/incident_router.py:191:    _current_user: User = Depends(
+backend/app/incidents/incident_router.py:192:        require_roles(*INCIDENT_READ_ROLES)
+backend/app/incidents/incident_router.py:208:    db: Session = Depends(get_db),
+backend/app/incidents/incident_router.py:209:    _current_user: User = Depends(
+backend/app/incidents/incident_router.py:210:        require_roles(*INCIDENT_READ_ROLES)
+backend/app/incidents/incident_router.py:228:    db: Session = Depends(get_db),
+backend/app/incidents/incident_router.py:229:    current_user: User = Depends(
+backend/app/incidents/incident_router.py:230:        require_roles(*INCIDENT_MANAGE_ROLES)
+backend/app/incidents/incident_router.py:239:        actor_user_id=str(current_user.id),
+backend/app/incidents/incident_router.py:250:    db: Session = Depends(get_db),
+backend/app/incidents/incident_router.py:251:    current_user: User = Depends(
+backend/app/incidents/incident_router.py:252:        require_roles(*INCIDENT_MANAGE_ROLES)
+backend/app/incidents/incident_router.py:261:        assigned_by_user_id=str(current_user.id),
+backend/app/incidents/incident_router.py:272:    db: Session = Depends(get_db),
+backend/app/incidents/incident_router.py:273:    current_user: User = Depends(
+backend/app/incidents/incident_router.py:274:        require_roles(*INCIDENT_MANAGE_ROLES)
+backend/app/incidents/incident_router.py:283:        actor_user_id=str(current_user.id),
+backend/app/incidents/incident_router.py:295:    db: Session = Depends(get_db),
+backend/app/incidents/incident_router.py:296:    current_user: User = Depends(
+backend/app/incidents/incident_router.py:297:        require_roles(*INCIDENT_MANAGE_ROLES)
+backend/app/incidents/incident_router.py:306:        actor=current_user,
+backend/app/incidents/incident_router.py:316:    db: Session = Depends(get_db),
+backend/app/incidents/incident_router.py:317:    _current_user: User = Depends(
+backend/app/incidents/incident_router.py:318:        require_roles(*INCIDENT_READ_ROLES)
+backend/app/incidents/incident_router.py:335:    db: Session = Depends(get_db),
+backend/app/incidents/incident_router.py:336:    _current_user: User = Depends(
+backend/app/incidents/incident_router.py:337:        require_roles(*INCIDENT_READ_ROLES)
+backend/app/incidents/incident_router.py:381:    db: Session = Depends(get_db),
+backend/app/incidents/incident_router.py:382:    _current_user: User = Depends(
+backend/app/incidents/incident_router.py:383:        require_roles(*INCIDENT_READ_ROLES)
+backend/app/incidents/incident_router.py:424:    db: Session = Depends(get_db),
+backend/app/incidents/incident_router.py:425:    _current_user: User = Depends(
+backend/app/incidents/incident_router.py:426:        require_roles(*INCIDENT_READ_ROLES)
+backend/app/incidents/router.py:27:    db: Session = Depends(get_db),
+backend/app/incidents/router.py:51:    db: Session = Depends(get_db),
+backend/app/incidents/router.py:64:    db: Session = Depends(get_db),
+backend/app/incidents/router.py:76:    db: Session = Depends(get_db),
+backend/app/incidents/router.py:88:    db: Session = Depends(get_db),
+backend/app/incidents/router.py:102:    db: Session = Depends(get_db),
+backend/app/incidents/router.py:118:    db: Session = Depends(get_db),
+backend/app/auth/dependencies.py:2:from fastapi.security import OAuth2PasswordBearer
+backend/app/auth/dependencies.py:9:oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+backend/app/auth/dependencies.py:29:def get_current_user(token: str = Depends(oauth2_scheme), db=Depends(get_db)) -> User:
+backend/app/auth/dependencies.py:57:def require_roles(*allowed_roles: str):
+backend/app/auth/dependencies.py:58:    def checker(current_user: User = Depends(get_current_user)) -> User:
+backend/app/auth/dependencies.py:59:        user_role = get_user_primary_role(current_user)
+backend/app/auth/dependencies.py:67:        return current_user
+backend/app/auth/router.py:3:from app.auth.dependencies import get_current_user, get_db, get_user_primary_role
+backend/app/auth/router.py:42:def register(payload: RegisterRequest, db=Depends(get_db)):
+backend/app/auth/router.py:90:def login(payload: LoginRequest, db=Depends(get_db)):
+backend/app/auth/router.py:105:def me(current_user: User = Depends(get_current_user)):
+backend/app/auth/router.py:107:        "id": current_user.id,
+backend/app/auth/router.py:108:        "email": current_user.email,
+backend/app/auth/router.py:109:        "role": get_user_primary_role(current_user),
+backend/app/control_plane/routes.py:1:from app.auth.dependencies import require_roles
+backend/app/control_plane/routes.py:44:def create_project(request: ProjectCreate, db: Session = Depends(get_db)):
+backend/app/control_plane/routes.py:74:def list_projects(db: Session = Depends(get_db)):
+backend/app/control_plane/routes.py:79:def get_project(project_id: str, db: Session = Depends(get_db)):
+backend/app/control_plane/routes.py:95:    db: Session = Depends(get_db),
+backend/app/control_plane/routes.py:137:def list_project_services(project_id: str, db: Session = Depends(get_db)):
+backend/app/control_plane/routes.py:158:    db: Session = Depends(get_db),
+backend/app/control_plane/routes.py:183:    db: Session = Depends(get_db),
+backend/app/control_plane/routes.py:237:    db: Session = Depends(get_db),
+backend/app/control_plane/routes.py:289:    db: Session = Depends(get_db),
+backend/app/control_plane/routes.py:389:    db: Session = Depends(get_db),
+backend/app/control_plane/routes.py:390:    _current_user: User = Depends(
+backend/app/control_plane/routes.py:391:        require_roles("admin")
+backend/app/reliability/router.py:50:    db: Session = Depends(get_db),
+backend/app/reliability/router.py:76:    db: Session = Depends(get_db),
+backend/app/reliability/router.py:101:    db: Session = Depends(get_db),
+backend/app/reliability/router.py:121:    db: Session = Depends(get_db),
+backend/app/reliability/router.py:140:    db: Session = Depends(get_db),
+backend/app/reliability/router.py:151:    db: Session = Depends(get_db),
+backend/app/reliability/router.py:173:    db: Session = Depends(get_db),

@@ -1,0 +1,785 @@
+========================================
+MUTATION SCHEMAS
+========================================
+
+--- IncidentAcknowledgeRequest ---
+{
+  "properties": {
+    "note": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 5000
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Note"
+    },
+    "assign_to_self": {
+      "type": "boolean",
+      "title": "Assign To Self",
+      "default": false
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "title": "IncidentAcknowledgeRequest"
+}
+
+--- IncidentAssignRequest ---
+{
+  "properties": {
+    "assigned_to_user_id": {
+      "type": "string",
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Assigned To User Id"
+    },
+    "note": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 5000
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Note"
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "assigned_to_user_id"
+  ],
+  "title": "IncidentAssignRequest"
+}
+
+--- IncidentStatusUpdateRequest ---
+{
+  "properties": {
+    "status": {
+      "$ref": "#/components/schemas/IncidentStatus"
+    },
+    "reason": {
+      "type": "string",
+      "maxLength": 5000,
+      "minLength": 1,
+      "title": "Reason"
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "status",
+    "reason"
+  ],
+  "title": "IncidentStatusUpdateRequest"
+}
+
+--- IncidentCommentCreateRequest ---
+{
+  "properties": {
+    "comment": {
+      "type": "string",
+      "maxLength": 10000,
+      "minLength": 1,
+      "title": "Comment"
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "comment"
+  ],
+  "title": "IncidentCommentCreateRequest"
+}
+
+--- IncidentAssignmentResponse ---
+{
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+    },
+    "incident_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Incident Id"
+    },
+    "assigned_to_user_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Assigned To User Id"
+    },
+    "assigned_to_user": {
+      "anyOf": [
+        {
+          "$ref": "#/components/schemas/OperatorSummaryResponse"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "assigned_by_user_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Assigned By User Id"
+    },
+    "assigned_by_user": {
+      "anyOf": [
+        {
+          "$ref": "#/components/schemas/OperatorSummaryResponse"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "assignment_note": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Assignment Note"
+    },
+    "assigned_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Assigned At"
+    },
+    "unassigned_at": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Unassigned At"
+    },
+    "is_active": {
+      "type": "boolean",
+      "title": "Is Active"
+    }
+  },
+  "type": "object",
+  "required": [
+    "id",
+    "incident_id",
+    "assigned_at",
+    "is_active"
+  ],
+  "title": "IncidentAssignmentResponse"
+}
+
+--- IncidentCommentResponse ---
+{
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+    },
+    "incident_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Incident Id"
+    },
+    "author_user_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Author User Id"
+    },
+    "author": {
+      "anyOf": [
+        {
+          "$ref": "#/components/schemas/OperatorSummaryResponse"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "comment": {
+      "type": "string",
+      "title": "Comment"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Updated At"
+    }
+  },
+  "type": "object",
+  "required": [
+    "id",
+    "incident_id",
+    "comment",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "IncidentCommentResponse"
+}
+
+--- IncidentDetailResponse ---
+{
+  "properties": {
+    "incident": {
+      "$ref": "#/components/schemas/IncidentListItemResponse"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Description"
+    },
+    "deduplication_key": {
+      "type": "string",
+      "title": "Deduplication Key"
+    },
+    "primary_service": {
+      "$ref": "#/components/schemas/ServiceSummaryResponse"
+    },
+    "affected_services": {
+      "items": {
+        "$ref": "#/components/schemas/ServiceSummaryResponse"
+      },
+      "type": "array",
+      "title": "Affected Services"
+    },
+    "triggering_alert_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Triggering Alert Id"
+    },
+    "triggering_alert": {
+      "anyOf": [
+        {
+          "$ref": "#/components/schemas/ReliabilityAlertSummaryResponse"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "related_alerts": {
+      "items": {
+        "$ref": "#/components/schemas/ReliabilityAlertSummaryResponse"
+      },
+      "type": "array",
+      "title": "Related Alerts"
+    },
+    "suspected_deployment": {
+      "anyOf": [
+        {
+          "$ref": "#/components/schemas/DeploymentSummaryResponse"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "failure_started_at": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Failure Started At"
+    },
+    "investigation_started_at": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Investigation Started At"
+    },
+    "remediation_started_at": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Remediation Started At"
+    },
+    "mttd_seconds": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Mttd Seconds"
+    },
+    "mtta_seconds": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Mtta Seconds"
+    },
+    "mttr_seconds": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Mttr Seconds"
+    },
+    "mttd_display": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Mttd Display"
+    },
+    "mtta_display": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Mtta Display"
+    },
+    "mttr_display": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Mttr Display"
+    },
+    "created_by": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Created By"
+    },
+    "creator": {
+      "anyOf": [
+        {
+          "$ref": "#/components/schemas/OperatorSummaryResponse"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "current_assignment": {
+      "anyOf": [
+        {
+          "$ref": "#/components/schemas/IncidentAssignmentResponse"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "assignment_history": {
+      "items": {
+        "$ref": "#/components/schemas/IncidentAssignmentResponse"
+      },
+      "type": "array",
+      "title": "Assignment History"
+    },
+    "comments": {
+      "items": {
+        "$ref": "#/components/schemas/IncidentCommentResponse"
+      },
+      "type": "array",
+      "title": "Comments"
+    },
+    "metric_snapshot": {
+      "items": {
+        "$ref": "#/components/schemas/IncidentMetricResponse"
+      },
+      "type": "array",
+      "title": "Metric Snapshot"
+    },
+    "timeline_summary": {
+      "items": {
+        "$ref": "#/components/schemas/IncidentTimelineEventResponse"
+      },
+      "type": "array",
+      "title": "Timeline Summary"
+    },
+    "resolution_summary": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Resolution Summary"
+    },
+    "rca_summary": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Rca Summary"
+    },
+    "remediation_summary": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Remediation Summary"
+    },
+    "calculated_incident_metrics": {
+      "anyOf": [
+        {
+          "$ref": "#/components/schemas/IncidentCalculatedMetricsResponse"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "type": "object",
+  "required": [
+    "incident",
+    "deduplication_key",
+    "primary_service"
+  ],
+  "title": "IncidentDetailResponse"
+}
+
+========================================
+MUTATION ROUTES
+========================================
+
+--- POST /api/incidents/{incident_id}/acknowledge ---
+{
+  "tags": [
+    "Incidents"
+  ],
+  "summary": "Acknowledge Incident Endpoint",
+  "description": "Acknowledge an incident.",
+  "operationId": "acknowledge_incident_endpoint_api_incidents__incident_id__acknowledge_post",
+  "security": [
+    {
+      "OAuth2PasswordBearer": []
+    }
+  ],
+  "parameters": [
+    {
+      "name": "incident_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+        "type": "string",
+        "format": "uuid",
+        "title": "Incident Id"
+      }
+    }
+  ],
+  "requestBody": {
+    "required": true,
+    "content": {
+      "application/json": {
+        "schema": {
+          "$ref": "#/components/schemas/IncidentAcknowledgeRequest"
+        }
+      }
+    }
+  },
+  "responses": {
+    "200": {
+      "description": "Successful Response",
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/IncidentDetailResponse"
+          }
+        }
+      }
+    },
+    "422": {
+      "description": "Validation Error",
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/HTTPValidationError"
+          }
+        }
+      }
+    }
+  }
+}
+
+--- POST /api/incidents/{incident_id}/assign ---
+{
+  "tags": [
+    "Incidents"
+  ],
+  "summary": "Assign Incident Endpoint",
+  "description": "Create or replace the current incident assignment.",
+  "operationId": "assign_incident_endpoint_api_incidents__incident_id__assign_post",
+  "security": [
+    {
+      "OAuth2PasswordBearer": []
+    }
+  ],
+  "parameters": [
+    {
+      "name": "incident_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+        "type": "string",
+        "format": "uuid",
+        "title": "Incident Id"
+      }
+    }
+  ],
+  "requestBody": {
+    "required": true,
+    "content": {
+      "application/json": {
+        "schema": {
+          "$ref": "#/components/schemas/IncidentAssignRequest"
+        }
+      }
+    }
+  },
+  "responses": {
+    "200": {
+      "description": "Successful Response",
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/IncidentDetailResponse"
+          }
+        }
+      }
+    },
+    "422": {
+      "description": "Validation Error",
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/HTTPValidationError"
+          }
+        }
+      }
+    }
+  }
+}
+
+--- POST /api/incidents/{incident_id}/status ---
+{
+  "tags": [
+    "Incidents"
+  ],
+  "summary": "Update Incident Status Endpoint",
+  "description": "Apply a validated status transition to an incident.",
+  "operationId": "update_incident_status_endpoint_api_incidents__incident_id__status_post",
+  "security": [
+    {
+      "OAuth2PasswordBearer": []
+    }
+  ],
+  "parameters": [
+    {
+      "name": "incident_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+        "type": "string",
+        "format": "uuid",
+        "title": "Incident Id"
+      }
+    }
+  ],
+  "requestBody": {
+    "required": true,
+    "content": {
+      "application/json": {
+        "schema": {
+          "$ref": "#/components/schemas/IncidentStatusUpdateRequest"
+        }
+      }
+    }
+  },
+  "responses": {
+    "200": {
+      "description": "Successful Response",
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/IncidentDetailResponse"
+          }
+        }
+      }
+    },
+    "422": {
+      "description": "Validation Error",
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/HTTPValidationError"
+          }
+        }
+      }
+    }
+  }
+}
+
+--- POST /api/incidents/{incident_id}/comments ---
+{
+  "tags": [
+    "Incidents"
+  ],
+  "summary": "Add Incident Comment Endpoint",
+  "description": "Add a comment to an incident.",
+  "operationId": "add_incident_comment_endpoint_api_incidents__incident_id__comments_post",
+  "security": [
+    {
+      "OAuth2PasswordBearer": []
+    }
+  ],
+  "parameters": [
+    {
+      "name": "incident_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+        "type": "string",
+        "format": "uuid",
+        "title": "Incident Id"
+      }
+    }
+  ],
+  "requestBody": {
+    "required": true,
+    "content": {
+      "application/json": {
+        "schema": {
+          "$ref": "#/components/schemas/IncidentCommentCreateRequest"
+        }
+      }
+    }
+  },
+  "responses": {
+    "201": {
+      "description": "Successful Response",
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/IncidentCommentResponse"
+          }
+        }
+      }
+    },
+    "422": {
+      "description": "Validation Error",
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/HTTPValidationError"
+          }
+        }
+      }
+    }
+  }
+}
+
+========================================
+POSSIBLE USER OR OPERATOR ENDPOINTS
+========================================
+GET                  /auth/me

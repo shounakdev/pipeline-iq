@@ -1,0 +1,74 @@
+backend/app/models.py:146:    password_hash = Column(String, nullable=True)
+backend/app/executor.py:8:from app.shared.log_sanitizer import sanitize_log_text, sanitize_log_lines
+backend/app/executor.py:30:    command_text = sanitize_log_text(" ".join(command))
+backend/app/executor.py:56:            log_fn(sanitize_log_text(output.strip()))
+backend/app/executor.py:68:            log_fn(sanitize_log_text(output))
+backend/app/executor.py:495:        clean_message = sanitize_log_text(str(message).strip())
+backend/app/executor.py:535:            "logs": sanitize_log_lines(logs),
+backend/app/models.py.bak:133:    password_hash = Column(String, nullable=True)
+backend/app/main.py:114:    allow_credentials=True,
+backend/app/pipeline_runner.py:7:from app.shared.log_sanitizer import sanitize_log_text
+backend/app/pipeline_runner.py:15:    safe_text = sanitize_log_text(text)
+backend/app/pipeline_runner.py:24:    command_text = sanitize_log_text(" ".join(command))
+backend/app/incidents/incident_router.py:3:The router handles authentication, authorization, HTTP error mapping, and
+backend/app/ai_analyzer.py:14:    api_key = os.getenv("OPENAI_API_KEY")
+backend/app/ai_analyzer.py:19:    if not api_key or api_key == "your_openai_api_key_here":
+backend/app/ai_analyzer.py:26:    client = OpenAI(api_key=api_key)
+backend/app/auth/security.py:8:SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-only-change-this-secret")
+backend/app/auth/security.py:12:password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+backend/app/auth/security.py:15:def hash_password(password: str) -> str:
+backend/app/auth/security.py:16:    return password_context.hash(password)
+backend/app/auth/security.py:19:def verify_password(plain_password: str, hashed_password: str) -> bool:
+backend/app/auth/security.py:20:    return password_context.verify(plain_password, hashed_password)
+backend/app/auth/security.py:23:def create_access_token(data: dict) -> str:
+backend/app/auth/security.py:33:def decode_access_token(token: str) -> dict:
+backend/app/auth/security.py:35:        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+backend/app/auth/dependencies.py:4:from app.auth.security import decode_access_token
+backend/app/auth/dependencies.py:9:oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+backend/app/auth/dependencies.py:29:def get_current_user(token: str = Depends(oauth2_scheme), db=Depends(get_db)) -> User:
+backend/app/auth/dependencies.py:30:    payload = decode_access_token(token)
+backend/app/auth/dependencies.py:37:            detail="Invalid authentication token",
+backend/app/auth/schemas.py:8:    password: str
+backend/app/auth/schemas.py:15:    password: str
+backend/app/auth/schemas.py:25:    access_token: str
+backend/app/auth/schemas.py:26:    token_type: str
+backend/app/auth/router.py:5:from app.auth.security import create_access_token, hash_password, verify_password
+backend/app/auth/router.py:22:    access_token = create_access_token(
+backend/app/auth/router.py:31:        "access_token": access_token,
+backend/app/auth/router.py:32:        "token_type": "bearer",
+backend/app/auth/router.py:76:        password_hash=hash_password(payload.password),
+backend/app/auth/router.py:95:    if not user or not verify_password(payload.password, user.password_hash):
+backend/app/auth/router.py:98:            detail="Invalid email or password",
+backend/app/shared/log_sanitizer.py:10:    re.compile(r"(sonar\.token\s*=\s*)([^\s]+)", re.IGNORECASE),
+backend/app/shared/log_sanitizer.py:13:    re.compile(r"(-Dsonar\.token=)([^\s]+)", re.IGNORECASE),
+backend/app/shared/log_sanitizer.py:17:def mask_known_secret_values(text: str, secrets: Iterable[str | None]) -> str:
+backend/app/shared/log_sanitizer.py:21:    sanitized = text
+backend/app/shared/log_sanitizer.py:23:    for secret in secrets:
+backend/app/shared/log_sanitizer.py:24:        if secret and len(secret) >= 6:
+backend/app/shared/log_sanitizer.py:25:            sanitized = sanitized.replace(secret, "****MASKED_SECRET****")
+backend/app/shared/log_sanitizer.py:27:    return sanitized
+backend/app/shared/log_sanitizer.py:30:def sanitize_log_text(text: str) -> str:
+backend/app/shared/log_sanitizer.py:34:    sanitized = text
+backend/app/shared/log_sanitizer.py:36:    env_secrets = [
+backend/app/shared/log_sanitizer.py:41:    sanitized = mask_known_secret_values(sanitized, env_secrets)
+backend/app/shared/log_sanitizer.py:44:        sanitized = pattern.sub(r"\1****MASKED_SECRET****", sanitized)
+backend/app/shared/log_sanitizer.py:46:    return sanitized
+backend/app/shared/log_sanitizer.py:49:def sanitize_log_lines(lines: list[str]) -> list[str]:
+backend/app/shared/log_sanitizer.py:50:    return [sanitize_log_text(line) for line in lines]
+backend/app/tasks.py:13:from app.shared.log_sanitizer import sanitize_log_text
+backend/app/tasks.py:143:    - sanitize logs
+backend/app/tasks.py:150:    clean_message = sanitize_log_text(str(message).strip())
+backend/app/sonar_service.py:5:from app.shared.log_sanitizer import sanitize_log_text
+backend/app/sonar_service.py:19:def get_sonar_token():
+backend/app/sonar_service.py:39:    sonar_token = get_sonar_token()
+backend/app/sonar_service.py:42:    if not sonar_url or not sonar_token or not project_key:
+backend/app/sonar_service.py:66:        f"-Dsonar.login={sonar_token}",
+backend/app/sonar_service.py:73:    command_text = sanitize_log_text(" ".join(command))
+backend/app/sonar_service.py:101:            log_fn(sanitize_log_text(output))
+backend/app/sonar_service.py:115:            log_fn(sanitize_log_text(message))
+backend/app/sonar_service.py:128:    sonar_token = get_sonar_token()
+backend/app/sonar_service.py:134:    if not sonar_url or not sonar_token or not project_key:
+backend/app/sonar_service.py:165:    auth = (sonar_token, "")
+docker-compose.yml:126:      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+docker-compose.yml:174:      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+docker-compose.yml:225:      OPENAI_API_KEY: ${OPENAI_API_KEY:-}

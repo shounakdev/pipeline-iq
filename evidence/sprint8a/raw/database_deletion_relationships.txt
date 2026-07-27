@@ -1,0 +1,410 @@
+85-
+86-    logs = relationship(
+87-        "PipelineLog",
+88-        back_populates="pipeline",
+89:        cascade="all, delete-orphan",
+90-    )
+91-
+92-    analysis = relationship(
+93-        "Analysis",
+94-        back_populates="pipeline",
+95-        uselist=False,
+96:        cascade="all, delete-orphan",
+97-    )
+98-
+99-
+100-class PipelineLog(Base):
+101-    __tablename__ = "logs"
+102-
+103-    id = Column(Integer, primary_key=True, index=True)
+104-    pipeline_id = Column(String, ForeignKey("pipelines.id"))
+--
+192-    pipeline_runs = relationship("PipelineRun", back_populates="service")
+193-    health_snapshots = relationship(
+194-        "ServiceHealthSnapshot",
+195-        back_populates="service",
+196:        cascade="all, delete-orphan",
+197-    )
+198-
+199-
+200-class ServiceHealthStatus(str, enum.Enum):
+201-    HEALTHY = "HEALTHY"
+202-    DEGRADED = "DEGRADED"
+203-    UNHEALTHY = "UNHEALTHY"
+204-    UNKNOWN = "UNKNOWN"
+--
+361-
+362-    workloads = relationship(
+363-        "KubernetesWorkload",
+364-        back_populates="deployment",
+365:        cascade="all, delete-orphan",
+366-    )
+367-
+368-    revisions = relationship(
+369-        "DeploymentRevision",
+370-        back_populates="deployment",
+371:        cascade="all, delete-orphan",
+372-    )
+373-
+374-
+375-class KubernetesWorkload(Base):
+376-    __tablename__ = "kubernetes_workloads"
+377-
+378-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+379-
+--
+645-    )
+646-
+647-    primary_service_id = Column(
+648-        String(36),
+649:        ForeignKey("services.id", ondelete="SET NULL"),
+650-        nullable=True,
+651-    )
+652-
+653-    environment = Column(
+654-        String(100),
+655-        nullable=False,
+656-    )
+657-
+658-    triggering_alert_id = Column(
+659-        String(36),
+660-        ForeignKey(
+661-            "reliability_alerts.id",
+662:            ondelete="SET NULL",
+663-        ),
+664-        nullable=True,
+665-    )
+666-
+667-    suspected_deployment_id = Column(
+668-        UUID(as_uuid=True),
+669-        ForeignKey(
+670-            "deployments.id",
+671:            ondelete="SET NULL",
+672-        ),
+673-        nullable=True,
+674-    )
+675-
+676-    deduplication_key = Column(
+677-        String(500),
+678-        nullable=True,
+679-    )
+--
+710-    )
+711-
+712-    current_assignee_id = Column(
+713-        String(36),
+714:        ForeignKey("users.id", ondelete="SET NULL"),
+715-        nullable=True,
+716-    )
+717-
+718-    resolution_summary = Column(
+719-        Text,
+720-        nullable=True,
+721-    )
+722-
+--
+744-    )
+745-
+746-    created_by = Column(
+747-        String(36),
+748:        ForeignKey("users.id", ondelete="SET NULL"),
+749-        nullable=True,
+750-    )
+751-
+752-    # --------------------------------------------------------
+753-    # Temporary Sprint 5 compatibility columns.
+754-    #
+755-    # Keep these during Sprint 7B because the active router and
+756-    # old incident service still use these names.
+--
+813-
+814-    events = relationship(
+815-        "IncidentTimelineEvent",
+816-        back_populates="incident",
+817:        cascade="all, delete-orphan",
+818-        order_by=(
+819-            "IncidentTimelineEvent.occurred_at, "
+820-            "IncidentTimelineEvent.id"
+821-        ),
+822-    )
+823-
+824-    assignments = relationship(
+825-        "IncidentAssignment",
+826-        back_populates="incident",
+827:        cascade="all, delete-orphan",
+828-    )
+829-
+830-    comments = relationship(
+831-        "IncidentComment",
+832-        back_populates="incident",
+833:        cascade="all, delete-orphan",
+834-    )
+835-
+836-    metrics = relationship(
+837-        "IncidentMetric",
+838-        back_populates="incident",
+839:        cascade="all, delete-orphan",
+840-    )
+841-
+842-    alert_links = relationship(
+843-        "IncidentAlertLink",
+844-        back_populates="incident",
+845:        cascade="all, delete-orphan",
+846-    )
+847-
+848-    # Keep old ORM creation working until incident_service.py
+849-    # is replaced during the next Sprint 7 step.
+850-
+851-    @validates("service_id")
+852-    def sync_legacy_service_id(self, key, value):
+853-        if value:
+--
+913-    incident_id = Column(
+914-        UUID(as_uuid=True),
+915-        ForeignKey(
+916-            "incidents.id",
+917:            ondelete="CASCADE",
+918-        ),
+919-        nullable=False,
+920-    )
+921-
+922-    event_type = Column(
+923-        String(100),
+924-        nullable=False,
+925-    )
+--
+947-    )
+948-
+949-    actor_user_id = Column(
+950-        String(36),
+951:        ForeignKey("users.id", ondelete="SET NULL"),
+952-        nullable=True,
+953-    )
+954-
+955-    alert_id = Column(
+956-        String(36),
+957-        ForeignKey(
+958-            "reliability_alerts.id",
+959:            ondelete="SET NULL",
+960-        ),
+961-        nullable=True,
+962-    )
+963-
+964-    deployment_id = Column(
+965-        UUID(as_uuid=True),
+966-        ForeignKey(
+967-            "deployments.id",
+968:            ondelete="SET NULL",
+969-        ),
+970-        nullable=True,
+971-    )
+972-
+973-    metadata_json = Column(
+974-        JSONB,
+975-        nullable=True,
+976-    )
+--
+1051-    incident_id = Column(
+1052-        UUID(as_uuid=True),
+1053-        ForeignKey(
+1054-            "incidents.id",
+1055:            ondelete="CASCADE",
+1056-        ),
+1057-        nullable=False,
+1058-        index=True,
+1059-    )
+1060-
+1061-    assigned_to_user_id = Column(
+1062-        String(36),
+1063:        ForeignKey("users.id", ondelete="SET NULL"),
+1064-        nullable=True,
+1065-    )
+1066-
+1067-    assigned_by_user_id = Column(
+1068-        String(36),
+1069:        ForeignKey("users.id", ondelete="SET NULL"),
+1070-        nullable=True,
+1071-    )
+1072-
+1073-    assignment_note = Column(
+1074-        Text,
+1075-        nullable=True,
+1076-    )
+1077-
+--
+1121-    incident_id = Column(
+1122-        UUID(as_uuid=True),
+1123-        ForeignKey(
+1124-            "incidents.id",
+1125:            ondelete="CASCADE",
+1126-        ),
+1127-        nullable=False,
+1128-        index=True,
+1129-    )
+1130-
+1131-    author_user_id = Column(
+1132-        String(36),
+1133:        ForeignKey("users.id", ondelete="SET NULL"),
+1134-        nullable=True,
+1135-    )
+1136-
+1137-    comment = Column(
+1138-        Text,
+1139-        nullable=False,
+1140-    )
+1141-
+--
+1175-    incident_id = Column(
+1176-        UUID(as_uuid=True),
+1177-        ForeignKey(
+1178-            "incidents.id",
+1179:            ondelete="CASCADE",
+1180-        ),
+1181-        nullable=False,
+1182-        index=True,
+1183-    )
+1184-
+1185-    metric_type = Column(
+1186-        String(100),
+1187-        nullable=False,
+--
+1244-    incident_id = Column(
+1245-        UUID(as_uuid=True),
+1246-        ForeignKey(
+1247-            "incidents.id",
+1248:            ondelete="CASCADE",
+1249-        ),
+1250-        nullable=False,
+1251-        index=True,
+1252-    )
+1253-
+1254-    reliability_alert_id = Column(
+1255-        String(36),
+1256-        ForeignKey(
+1257-            "reliability_alerts.id",
+1258:            ondelete="CASCADE",
+1259-        ),
+1260-        nullable=False,
+1261-        index=True,
+1262-    )
+1263-
+1264-    linked_at = Column(
+1265-        DateTime(timezone=True),
+1266-        nullable=False,
+--
+1346-    )
+1347-
+1348-    service_id = Column(
+1349-        String(36),
+1350:        ForeignKey("services.id", ondelete="CASCADE"),
+1351-        nullable=False,
+1352-        index=True,
+1353-    )
+1354-
+1355-    metric_type = Column(
+1356-        SQLEnum(SLOMetricType, name="slo_metric_type"),
+1357-        nullable=False,
+1358-    )
+--
+1400-
+1401-    measurements = relationship(
+1402-        "SLOMeasurement",
+1403-        back_populates="slo_definition",
+1404:        cascade="all, delete-orphan",
+1405-    )
+1406-
+1407-    error_budget_statuses = relationship(
+1408-        "ErrorBudgetStatus",
+1409-        back_populates="slo_definition",
+1410:        cascade="all, delete-orphan",
+1411-    )
+1412-
+1413-    alerts = relationship(
+1414-        "ReliabilityAlert",
+1415-        back_populates="slo_definition",
+1416:        cascade="all, delete-orphan",
+1417-    )
+1418-
+1419-
+1420-class SLOMeasurement(Base):
+1421-    __tablename__ = "slo_measurements"
+1422-
+1423-    id = Column(
+1424-        String(36),
+--
+1427-    )
+1428-
+1429-    slo_definition_id = Column(
+1430-        String(36),
+1431:        ForeignKey("slo_definitions.id", ondelete="CASCADE"),
+1432-        nullable=False,
+1433-        index=True,
+1434-    )
+1435-
+1436-    service_id = Column(
+1437-        String(36),
+1438:        ForeignKey("services.id", ondelete="CASCADE"),
+1439-        nullable=False,
+1440-        index=True,
+1441-    )
+1442-
+1443-    metric_type = Column(
+1444-        SQLEnum(SLOMetricType, name="slo_metric_type"),
+1445-        nullable=False,
+1446-    )
+--
+1488-    )
+1489-
+1490-    slo_definition_id = Column(
+1491-        String(36),
+1492:        ForeignKey("slo_definitions.id", ondelete="CASCADE"),
+1493-        nullable=False,
+1494-        index=True,
+1495-    )
+1496-
+1497-    service_id = Column(
+1498-        String(36),
+1499:        ForeignKey("services.id", ondelete="CASCADE"),
+1500-        nullable=False,
+1501-        index=True,
+1502-    )
+1503-
+1504-    target_percentage = Column(Float, nullable=False)
+1505-    allowed_failure_percentage = Column(Float, nullable=False)
+1506-
+1507-    consumed_percentage = Column(
+--
+1565-    )
+1566-
+1567-    service_id = Column(
+1568-        String(36),
+1569:        ForeignKey("services.id", ondelete="CASCADE"),
+1570-        nullable=False,
+1571-        index=True,
+1572-    )
+1573-
+1574-    slo_definition_id = Column(
+1575-        String(36),
+1576:        ForeignKey("slo_definitions.id", ondelete="CASCADE"),
+1577-        nullable=False,
+1578-        index=True,
+1579-    )
+1580-
+1581-    alert_type = Column(
+1582-        SQLEnum(
+1583-            ReliabilityAlertType,
+1584-            name="reliability_alert_type",
+--
+1598-    threshold_value = Column(Float, nullable=False)
+1599-
+1600-    deployment_id = Column(
+1601-        UUID(as_uuid=True),
+1602:        ForeignKey("deployments.id", ondelete="SET NULL"),
+1603-        nullable=True,
+1604-        index=True,
+1605-    )
+1606-
+1607-    status = Column(
+1608-        SQLEnum(
+1609-            ReliabilityAlertStatus,
+1610-            name="reliability_alert_status",

@@ -1,0 +1,213 @@
+327-
+328-    service = relationship("Service", back_populates="pipeline_runs")
+329-    repository = relationship("Repository", back_populates="pipeline_runs")
+330-
+331-
+332:class Deployment(Base):
+333-    __tablename__ = "deployments"
+334-
+335-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+336-
+337-    service_id = Column(String(36), ForeignKey("services.id"), nullable=False)
+338-    pipeline_run_id = Column(String(36), ForeignKey("pipeline_runs.id"), nullable=True)
+339-    environment_id = Column(String(36), ForeignKey("environments.id"), nullable=True)
+340-
+341-    commit_sha = Column(String(100), nullable=True)
+342-    image_tag = Column(String(255), nullable=False)
+343-    deployment_version = Column(String(50), nullable=True)
+344-
+345-    argo_sync_status = Column(String(50), nullable=True, default="UNKNOWN")
+346-    kubernetes_rollout_status = Column(String(50), nullable=True, default="UNKNOWN")
+347-
+348-    previous_revision = Column(String(100), nullable=True)
+349-
+350-    namespace = Column(String(100), nullable=True)
+351-    cluster_name = Column(String(100), nullable=True, default="kind-platformiq")
+352-    service_name = Column(String(150), nullable=True)
+353-    argo_application_name = Column(String(150), nullable=True)
+354-
+355-    pod_count = Column(Integer, nullable=True, default=0)
+356-    restart_count = Column(Integer, nullable=True, default=0)
+357-    failure_reason = Column(Text, nullable=True)
+358-
+359-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+360-    deployed_at = Column(DateTime(timezone=True), nullable=True)
+361-
+362-    workloads = relationship(
+363-        "KubernetesWorkload",
+364-        back_populates="deployment",
+365-        cascade="all, delete-orphan",
+366-    )
+367-
+368-    revisions = relationship(
+369-        "DeploymentRevision",
+370-        back_populates="deployment",
+371-        cascade="all, delete-orphan",
+372-    )
+373-
+374-
+375-class KubernetesWorkload(Base):
+376-    __tablename__ = "kubernetes_workloads"
+377-
+378-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+379-
+380-    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+381-
+382-    workload_name = Column(String(150), nullable=False)
+383-    namespace = Column(String(100), nullable=False)
+384-    kind = Column(String(50), nullable=False)
+385-
+386-    desired_replicas = Column(Integer, nullable=True, default=0)
+387-    available_replicas = Column(Integer, nullable=True, default=0)
+388-    pod_count = Column(Integer, nullable=True, default=0)
+389-    restart_count = Column(Integer, nullable=True, default=0)
+390-
+391-    status = Column(String(50), nullable=True, default="UNKNOWN")
+392-    failure_reason = Column(Text, nullable=True)
+393-
+394-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+395-
+396-    deployment = relationship("Deployment", back_populates="workloads")
+397-
+398-
+399:class DeploymentRevision(Base):
+400-    __tablename__ = "deployment_revisions"
+401-
+402-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+403-
+404-    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+405-
+406-    revision = Column(String(100), nullable=True)
+407-    image_tag = Column(String(255), nullable=True)
+408-    commit_sha = Column(String(100), nullable=True)
+409-    status = Column(String(50), nullable=True)
+410-
+411-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+412-    deployed_at = Column(DateTime(timezone=True), nullable=True)
+413-
+414-    deployment = relationship("Deployment", back_populates="revisions")
+415-
+416-
+417-class AuditEvent(Base):
+418-    __tablename__ = "audit_events"
+419-
+420-    id = Column(String, primary_key=True, default=generate_uuid)
+421-    actor_id = Column(String, ForeignKey("users.id"), nullable=True)
+422-    action = Column(String, nullable=False)
+423-    entity_type = Column(String, nullable=True)
+424-    entity_id = Column(String, nullable=True)
+425-    details = Column(Text, nullable=True)
+426-    created_at = Column(DateTime, default=datetime.utcnow)
+427-
+428-
+429-class EventRecord(Base):
+430-    __tablename__ = "event_records"
+431-
+432-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+433-
+434-    event_id = Column(String, nullable=False, unique=True, index=True)
+435-    event_type = Column(String, nullable=False, index=True)
+436-    schema_version = Column(String, nullable=True)
+437-
+438-    topic = Column(String, nullable=False, index=True)
+439-    correlation_id = Column(String, nullable=True, index=True)
+440-    service_id = Column(String, nullable=True, index=True)
+441-    environment = Column(String, nullable=True, index=True)
+442-
+443-    timestamp = Column(DateTime(timezone=True), nullable=True, index=True)
+444-
+445-    payload = Column(JSON, nullable=False, default=dict)
+446-    raw_event = Column(JSON, nullable=False, default=dict)
+447-
+448-    processing_status = Column(
+449-        String,
+450-        nullable=False,
+451-        default="PROCESSED",
+452-        index=True,
+453-    )
+454-    processing_error = Column(Text, nullable=True)
+455-
+456-    created_at = Column(
+457-        DateTime(timezone=True),
+458-        server_default=func.now(),
+459-        nullable=False,
+460-    )
+461-
+462-    processed_at = Column(DateTime(timezone=True), nullable=True)
+463-
+464-
+465-Index(
+466-    "ix_event_records_release_timeline",
+467-    EventRecord.correlation_id,
+468-    EventRecord.timestamp,
+469-)
+470-
+471-
+472-class OutboxEvent(Base):
+473-    __tablename__ = "outbox_events"
+474-
+475-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+476-
+477-    event_id = Column(String, unique=True, index=True, nullable=False)
+478-    topic = Column(String, index=True, nullable=False)
+479-    event_type = Column(String, index=True, nullable=False)
+480-    schema_version = Column(String, nullable=False, default="1.0")
+481-
+482-    correlation_id = Column(String, index=True, nullable=True)
+483-    service_id = Column(String, index=True, nullable=True)
+484-    environment = Column(String, index=True, nullable=True)
+485-
+486-    payload = Column(JSONB, nullable=False, default=dict)
+487-
+488-    status = Column(String, index=True, nullable=False, default="PENDING")
+489-    retry_count = Column(Integer, nullable=False, default=0)
+490-    last_error = Column(Text, nullable=True)
+491-
+492-    published_at = Column(DateTime(timezone=True), nullable=True)
+493-
+494-    created_at = Column(
+495-        DateTime(timezone=True),
+496-        nullable=False,
+497-        default=lambda: datetime.now(timezone.utc),
+498-    )
+499-
+500-    updated_at = Column(
+501-        DateTime(timezone=True),
+502-        nullable=False,
+503-        default=lambda: datetime.now(timezone.utc),
+504-        onupdate=lambda: datetime.now(timezone.utc),
+505-    )
+506-
+507-
+508-class ConsumerCheckpoint(Base):
+509-    __tablename__ = "consumer_checkpoints"
+510-
+511-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+512-
+513-    consumer_name = Column(String, nullable=False)
+514-    topic = Column(String, nullable=False)
+515-    partition = Column(Integer, nullable=False)
+516-    offset = Column(Integer, nullable=False)
+517-
+518-    updated_at = Column(
+519-        DateTime(timezone=True),
+520-        nullable=False,
+521-        default=lambda: datetime.now(timezone.utc),
+522-        onupdate=lambda: datetime.now(timezone.utc),
+523-    )
+524-
+525-    __table_args__ = (
+526-        UniqueConstraint(
+527-            "consumer_name",
+528-            "topic",
+529-            "partition",
+530-            name="uq_consumer_topic_partition",
+531-        ),
+532-    )
+533-
+534-
+535-class DeadLetterEvent(Base):
+536-    __tablename__ = "dead_letter_events"
+537-
+538-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+539-

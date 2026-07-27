@@ -1,0 +1,114 @@
+backend/app/observability/health_router.py:10:from app.observability.collector import create_health_snapshot
+backend/app/observability/health_router.py:13:    ServiceHealthSnapshotResponse,
+backend/app/observability/health_router.py:29:    latency_ms: float | None = None
+backend/app/observability/health_router.py:30:    error_rate: float | None = None
+backend/app/observability/health_router.py:31:    cpu_usage: float | None = None
+backend/app/observability/health_router.py:32:    memory_usage: float | None = None
+backend/app/observability/health_router.py:33:    pod_restart_count: int | None = None
+backend/app/observability/health_router.py:34:    replica_count: int | None = None
+backend/app/observability/health_router.py:35:    available_replicas: int | None = None
+backend/app/observability/health_router.py:43:    snapshot = create_health_snapshot(
+backend/app/observability/health_router.py:48:        latency_ms=request.latency_ms,
+backend/app/observability/health_router.py:49:        error_rate=request.error_rate,
+backend/app/observability/health_router.py:50:        cpu_usage=request.cpu_usage,
+backend/app/observability/health_router.py:51:        memory_usage=request.memory_usage,
+backend/app/observability/health_router.py:52:        pod_restart_count=request.pod_restart_count,
+backend/app/observability/health_router.py:53:        replica_count=request.replica_count,
+backend/app/observability/health_router.py:54:        available_replicas=request.available_replicas,
+backend/app/observability/health_router.py:82:    response_model=ServiceHealthSnapshotResponse,
+backend/app/observability/health_router.py:98:    response_model=list[ServiceHealthSnapshotResponse],
+backend/app/observability/collector.py:3:from app.models import ServiceHealthSnapshot, ServiceHealthStatus
+backend/app/observability/collector.py:7:def create_health_snapshot(
+backend/app/observability/collector.py:12:    latency_ms: float | None,
+backend/app/observability/collector.py:13:    error_rate: float | None,
+backend/app/observability/collector.py:14:    cpu_usage: float | None,
+backend/app/observability/collector.py:15:    memory_usage: float | None,
+backend/app/observability/collector.py:16:    pod_restart_count: int | None,
+backend/app/observability/collector.py:17:    replica_count: int | None,
+backend/app/observability/collector.py:18:    available_replicas: int | None,
+backend/app/observability/collector.py:22:        latency_ms=latency_ms,
+backend/app/observability/collector.py:23:        error_rate=error_rate,
+backend/app/observability/collector.py:24:        pod_restart_count=pod_restart_count,
+backend/app/observability/collector.py:25:        available_replicas=available_replicas,
+backend/app/observability/collector.py:26:        replica_count=replica_count,
+backend/app/observability/collector.py:29:    snapshot = ServiceHealthSnapshot(
+backend/app/observability/collector.py:34:        latency_ms=latency_ms,
+backend/app/observability/collector.py:35:        error_rate=error_rate,
+backend/app/observability/collector.py:36:        cpu_usage=cpu_usage,
+backend/app/observability/collector.py:37:        memory_usage=memory_usage,
+backend/app/observability/collector.py:38:        pod_restart_count=pod_restart_count,
+backend/app/observability/collector.py:39:        replica_count=replica_count,
+backend/app/observability/collector.py:40:        available_replicas=available_replicas,
+backend/app/observability/health_rules.py:2:    latency_ms: float | None,
+backend/app/observability/health_rules.py:3:    error_rate: float | None,
+backend/app/observability/health_rules.py:4:    pod_restart_count: int | None,
+backend/app/observability/health_rules.py:5:    available_replicas: int | None,
+backend/app/observability/health_rules.py:6:    replica_count: int | None,
+backend/app/observability/health_rules.py:8:    if available_replicas is not None and replica_count is not None:
+backend/app/observability/health_rules.py:9:        if available_replicas == 0:
+backend/app/observability/health_rules.py:11:        if available_replicas < replica_count:
+backend/app/observability/health_rules.py:14:    if error_rate is not None and error_rate > 10:
+backend/app/observability/health_rules.py:17:    if error_rate is not None and error_rate > 5:
+backend/app/observability/health_rules.py:20:    if latency_ms is not None and latency_ms > 2000:
+backend/app/observability/health_rules.py:23:    if latency_ms is not None and latency_ms > 1000:
+backend/app/observability/health_rules.py:26:    if pod_restart_count is not None and pod_restart_count > 3:
+backend/app/observability/schemas.py:7:class ServiceHealthSnapshotResponse(BaseModel):
+backend/app/observability/schemas.py:13:    latency_ms: float | None = None
+backend/app/observability/schemas.py:14:    error_rate: float | None = None
+backend/app/observability/schemas.py:15:    cpu_usage: float | None = None
+backend/app/observability/schemas.py:16:    memory_usage: float | None = None
+backend/app/observability/schemas.py:17:    pod_restart_count: int | None = None
+backend/app/observability/schemas.py:18:    replica_count: int | None = None
+backend/app/observability/schemas.py:19:    available_replicas: int | None = None
+backend/app/observability/schemas.py:32:    latency_ms: float | None = None
+backend/app/observability/schemas.py:33:    error_rate: float | None = None
+backend/app/observability/schemas.py:34:    pod_restart_count: int | None = None
+backend/app/observability/schemas.py:35:    available_replicas: int | None = None
+backend/app/observability/schemas.py:36:    replica_count: int | None = None
+backend/app/observability/service.py:3:from app.models import ServiceHealthSnapshot
+backend/app/observability/service.py:8:        db.query(ServiceHealthSnapshot)
+backend/app/observability/service.py:9:        .filter(ServiceHealthSnapshot.service_id == service_id)
+backend/app/observability/service.py:10:        .order_by(ServiceHealthSnapshot.created_at.desc())
+backend/app/observability/service.py:17:        db.query(ServiceHealthSnapshot)
+backend/app/observability/service.py:18:        .filter(ServiceHealthSnapshot.service_id == service_id)
+backend/app/observability/service.py:19:        .order_by(ServiceHealthSnapshot.created_at.desc())
+backend/app/observability/service.py:27:        db.query(ServiceHealthSnapshot)
+backend/app/observability/service.py:28:        .order_by(ServiceHealthSnapshot.created_at.desc())
+backend/app/observability/alert_rules.py:20:    if snapshot.error_rate is not None and snapshot.error_rate > 5:
+backend/app/observability/alert_rules.py:24:                severity="HIGH" if snapshot.error_rate > 10 else "MEDIUM",
+backend/app/observability/alert_rules.py:26:                    "error_rate": snapshot.error_rate,
+backend/app/observability/alert_rules.py:32:    if snapshot.latency_ms is not None and snapshot.latency_ms > 1000:
+backend/app/observability/alert_rules.py:36:                severity="HIGH" if snapshot.latency_ms > 2000 else "MEDIUM",
+backend/app/observability/alert_rules.py:38:                    "latency_ms": snapshot.latency_ms,
+backend/app/observability/alert_rules.py:44:    if snapshot.pod_restart_count is not None and snapshot.pod_restart_count > 3:
+backend/app/observability/alert_rules.py:50:                    "pod_restart_count": snapshot.pod_restart_count,
+backend/app/observability/alert_rules.py:57:        snapshot.available_replicas is not None
+backend/app/observability/alert_rules.py:58:        and snapshot.replica_count is not None
+backend/app/observability/alert_rules.py:59:        and snapshot.available_replicas < snapshot.replica_count
+backend/app/observability/alert_rules.py:64:                severity="HIGH" if snapshot.available_replicas == 0 else "MEDIUM",
+backend/app/observability/alert_rules.py:66:                    "available_replicas": snapshot.available_replicas,
+backend/app/observability/alert_rules.py:67:                    "replica_count": snapshot.replica_count,
+backend/app/reliability/prometheus_client.py:264:def get_error_rate(
+backend/app/reliability/slo_engine.py:20:    get_error_rate,
+backend/app/reliability/slo_engine.py:37:    SLOMetricType.ERROR_RATE: get_error_rate,
+backend/app/incidents/service.py:2284:                "source": "service_health_snapshots",
+backend/app/incidents/service.py:2297:                    "latency_ms": snapshot.latency_ms,
+backend/app/incidents/service.py:2298:                    "error_rate": snapshot.error_rate,
+backend/app/incidents/service.py:2299:                    "cpu_usage": snapshot.cpu_usage,
+backend/app/incidents/service.py:2300:                    "memory_usage": snapshot.memory_usage,
+backend/app/incidents/service.py:2301:                    "pod_restart_count": (snapshot.pod_restart_count),
+backend/app/incidents/service.py:2302:                    "replica_count": snapshot.replica_count,
+backend/app/incidents/service.py:2303:                    "available_replicas": (snapshot.available_replicas),
+backend/app/models.py:193:    health_snapshots = relationship(
+backend/app/models.py:194:        "ServiceHealthSnapshot",
+backend/app/models.py:207:class ServiceHealthSnapshot(Base):
+backend/app/models.py:208:    __tablename__ = "service_health_snapshots"
+backend/app/models.py:227:    latency_ms = Column(Float, nullable=True)
+backend/app/models.py:228:    error_rate = Column(Float, nullable=True)
+backend/app/models.py:229:    cpu_usage = Column(Float, nullable=True)
+backend/app/models.py:230:    memory_usage = Column(Float, nullable=True)
+backend/app/models.py:232:    pod_restart_count = Column(Integer, nullable=True)
+backend/app/models.py:233:    replica_count = Column(Integer, nullable=True)
+backend/app/models.py:234:    available_replicas = Column(Integer, nullable=True)
+backend/app/models.py:244:    service = relationship("Service", back_populates="health_snapshots")
+backend/app/models.py:387:    available_replicas = Column(Integer, nullable=True, default=0)

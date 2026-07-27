@@ -1,0 +1,1691 @@
+]633;E;for field in incident_number primary_service_id service_id environment status severity failure_started_at detected_at acknowledged_at investigation_started_at remediation_started_at resolved_at suspected_deployment_id;90d3a1a2-76f0-4cf7-8629-0c5cf4db9cd7]633;C===== incident_number =====
+backend/app/models.py:616:    incident_number = Column(
+backend/app/models.py:620:        server_default=text("next_incident_number()"),
+backend/app/incidents/repository.py:94:    incident_number: str,
+backend/app/incidents/repository.py:101:        Incident.incident_number == incident_number,
+backend/app/incidents/repository.py:662:        "incident_number",
+backend/app/incidents/schemas.py:393:    incident_number: str
+backend/app/incidents/service.py:461:        incident_number=incident.incident_number,
+backend/app/incidents/service.py:1151:                    f"Incident {incident.incident_number} "
+backend/app/incidents/service.py:1739:        "incident_number": getattr(
+backend/app/incidents/service.py:1741:            "incident_number",
+backend/app/incidents/service.py:2037:                "incident_number": getattr(
+backend/app/incidents/service.py:2039:                    "incident_number",
+backend/app/incidents/service.py:2114:                incident_number=getattr(
+backend/app/incidents/service.py:2116:                    "incident_number",
+backend/app/incidents/service.py:2260:                        "incident_number": (incident.incident_number),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:173:        CREATE SEQUENCE incident_number_seq
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:183:        CREATE FUNCTION next_incident_number()
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:189:                   lpad(nextval('incident_number_seq'::regclass)::text, 3, '0');
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:212:        sa.Column("incident_number", sa.String(length=32), nullable=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:366:        SET incident_number =
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:618:                MAX(substring(incident_number FROM 5)::bigint),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:625:                PERFORM setval('incident_number_seq', 1, false);
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:627:                PERFORM setval('incident_number_seq', maximum_number, true);
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:636:        "incident_number",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:639:        server_default=sa.text("next_incident_number()"),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:649:        "uq_incidents_incident_number",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:651:        ["incident_number"],
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1092:        "uq_incidents_incident_number",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1248:    op.drop_column("incidents", "incident_number")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1250:    op.execute("DROP FUNCTION next_incident_number()")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1251:    op.execute("DROP SEQUENCE incident_number_seq")
+backend/alembic/versions/a2f39e69aa46_make_legacy_incident_fields_nullable.py:56:        SET correlation_id = incident_number
+
+===== primary_service_id =====
+backend/app/models.py:647:    primary_service_id = Column(
+backend/app/models.py:760:    # New Sprint 7 code must use primary_service_id, deduplication_key,
+backend/app/models.py:791:        foreign_keys=[primary_service_id],
+backend/app/models.py:854:            self.primary_service_id = value
+backend/app/models.py:882:            "ix_incidents_primary_service_id",
+backend/app/models.py:883:            "primary_service_id",
+backend/app/events/handlers.py:346:        primary_service_id=record.service_id,
+backend/app/incidents/repository.py:175:            Incident.primary_service_id == service_id,
+backend/app/incidents/schemas.py:399:    # These represent the primary_service_id relationship in a
+backend/app/incidents/service.py:451:    service_id = incident.primary_service_id or incident.service_id
+backend/app/incidents/service.py:603:            service_id=str(incident.primary_service_id),
+backend/app/incidents/service.py:650:            service_id=str(incident.primary_service_id),
+backend/app/incidents/service.py:1093:                primary_service_id=alert.service_id,
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:216:        sa.Column("primary_service_id", sa.String(length=36), nullable=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:377:            primary_service_id = service_id,
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:420:        SET primary_service_id = NULL
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:421:        WHERE primary_service_id IS NOT NULL
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:425:              WHERE service.id = incident.primary_service_id
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:543:        "fk_incidents_primary_service_id_services",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:546:        ["primary_service_id"],
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:898:        "ix_incidents_primary_service_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:900:        ["primary_service_id"],
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1035:        "ix_incidents_primary_service_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1087:        "fk_incidents_primary_service_id_services",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1247:    op.drop_column("incidents", "primary_service_id")
+backend/alembic/versions/a2f39e69aa46_make_legacy_incident_fields_nullable.py:48:        SET service_id = primary_service_id
+
+===== service_id =====
+backend/app/models.py:212:    service_id = Column(
+backend/app/models.py:251:    service_id = Column(String, ForeignKey("services.id"), nullable=False)
+backend/app/models.py:263:    service_id = Column(String, ForeignKey("services.id"), nullable=False)
+backend/app/models.py:278:    service_id = Column(String, ForeignKey("services.id"), nullable=True)
+backend/app/models.py:337:    service_id = Column(String(36), ForeignKey("services.id"), nullable=False)
+backend/app/models.py:440:    service_id = Column(String, nullable=True, index=True)
+backend/app/models.py:483:    service_id = Column(String, index=True, nullable=True)
+backend/app/models.py:545:    service_id = Column(String, nullable=True, index=True)
+backend/app/models.py:647:    primary_service_id = Column(
+backend/app/models.py:760:    # New Sprint 7 code must use primary_service_id, deduplication_key,
+backend/app/models.py:762:    service_id = Column(
+backend/app/models.py:791:        foreign_keys=[primary_service_id],
+backend/app/models.py:851:    @validates("service_id")
+backend/app/models.py:852:    def sync_legacy_service_id(self, key, value):
+backend/app/models.py:854:            self.primary_service_id = value
+backend/app/models.py:882:            "ix_incidents_primary_service_id",
+backend/app/models.py:883:            "primary_service_id",
+backend/app/models.py:1348:    service_id = Column(
+backend/app/models.py:1436:    service_id = Column(
+backend/app/models.py:1497:    service_id = Column(
+backend/app/models.py:1567:    service_id = Column(
+backend/app/observability/alert_service.py:24:        or f"{snapshot.service_id}:{snapshot.environment}:{alert.event_type}"
+backend/app/observability/alert_service.py:33:        "service_id": str(snapshot.service_id),
+backend/app/observability/alert_service.py:73:            key=str(snapshot.service_id),
+backend/app/observability/health_router.py:26:    service_id: UUID
+backend/app/observability/health_router.py:45:        service_id=str(request.service_id),
+backend/app/observability/health_router.py:69:        "service_id": str(snapshot.service_id),
+backend/app/observability/health_router.py:81:    "/services/{service_id}/health",
+backend/app/observability/health_router.py:84:def service_health(service_id: str, db: Session = Depends(get_db)):
+backend/app/observability/health_router.py:85:    snapshot = get_latest_service_health(db, service_id)
+backend/app/observability/health_router.py:97:    "/services/{service_id}/health/history",
+backend/app/observability/health_router.py:101:    service_id: str,
+backend/app/observability/health_router.py:105:    return get_service_health_history(db, service_id, limit=limit)
+backend/app/observability/collector.py:9:    service_id,
+backend/app/observability/collector.py:30:        service_id=str(service_id),
+backend/app/observability/schemas.py:9:    service_id: str
+backend/app/observability/schemas.py:28:    service_id: str
+backend/app/observability/service.py:6:def get_latest_service_health(db: Session, service_id: str):
+backend/app/observability/service.py:9:        .filter(ServiceHealthSnapshot.service_id == service_id)
+backend/app/observability/service.py:15:def get_service_health_history(db: Session, service_id: str, limit: int = 50):
+backend/app/observability/service.py:18:        .filter(ServiceHealthSnapshot.service_id == service_id)
+backend/app/observability/service.py:36:        key = (row.service_id, row.environment)
+backend/app/models.py.bak:186:    service_id = Column(String, ForeignKey("services.id"), nullable=False)
+backend/app/models.py.bak:198:    service_id = Column(String, ForeignKey("services.id"), nullable=False)
+backend/app/models.py.bak:213:    service_id = Column(String, ForeignKey("services.id"), nullable=True)
+backend/app/models.py.bak:271:    service_id = Column(String(36), ForeignKey("services.id"), nullable=False)
+backend/app/deployments/kubernetes_capture.py:37:    service_id: str | None,
+backend/app/deployments/kubernetes_capture.py:81:                service_id=service_id,
+backend/app/deployments/kubernetes_capture.py:98:                service_id=service_id,
+backend/app/deployments/kubernetes_capture.py:119:            service_id=service_id,
+backend/app/deployments/kubernetes_capture.py:143:            service_id=service_id,
+backend/app/deployments/kubernetes_capture.py:252:    service_id: str | None = None,
+backend/app/deployments/kubernetes_capture.py:301:                correlation_id or service_id or deployment_name
+backend/app/deployments/kubernetes_capture.py:306:                service_id=str(service_id) if service_id else None,
+backend/app/deployments/kubernetes_capture.py:330:                correlation_id or service_id or deployment_name or pod_name
+backend/app/deployments/kubernetes_capture.py:335:                service_id=str(service_id) if service_id else None,
+backend/app/deployments/schemas.py:29:    service_id: UUID
+backend/app/deployments/schemas.py:58:    service_id: UUID
+backend/app/deployments/router.py:44:    service_id: str
+backend/app/deployments/router.py:73:    service_id: str
+backend/app/deployments/router.py:138:        service_id=str(deployment.service_id),
+backend/app/deployments/router.py:161:    service_id: Optional[str] = None,
+backend/app/deployments/router.py:166:    if service_id:
+backend/app/deployments/router.py:167:        query = query.filter(Deployment.service_id == service_id)
+backend/app/deployments/router.py:172:@router.get("/services/{service_id}/deployments", response_model=list[DeploymentOut])
+backend/app/deployments/router.py:174:    service_id: str,
+backend/app/deployments/router.py:179:        .filter(Deployment.service_id == service_id)
+backend/app/deployments/router.py:294:                service_id=str(deployment.service_id),
+backend/app/deployments/router.py:317:                service_id=str(deployment.service_id),
+backend/app/main.py:203:        service_id=None,
+backend/app/events/envelope.py:14:    service_id: Optional[str] = None,
+backend/app/events/envelope.py:31:        service_id=service_id,
+backend/app/events/consumer.py:129:                service_id=envelope.get("service_id"),
+backend/app/events/schemas.py:14:    service_id: Optional[str] = None
+backend/app/events/outbox.py:15:    service_id: Optional[str] = None,
+backend/app/events/outbox.py:35:        service_id=service_id,
+backend/app/events/outbox.py:46:        service_id=envelope.get("service_id"),
+backend/app/events/router.py:38:    service_id: Optional[str] = None,
+backend/app/events/router.py:52:        service_id=service_id,
+backend/app/events/service.py:19:    service_id: Optional[str] = None,
+backend/app/events/service.py:37:        service_id=service_id,
+backend/app/events/service.py:51:        "service_id": event.service_id,
+backend/app/events/service.py:70:        "service_id": event.service_id,
+backend/app/events/service.py:87:    service_id: Optional[str] = None,
+backend/app/events/service.py:102:    if service_id:
+backend/app/events/service.py:103:        query = query.filter(EventRecord.service_id == service_id)
+backend/app/events/outbox_publisher.py:25:        "service_id": event.service_id,
+backend/app/events/handlers.py:277:    if not record.service_id:
+backend/app/events/handlers.py:279:            "Telemetry alert missing service_id for "
+backend/app/events/handlers.py:312:        or record.service_id
+backend/app/events/handlers.py:346:        primary_service_id=record.service_id,
+backend/app/events/handlers.py:347:        service_id=record.service_id,
+backend/app/events/idempotency.py:45:        service_id=envelope.get("service_id"),
+backend/app/schemas.py:74:    service_id: str
+backend/app/schemas.py:88:    service_id: str
+backend/app/schemas.py:110:    service_id: str
+backend/app/incidents/repository.py:137:    service_id: str | None = None,
+backend/app/incidents/repository.py:173:    if service_id is not None:
+backend/app/incidents/repository.py:175:            Incident.primary_service_id == service_id,
+backend/app/incidents/repository.py:257:    service_id: str,
+backend/app/incidents/repository.py:293:            Deployment.service_id == service_id,
+backend/app/incidents/repository.py:294:            Environment.service_id == service_id,
+backend/app/incidents/repository.py:313:    service_id: str,
+backend/app/incidents/repository.py:327:            SLOMeasurement.service_id == service_id,
+backend/app/incidents/repository.py:358:    service_id: str,
+backend/app/incidents/repository.py:369:            ErrorBudgetStatus.service_id == service_id,
+backend/app/incidents/incident_router.py:125:    service_id: str | None = Query(
+backend/app/incidents/incident_router.py:173:        service_id=service_id,
+backend/app/incidents/incident_router.py:349:    "/{service_id}/incidents",
+backend/app/incidents/incident_router.py:353:    service_id: str,
+backend/app/incidents/incident_router.py:405:        service_id=service_id,
+backend/app/incidents/incident_router.py:416:    "/{service_id}/runtime-timeline",
+backend/app/incidents/incident_router.py:420:    service_id: str,
+backend/app/incidents/incident_router.py:433:        service_id=service_id,
+backend/app/incidents/schemas.py:37:    service_id: str
+backend/app/incidents/schemas.py:51:    service_id: str
+backend/app/incidents/schemas.py:399:    # These represent the primary_service_id relationship in a
+backend/app/incidents/schemas.py:401:    service_id: str
+backend/app/incidents/router.py:25:    service_id: str | None = Query(default=None),
+backend/app/incidents/router.py:37:    if service_id:
+backend/app/incidents/router.py:38:        query = query.filter(Incident.service_id == service_id)
+backend/app/incidents/router.py:98:@service_router.get("/{service_id}/incidents", response_model=list[IncidentOut])
+backend/app/incidents/router.py:100:    service_id: str,
+backend/app/incidents/router.py:104:    query = db.query(Incident).filter(Incident.service_id == service_id)
+backend/app/incidents/router.py:114:@service_router.get("/{service_id}/runtime-timeline", response_model=list[TimelineItemOut])
+backend/app/incidents/router.py:116:    service_id: str,
+backend/app/incidents/router.py:120:    query = db.query(Incident).filter(Incident.service_id == service_id)
+backend/app/incidents/service.py:310:        service_id=str(alert.service_id),
+backend/app/incidents/service.py:331:        service_id=str(deployment.service_id),
+backend/app/incidents/service.py:451:    service_id = incident.primary_service_id or incident.service_id
+backend/app/incidents/service.py:453:    if not service_id:
+backend/app/incidents/service.py:465:        service_id=str(service_id),
+backend/app/incidents/service.py:511:    service_id: str | None = None,
+backend/app/incidents/service.py:552:        service_id=service_id,
+backend/app/incidents/service.py:603:            service_id=str(incident.primary_service_id),
+backend/app/incidents/service.py:628:                "service_id": str(measurement.service_id),
+backend/app/incidents/service.py:650:            service_id=str(incident.primary_service_id),
+backend/app/incidents/service.py:678:            "service_id": str(
+backend/app/incidents/service.py:679:                error_budget.service_id
+backend/app/incidents/service.py:1003:            alert.service_id,
+backend/app/incidents/service.py:1027:            service_id=alert.service_id,
+backend/app/incidents/service.py:1074:                else str(alert.service_id)
+backend/app/incidents/service.py:1093:                primary_service_id=alert.service_id,
+backend/app/incidents/service.py:1105:                service_id=alert.service_id,
+backend/app/incidents/service.py:1224:                        "service_id": str(alert.service_id),
+backend/app/incidents/service.py:1253:                        "service_id": str(alert.service_id),
+backend/app/incidents/service.py:1292:                        "service_id": str(alert.service_id),
+backend/app/incidents/service.py:1326:                    "service_id": str(alert.service_id),
+backend/app/incidents/service.py:2224:    service_id: str,
+backend/app/incidents/service.py:2237:        service_id=service_id,
+backend/app/incidents/service.py:2274:        service_id,
+backend/app/incidents/service.py:2293:                    "service_id": str(snapshot.service_id),
+backend/app/incidents/service.py:2316:        "service_id": service_id,
+backend/app/incidents/rules.py:77:    service_id: Any,
+backend/app/incidents/rules.py:85:            _normalise_key_part(service_id, "service_id"),
+backend/app/incidents/schemas.py.sprint5.bak:23:    service_id: str
+backend/app/control_plane/routes.py:152:    "/projects/{project_id}/services/{service_id}",
+backend/app/control_plane/routes.py:157:    service_id: str,
+backend/app/control_plane/routes.py:163:            Service.id == service_id,
+backend/app/control_plane/routes.py:176:    "/projects/{project_id}/services/{service_id}/repositories",
+backend/app/control_plane/routes.py:181:    service_id: str,
+backend/app/control_plane/routes.py:188:            Service.id == service_id,
+backend/app/control_plane/routes.py:199:        service_id=service_id,
+backend/app/control_plane/routes.py:216:            "service_id": service_id,
+backend/app/control_plane/routes.py:230:    "/projects/{project_id}/services/{service_id}/environments",
+backend/app/control_plane/routes.py:235:    service_id: str,
+backend/app/control_plane/routes.py:242:            Service.id == service_id,
+backend/app/control_plane/routes.py:253:        service_id=service_id,
+backend/app/control_plane/routes.py:269:            "service_id": service_id,
+backend/app/control_plane/routes.py:282:    "/projects/{project_id}/services/{service_id}/trigger-pipeline",
+backend/app/control_plane/routes.py:287:    service_id: str,
+backend/app/control_plane/routes.py:294:            Service.id == service_id,
+backend/app/control_plane/routes.py:305:        .filter(Repository.service_id == service_id)
+backend/app/control_plane/routes.py:335:        service_id=str(service.id),
+backend/app/control_plane/routes.py:344:            "service_id": str(service_id),
+backend/app/control_plane/routes.py:357:            "service_id": service_id,
+backend/app/control_plane/routes.py:375:        service_id=service_id,
+backend/app/tasks.py:102:        service_id = getattr(pipeline, "service_id", None)
+backend/app/tasks.py:108:            service_id=str(service_id) if service_id else None,
+backend/app/reliability/alert_service.py:34:    service_id: str,
+backend/app/reliability/alert_service.py:43:        Deployment.service_id == service_id,
+backend/app/reliability/alert_service.py:150:    service_id: str,
+backend/app/reliability/alert_service.py:164:            ReliabilityAlert.service_id
+backend/app/reliability/alert_service.py:165:            == service_id,
+backend/app/reliability/alert_service.py:196:    service_id: str,
+backend/app/reliability/alert_service.py:233:                service_id=service_id,
+backend/app/reliability/alert_service.py:247:    service_id: str,
+backend/app/reliability/alert_service.py:261:            ReliabilityAlert.service_id
+backend/app/reliability/alert_service.py:262:            == service_id,
+backend/app/reliability/alert_service.py:290:    service_id = str(service.id)
+backend/app/reliability/alert_service.py:305:        service_id=service_id,
+backend/app/reliability/alert_service.py:329:        service_id=service_id,
+backend/app/reliability/alert_service.py:353:        service_id=slo_definition.service_id,
+backend/app/reliability/alert_service.py:368:        service_id=service_id,
+backend/app/reliability/alert_service.py:464:        service_id=service_id,
+backend/app/reliability/query_service.py:36:    service_id: str,
+backend/app/reliability/query_service.py:45:        .filter(Service.id == service_id)
+backend/app/reliability/query_service.py:51:            f"Service with id '{service_id}' was not found."
+backend/app/reliability/query_service.py:303:        "service_id": str(alert.service_id),
+backend/app/reliability/query_service.py:338:    service_id: str,
+backend/app/reliability/query_service.py:354:    service_id = str(service_id)
+backend/app/reliability/query_service.py:355:    service = _get_service(db, service_id)
+backend/app/reliability/query_service.py:360:            SLODefinition.service_id == service_id,
+backend/app/reliability/query_service.py:445:            ReliabilityAlert.service_id
+backend/app/reliability/query_service.py:446:            == service_id,
+backend/app/reliability/query_service.py:460:            Deployment.service_id == service_id
+backend/app/reliability/query_service.py:469:        service_id=str(service.id),
+backend/app/reliability/query_service.py:487:    service_id: str,
+backend/app/reliability/query_service.py:495:    service_id = str(service_id)
+backend/app/reliability/query_service.py:498:    _get_service(db, service_id)
+backend/app/reliability/query_service.py:503:            SLODefinition.service_id
+backend/app/reliability/query_service.py:504:            == service_id
+backend/app/reliability/query_service.py:555:        service_id=service_id,
+backend/app/reliability/query_service.py:632:                service_id=str(
+backend/app/reliability/query_service.py:633:                    slo_definition.service_id
+backend/app/reliability/schemas.py:63:    service_id: str
+backend/app/reliability/schemas.py:76:    service_id: str
+backend/app/reliability/schemas.py:110:    service_id: str
+backend/app/reliability/schemas.py:123:    service_id: str
+backend/app/reliability/schemas.py:144:    service_id: str
+backend/app/reliability/schemas.py:150:    service_id: str
+backend/app/reliability/router.py:43:    "/services/{service_id}/slos",
+backend/app/reliability/router.py:48:    service_id: str,
+backend/app/reliability/router.py:54:        service_id=service_id,
+backend/app/reliability/router.py:65:        service_id=service_id,
+backend/app/reliability/router.py:71:    "/services/{service_id}/slos",
+backend/app/reliability/router.py:75:    service_id: str,
+backend/app/reliability/router.py:80:        service_id=service_id,
+backend/app/reliability/router.py:91:        service_id=service_id,
+backend/app/reliability/router.py:96:    "/services/{service_id}/reliability",
+backend/app/reliability/router.py:100:    service_id: str,
+backend/app/reliability/router.py:106:            service_id=service_id,
+backend/app/reliability/router.py:116:    "/services/{service_id}/error-budget",
+backend/app/reliability/router.py:120:    service_id: str,
+backend/app/reliability/router.py:126:            service_id=service_id,
+backend/app/reliability/slo_service.py:9:    service_id: str,
+backend/app/reliability/slo_service.py:13:        .filter(Service.id == service_id)
+backend/app/reliability/slo_service.py:20:    service_id: str,
+backend/app/reliability/slo_service.py:24:        service_id=service_id,
+backend/app/reliability/slo_service.py:45:    service_id: str,
+backend/app/reliability/slo_service.py:49:        .filter(SLODefinition.service_id == service_id)
+backend/app/reliability/slo_service.py:57:    service_id: str,
+backend/app/reliability/slo_service.py:62:            SLODefinition.service_id == service_id,
+backend/app/reliability/tasks.py:77:                    "service_id=%s "
+backend/app/reliability/tasks.py:81:                    slo_definition.service_id,
+backend/app/reliability/tasks.py:95:                    "service_id=%s "
+backend/app/reliability/tasks.py:98:                    slo_definition.service_id,
+backend/app/reliability/slo_engine.py:87:            == slo_definition.service_id
+backend/app/reliability/slo_engine.py:127:        service_id=slo_definition.service_id,
+backend/app/reliability/slo_engine.py:195:        "service_id": service.id,
+backend/app/reliability/error_budget.py:155:        service_id=slo_definition.service_id,
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:28:        sa.Column("service_id", sa.String(), nullable=True),
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:57:    op.create_index("ix_incidents_service_id", "incidents", ["service_id"])
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:77:    op.drop_index("ix_incidents_service_id", table_name="incidents")
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:26:        sa.Column("service_id", sa.String(length=36), nullable=False),
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:46:        sa.ForeignKeyConstraint(["service_id"], ["services.id"]),
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:55:        sa.Column("service_id", sa.String(), nullable=False),
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:80:    op.create_index("ix_incidents_service_id", "incidents", ["service_id"])
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:80:        sa.Column("service_id", sa.String(length=36), nullable=False),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:118:            ["service_id"],
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:126:        "ix_slo_definitions_service_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:128:        ["service_id"],
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:140:        sa.Column("service_id", sa.String(length=36), nullable=False),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:169:            ["service_id"],
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:189:        "ix_slo_measurements_service_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:191:        ["service_id"],
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:210:        sa.Column("service_id", sa.String(length=36), nullable=False),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:255:            ["service_id"],
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:275:        "ix_error_budget_statuses_service_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:277:        ["service_id"],
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:291:        sa.Column("service_id", sa.String(length=36), nullable=False),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:332:            ["service_id"],
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:350:        "ix_reliability_alerts_service_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:352:        ["service_id"],
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:383:        "ix_reliability_alerts_service_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:393:        "ix_error_budget_statuses_service_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:407:        "ix_slo_measurements_service_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:417:        "ix_slo_definitions_service_id",
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:30:        sa.Column("service_id", sa.String(), nullable=True),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:44:    op.create_index("ix_event_records_service_id", "event_records", ["service_id"])
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:55:        sa.Column("service_id", sa.String(), nullable=True),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:71:    op.create_index("ix_outbox_events_service_id", "outbox_events", ["service_id"])
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:99:        sa.Column("service_id", sa.String(), nullable=True),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:114:    op.create_index("ix_dead_letter_events_service_id", "dead_letter_events", ["service_id"])
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:122:    op.drop_index("ix_dead_letter_events_service_id", table_name="dead_letter_events")
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:133:    op.drop_index("ix_outbox_events_service_id", table_name="outbox_events")
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:141:    op.drop_index("ix_event_records_service_id", table_name="event_records")
+backend/alembic/versions/847c900aa085_add_service_health_snapshots.py:44:        sa.Column("service_id", sa.String(), nullable=False),
+backend/alembic/versions/847c900aa085_add_service_health_snapshots.py:62:        sa.ForeignKeyConstraint(["service_id"], ["services.id"]),
+backend/alembic/versions/847c900aa085_add_service_health_snapshots.py:67:        op.f("ix_service_health_snapshots_service_id"),
+backend/alembic/versions/847c900aa085_add_service_health_snapshots.py:69:        ["service_id"],
+backend/alembic/versions/847c900aa085_add_service_health_snapshots.py:103:        op.f("ix_service_health_snapshots_service_id"),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:200:    op.drop_index("ix_incidents_service_id", table_name="incidents")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:216:        sa.Column("primary_service_id", sa.String(length=36), nullable=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:377:            primary_service_id = service_id,
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:420:        SET primary_service_id = NULL
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:421:        WHERE primary_service_id IS NOT NULL
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:425:              WHERE service.id = incident.primary_service_id
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:543:        "fk_incidents_primary_service_id_services",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:546:        ["primary_service_id"],
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:898:        "ix_incidents_primary_service_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:900:        ["primary_service_id"],
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1035:        "ix_incidents_primary_service_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1087:        "fk_incidents_primary_service_id_services",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1247:    op.drop_column("incidents", "primary_service_id")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1255:        "ix_incidents_service_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1257:        ["service_id"],
+backend/alembic/versions/a2f39e69aa46_make_legacy_incident_fields_nullable.py:24:        "service_id",
+backend/alembic/versions/a2f39e69aa46_make_legacy_incident_fields_nullable.py:48:        SET service_id = primary_service_id
+backend/alembic/versions/a2f39e69aa46_make_legacy_incident_fields_nullable.py:49:        WHERE service_id IS NULL
+backend/alembic/versions/a2f39e69aa46_make_legacy_incident_fields_nullable.py:85:        "service_id",
+
+===== environment =====
+backend/app/models.py:190:    environments = relationship("Environment", back_populates="service")
+backend/app/models.py:220:    environment = Column(String, nullable=False, default="staging")
+backend/app/models.py:248:    __tablename__ = "environments"
+backend/app/models.py:256:    service = relationship("Service", back_populates="environments")
+backend/app/models.py:339:    environment_id = Column(String(36), ForeignKey("environments.id"), nullable=True)
+backend/app/models.py:441:    environment = Column(String, nullable=True, index=True)
+backend/app/models.py:484:    environment = Column(String, index=True, nullable=True)
+backend/app/models.py:546:    environment = Column(String, nullable=True, index=True)
+backend/app/models.py:653:    environment = Column(
+backend/app/models.py:886:            "ix_incidents_environment",
+backend/app/models.py:887:            "environment",
+backend/app/observability/alert_service.py:24:        or f"{snapshot.service_id}:{snapshot.environment}:{alert.event_type}"
+backend/app/observability/alert_service.py:35:        "environment": snapshot.environment,
+backend/app/observability/health_router.py:28:    environment: str = "staging"
+backend/app/observability/health_router.py:47:        environment=request.environment,
+backend/app/observability/health_router.py:71:        "environment": snapshot.environment,
+backend/app/observability/collector.py:11:    environment: str,
+backend/app/observability/collector.py:32:        environment=environment,
+backend/app/observability/schemas.py:11:    environment: str
+backend/app/observability/schemas.py:30:    environment: str
+backend/app/observability/service.py:36:        key = (row.service_id, row.environment)
+backend/app/observability/metrics.py:43:    ["service_name", "environment"],
+backend/app/models.py.bak:177:    environments = relationship("Environment", back_populates="service")
+backend/app/models.py.bak:183:    __tablename__ = "environments"
+backend/app/models.py.bak:191:    service = relationship("Service", back_populates="environments")
+backend/app/models.py.bak:273:    environment_id = Column(String(36), ForeignKey("environments.id"), nullable=True)
+backend/app/deployments/kubernetes_capture.py:38:    environment: str,
+backend/app/deployments/kubernetes_capture.py:82:                environment=environment,
+backend/app/deployments/kubernetes_capture.py:99:                environment=environment,
+backend/app/deployments/kubernetes_capture.py:120:            environment=environment,
+backend/app/deployments/kubernetes_capture.py:144:            environment=environment,
+backend/app/deployments/kubernetes_capture.py:253:    environment: str = DEFAULT_ENVIRONMENT,
+backend/app/deployments/kubernetes_capture.py:307:                environment=environment or "staging",
+backend/app/deployments/kubernetes_capture.py:336:                environment=environment or "staging",
+backend/app/deployments/schemas.py:31:    environment_id: Optional[UUID] = None
+backend/app/deployments/schemas.py:60:    environment_id: Optional[UUID]
+backend/app/deployments/router.py:46:    environment_id: Optional[str] = None
+backend/app/deployments/router.py:75:    environment_id: Optional[str]
+backend/app/deployments/router.py:139:        environment=getattr(deployment, "environment", None) or "staging",
+backend/app/deployments/router.py:295:                environment=getattr(deployment, "environment", None) or "staging",
+backend/app/deployments/router.py:318:                environment=getattr(deployment, "environment", None) or "staging",
+backend/app/main.py:204:        environment="staging",
+backend/app/events/envelope.py:15:    environment: Optional[str] = None,
+backend/app/events/envelope.py:32:        environment=environment,
+backend/app/events/consumer.py:130:                environment=envelope.get("environment"),
+backend/app/events/schemas.py:15:    environment: Optional[str] = None
+backend/app/events/outbox.py:16:    environment: Optional[str] = None,
+backend/app/events/outbox.py:36:        environment=environment,
+backend/app/events/outbox.py:47:        environment=envelope.get("environment"),
+backend/app/events/router.py:39:    environment: Optional[str] = None,
+backend/app/events/router.py:53:        environment=environment,
+backend/app/events/service.py:20:    environment: Optional[str] = None,
+backend/app/events/service.py:38:        environment=environment,
+backend/app/events/service.py:52:        "environment": event.environment,
+backend/app/events/service.py:71:        "environment": event.environment,
+backend/app/events/service.py:88:    environment: Optional[str] = None,
+backend/app/events/service.py:105:    if environment:
+backend/app/events/service.py:106:        query = query.filter(EventRecord.environment == environment)
+backend/app/events/outbox_publisher.py:26:        "environment": event.environment,
+backend/app/events/handlers.py:316:    environment = (
+backend/app/events/handlers.py:317:        raw_event.get("environment")
+backend/app/events/handlers.py:318:        or record.environment
+backend/app/events/handlers.py:335:        environment=environment,
+backend/app/events/handlers.py:348:        environment=environment,
+backend/app/events/handlers.py:376:    environment: str,
+backend/app/events/handlers.py:385:            f"{service_name} in {environment} is experiencing "
+backend/app/events/handlers.py:395:            f"{service_name} in {environment} is experiencing "
+backend/app/events/handlers.py:405:            f"{service_name} in {environment} has a pod "
+backend/app/events/handlers.py:414:            f"{service_name} in {environment} is degraded. "
+backend/app/events/handlers.py:423:            f"{service_name} in {environment} appears "
+backend/app/events/handlers.py:428:        f"{service_name} in {environment} triggered "
+backend/app/events/idempotency.py:46:        environment=envelope.get("environment"),
+backend/app/schemas.py:128:    environments: list[EnvironmentResponse] = Field(
+backend/app/incidents/repository.py:138:    environment: str | None = None,
+backend/app/incidents/repository.py:178:    if environment is not None:
+backend/app/incidents/repository.py:180:            Incident.environment == environment,
+backend/app/incidents/repository.py:258:    environment: str,
+backend/app/incidents/repository.py:266:    primary service and environment, occurred no later than detection,
+backend/app/incidents/repository.py:272:    normalised_environment = environment.strip().lower()
+backend/app/incidents/repository.py:274:    if not normalised_environment:
+backend/app/incidents/repository.py:290:            Environment.id == Deployment.environment_id,
+backend/app/incidents/repository.py:296:            == normalised_environment,
+backend/app/incidents/consumer.py:136:    environment = (
+backend/app/incidents/consumer.py:137:        record.environment
+backend/app/incidents/consumer.py:138:        or payload.get("environment")
+backend/app/incidents/consumer.py:141:    if not environment:
+backend/app/incidents/consumer.py:143:            "Reliability alert event is missing environment: "
+backend/app/incidents/consumer.py:153:            environment=str(environment),
+backend/app/incidents/consumer.py:183:        environment=str(environment),
+backend/app/incidents/incident_router.py:128:    environment: str | None = Query(
+backend/app/incidents/incident_router.py:174:        environment=environment,
+backend/app/incidents/incident_router.py:360:    environment: str | None = Query(
+backend/app/incidents/incident_router.py:406:        environment=environment,
+backend/app/incidents/incident_router.py:421:    environment: str | None = Query(
+backend/app/incidents/incident_router.py:434:        environment=environment,
+backend/app/incidents/schemas.py:53:    environment_id: str | None = None
+backend/app/incidents/schemas.py:404:    environment: str
+backend/app/incidents/router.py:26:    environment: str | None = Query(default=None),
+backend/app/incidents/router.py:40:    if environment:
+backend/app/incidents/router.py:41:        query = query.filter(Incident.environment == environment)
+backend/app/incidents/router.py:117:    environment: str | None = Query(default=None),
+backend/app/incidents/router.py:122:    if environment:
+backend/app/incidents/router.py:123:        query = query.filter(Incident.environment == environment)
+backend/app/incidents/service.py:333:        environment_id=deployment.environment_id,
+backend/app/incidents/service.py:471:        environment=incident.environment,
+backend/app/incidents/service.py:512:    environment: str | None = None,
+backend/app/incidents/service.py:553:        environment=environment,
+backend/app/incidents/service.py:944:    environment: str,
+backend/app/incidents/service.py:954:    ReliabilityAlert has no environment column, so callers must supply
+backend/app/incidents/service.py:955:    the environment from the event or telemetry context.
+backend/app/incidents/service.py:986:        normalised_environment = environment.strip()
+backend/app/incidents/service.py:988:        if not normalised_environment:
+backend/app/incidents/service.py:989:            raise ValueError("Incident environment must not be empty")
+backend/app/incidents/service.py:1004:            normalised_environment,
+backend/app/incidents/service.py:1028:            environment=normalised_environment,
+backend/app/incidents/service.py:1037:            environment=normalised_environment,
+backend/app/incidents/service.py:1094:                environment=normalised_environment,
+backend/app/incidents/service.py:1219:                        f"to {normalised_environment}."
+backend/app/incidents/service.py:1225:                        "environment": normalised_environment,
+backend/app/incidents/service.py:1245:                        f"{normalised_environment} deployment "
+backend/app/incidents/service.py:1254:                        "environment": normalised_environment,
+backend/app/incidents/service.py:1293:                        "environment": normalised_environment,
+backend/app/incidents/service.py:1327:                    "environment": normalised_environment,
+backend/app/incidents/service.py:2226:    environment: str | None = None,
+backend/app/incidents/service.py:2238:        environment=environment,
+backend/app/incidents/service.py:2279:        if environment is not None and snapshot.environment != environment:
+backend/app/incidents/service.py:2295:                    "environment": snapshot.environment,
+backend/app/incidents/config.py:9:    """Read a positive integer from the environment."""
+backend/app/incidents/config.py:27:    """Read a positive floating-point value from the environment."""
+backend/app/incidents/rules.py:78:    environment: str,
+backend/app/incidents/rules.py:81:    """Build a stable service, environment, and SLO/category key."""
+backend/app/incidents/rules.py:86:            _normalise_key_part(environment, "environment"),
+backend/app/incidents/rules.py:151:    environment: str = "production",
+backend/app/incidents/rules.py:168:    normalised_environment = environment.strip().lower()
+backend/app/incidents/rules.py:207:        "environment": normalised_environment,
+backend/app/incidents/rules.py:220:    if normalised_environment in NON_PRODUCTION_ENVIRONMENTS:
+backend/app/incidents/rules.py:226:                f"environment {normalised_environment!r}."
+backend/app/incidents/rules.py:377:    environment: str = "production",
+backend/app/incidents/rules.py:393:        environment=environment,
+backend/app/incidents/rules.py:417:        environment="production",
+backend/app/incidents/schemas.py.sprint5.bak:24:    environment: str
+backend/app/control_plane/routes.py:230:    "/projects/{project_id}/services/{service_id}/environments",
+backend/app/control_plane/routes.py:233:def create_environment(
+backend/app/control_plane/routes.py:251:    environment = Environment(
+backend/app/control_plane/routes.py:259:    db.add(environment)
+backend/app/control_plane/routes.py:265:        entity_id=environment.id,
+backend/app/control_plane/routes.py:270:            "name": environment.name,
+backend/app/control_plane/routes.py:271:            "is_active": environment.is_active,
+backend/app/control_plane/routes.py:276:    db.refresh(environment)
+backend/app/control_plane/routes.py:278:    return environment
+backend/app/control_plane/routes.py:336:        environment="staging",
+backend/app/tasks.py:109:            environment=getattr(pipeline, "environment", None) or "staging",
+backend/app/reliability/alert_service.py:36:    environment_id: str | None = None,
+backend/app/reliability/alert_service.py:47:    if environment_id is not None:
+backend/app/reliability/alert_service.py:49:            Deployment.environment_id == environment_id
+backend/app/reliability/alert_service.py:60:def get_deployment_environment(
+backend/app/reliability/alert_service.py:67:        and deployment.environment_id
+backend/app/reliability/alert_service.py:69:        environment = (
+backend/app/reliability/alert_service.py:73:                == deployment.environment_id
+backend/app/reliability/alert_service.py:78:        if environment is not None:
+backend/app/reliability/alert_service.py:79:            return environment.name
+backend/app/reliability/alert_service.py:355:        environment_id=getattr(
+backend/app/reliability/alert_service.py:357:            "environment_id",
+backend/app/reliability/alert_service.py:362:    environment = get_deployment_environment(
+backend/app/reliability/alert_service.py:392:        f"{environment}:"
+backend/app/reliability/alert_service.py:465:        environment=environment,
+backend/app/reliability/query_service.py:210:def _get_deployment_environment(
+backend/app/reliability/query_service.py:216:    Fall back to environment_id because the current Deployment model
+backend/app/reliability/query_service.py:217:    stores environment_id rather than a direct environment string.
+backend/app/reliability/query_service.py:219:    environment = getattr(
+backend/app/reliability/query_service.py:221:        "environment",
+backend/app/reliability/query_service.py:225:    if environment is not None:
+backend/app/reliability/query_service.py:226:        if isinstance(environment, str):
+backend/app/reliability/query_service.py:227:            return environment
+backend/app/reliability/query_service.py:229:        environment_name = getattr(
+backend/app/reliability/query_service.py:230:            environment,
+backend/app/reliability/query_service.py:235:        if environment_name is not None:
+backend/app/reliability/query_service.py:236:            return _string_value(environment_name)
+backend/app/reliability/query_service.py:241:            "environment_id",
+backend/app/reliability/query_service.py:287:        environment=_get_deployment_environment(
+backend/app/reliability/schemas.py:103:    environment: str | None = None
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:30:        sa.Column("environment", sa.String(), nullable=True),
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:59:    op.create_index("ix_incidents_environment", "incidents", ["environment"])
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:75:    op.drop_index("ix_incidents_environment", table_name="incidents")
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:28:        sa.Column("environment_id", sa.String(length=36), nullable=True),
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:44:        sa.ForeignKeyConstraint(["environment_id"], ["environments.id"]),
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:56:        sa.Column("environment", sa.String(), nullable=False),
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:81:    op.create_index("ix_incidents_environment", "incidents", ["environment"])
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:31:        sa.Column("environment", sa.String(), nullable=True),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:45:    op.create_index("ix_event_records_environment", "event_records", ["environment"])
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:56:        sa.Column("environment", sa.String(), nullable=True),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:72:    op.create_index("ix_outbox_events_environment", "outbox_events", ["environment"])
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:100:        sa.Column("environment", sa.String(), nullable=True),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:115:    op.create_index("ix_dead_letter_events_environment", "dead_letter_events", ["environment"])
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:121:    op.drop_index("ix_dead_letter_events_environment", table_name="dead_letter_events")
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:132:    op.drop_index("ix_outbox_events_environment", table_name="outbox_events")
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:140:    op.drop_index("ix_event_records_environment", table_name="event_records")
+backend/alembic/versions/847c900aa085_add_service_health_snapshots.py:46:        sa.Column("environment", sa.String(), nullable=False),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:201:    op.drop_index("ix_incidents_environment", table_name="incidents")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:904:        "ix_incidents_environment",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:906:        ["environment"],
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1038:    op.drop_index("ix_incidents_environment", table_name="incidents")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1261:        "ix_incidents_environment",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1263:        ["environment"],
+
+===== status =====
+backend/app/models.py:37:    status = Column(String, nullable=False, default="PENDING")
+backend/app/models.py:48:    build_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:49:    test_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:50:    sonar_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:51:    trivy_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:121:    final_status = Column(String, nullable=True)
+backend/app/models.py:221:    status = Column(
+backend/app/models.py:284:    status = Column(String, default="PENDING")
+backend/app/models.py:291:    build_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:292:    test_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:293:    sonar_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:294:    trivy_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:345:    argo_sync_status = Column(String(50), nullable=True, default="UNKNOWN")
+backend/app/models.py:346:    kubernetes_rollout_status = Column(String(50), nullable=True, default="UNKNOWN")
+backend/app/models.py:391:    status = Column(String(50), nullable=True, default="UNKNOWN")
+backend/app/models.py:409:    status = Column(String(50), nullable=True)
+backend/app/models.py:448:    processing_status = Column(
+backend/app/models.py:488:    status = Column(String, index=True, nullable=False, default="PENDING")
+backend/app/models.py:552:    status = Column(String, nullable=False, default="OPEN", index=True)
+backend/app/models.py:599:incident_status_enum = SQLEnum(
+backend/app/models.py:601:    name="incidentstatus",
+backend/app/models.py:640:    status = Column(
+backend/app/models.py:641:        incident_status_enum,
+backend/app/models.py:874:            "ix_incidents_status",
+backend/app/models.py:875:            "status",
+backend/app/models.py:939:    from_status = Column(
+backend/app/models.py:940:        incident_status_enum,
+backend/app/models.py:944:    to_status = Column(
+backend/app/models.py:945:        incident_status_enum,
+backend/app/models.py:1407:    error_budget_statuses = relationship(
+backend/app/models.py:1482:    __tablename__ = "error_budget_statuses"
+backend/app/models.py:1528:    status = Column(
+backend/app/models.py:1552:        back_populates="error_budget_statuses",
+backend/app/models.py:1607:    status = Column(
+backend/app/models.py:1610:            name="reliability_alert_status",
+backend/app/pipelineiq/security/trivy_scan.py:14:            "status": "FAILED",
+backend/app/pipelineiq/security/trivy_scan.py:42:                "status": "FAILED",
+backend/app/pipelineiq/security/trivy_scan.py:74:            "status": "SUCCESS",
+backend/app/pipelineiq/security/trivy_scan.py:87:            "status": "FAILED",
+backend/app/pipelineiq/security/trivy_scan.py:100:            "status": "FAILED",
+backend/app/pipelineiq/risk/release_risk.py:5:    calculate_release_risk(build_status=..., trivy_status=...)
+backend/app/pipelineiq/risk/release_risk.py:13:    build_status = payload.get("build_status")
+backend/app/pipelineiq/risk/release_risk.py:14:    test_status = payload.get("test_status")
+backend/app/pipelineiq/risk/release_risk.py:15:    sonar_status = payload.get("sonar_status")
+backend/app/pipelineiq/risk/release_risk.py:16:    trivy_status = payload.get("trivy_status")
+backend/app/pipelineiq/risk/release_risk.py:34:    if build_status == "FAILED":
+backend/app/pipelineiq/risk/release_risk.py:38:    if test_status == "FAILED":
+backend/app/pipelineiq/risk/release_risk.py:42:    if sonar_status == "FAILED":
+backend/app/pipelineiq/risk/release_risk.py:46:    if trivy_status in {"FAILED", "SKIPPED"}:
+backend/app/pipelineiq/risk/release_risk.py:87:        f"Build={build_status}, Tests={test_status}, Sonar={sonar_status}, "
+backend/app/pipelineiq/risk/release_risk.py:88:        f"Trivy={trivy_status}, Trivy critical/high={trivy_critical}/{trivy_high}."
+backend/app/pipelineiq/risk/release_risk.py:118:    build_status = _get_run_value(run, "build_status", "UNKNOWN")
+backend/app/pipelineiq/risk/release_risk.py:119:    test_status = _get_run_value(run, "test_status", "UNKNOWN")
+backend/app/pipelineiq/risk/release_risk.py:131:    if build_status == "FAILED":
+backend/app/pipelineiq/risk/release_risk.py:135:    if test_status == "FAILED":
+backend/app/pipelineiq/intelligence/risk_engine.py:6:        build_status=getattr(pipeline, "build_status", None),
+backend/app/pipelineiq/intelligence/risk_engine.py:7:        test_status=getattr(pipeline, "test_status", None),
+backend/app/pipelineiq/intelligence/risk_engine.py:8:        sonar_status=getattr(pipeline, "sonar_status", None),
+backend/app/pipelineiq/intelligence/risk_engine.py:9:        trivy_status=getattr(pipeline, "trivy_status", None),
+backend/app/pipelineiq/reliability/stale_runs.py:11:        .filter(Pipeline.status == "RUNNING")
+backend/app/pipelineiq/reliability/stale_runs.py:17:        pipeline.status = "FAILED"
+backend/app/executor.py:143:            ["quality_gate", "quality_gate_status", "qualityGate"],
+backend/app/executor.py:310:    build_status = payload.get("build_status")
+backend/app/executor.py:311:    test_status = payload.get("test_status")
+backend/app/executor.py:312:    sonar_status = payload.get("sonar_status")
+backend/app/executor.py:313:    trivy_status = payload.get("trivy_status")
+backend/app/executor.py:325:    if build_status == "FAILED":
+backend/app/executor.py:329:    if test_status == "FAILED":
+backend/app/executor.py:333:    if sonar_status == "FAILED":
+backend/app/executor.py:337:    if trivy_status == "FAILED":
+backend/app/executor.py:394:        f"Build={build_status or 'UNKNOWN'}, "
+backend/app/executor.py:395:        f"Tests={test_status or 'UNKNOWN'}, "
+backend/app/executor.py:396:        f"Sonar={sonar_status or 'UNKNOWN'}, "
+backend/app/executor.py:397:        f"Trivy={trivy_status or 'UNKNOWN'}, "
+backend/app/executor.py:462:        "build_status": None,
+backend/app/executor.py:463:        "test_status": None,
+backend/app/executor.py:464:        "sonar_status": None,
+backend/app/executor.py:465:        "trivy_status": None,
+backend/app/executor.py:632:        update_state(test_status="RUNNING")
+backend/app/executor.py:633:        stage("TESTING", test_status="RUNNING")
+backend/app/executor.py:643:            return fail("npm test failed", test_status="FAILED")
+backend/app/executor.py:645:        update_state(test_status="SUCCESS")
+backend/app/executor.py:646:        stage("TESTING", test_status="SUCCESS")
+backend/app/executor.py:648:        update_state(build_status="RUNNING")
+backend/app/executor.py:649:        stage("BUILDING", build_status="RUNNING")
+backend/app/executor.py:659:            return fail("npm run build failed", build_status="FAILED")
+backend/app/executor.py:661:        update_state(build_status="SUCCESS")
+backend/app/executor.py:662:        stage("BUILDING", build_status="SUCCESS")
+backend/app/executor.py:666:        update_state(sonar_status="RUNNING")
+backend/app/executor.py:667:        stage("SONAR", sonar_status="RUNNING")
+backend/app/executor.py:679:            update_state(sonar_status="SKIPPED")
+backend/app/executor.py:680:            stage("SONAR", sonar_status="SKIPPED", **sonar_fields)
+backend/app/executor.py:687:            update_state(sonar_status="FAILED")
+backend/app/executor.py:688:            stage("SONAR", sonar_status="FAILED", **sonar_fields)
+backend/app/executor.py:703:            update_state(sonar_status="SUCCESS")
+backend/app/executor.py:704:            stage("SONAR", sonar_status="SUCCESS", **sonar_fields)
+backend/app/executor.py:707:        update_state(trivy_status="RUNNING")
+backend/app/executor.py:708:        stage("TRIVY", trivy_status="RUNNING")
+backend/app/executor.py:715:            update_state(trivy_status="SKIPPED")
+backend/app/executor.py:716:            stage("TRIVY", trivy_status="SKIPPED", **trivy_fields)
+backend/app/executor.py:727:            update_state(trivy_status="FAILED")
+backend/app/executor.py:728:            stage("TRIVY", trivy_status="FAILED", **trivy_fields)
+backend/app/executor.py:743:            update_state(trivy_status="SUCCESS")
+backend/app/executor.py:744:            stage("TRIVY", trivy_status="SUCCESS", **trivy_fields)
+backend/app/observability/health_router.py:72:        "status": snapshot.status.value
+backend/app/observability/health_router.py:73:        if hasattr(snapshot.status, "value")
+backend/app/observability/health_router.py:74:        else snapshot.status,
+backend/app/observability/health_router.py:89:            status_code=404,
+backend/app/observability/collector.py:21:    status = classify_health(
+backend/app/observability/collector.py:33:        status=ServiceHealthStatus(status),
+backend/app/observability/schemas.py:12:    status: str
+backend/app/observability/schemas.py:31:    status: str
+backend/app/observability/alert_rules.py:12:def _status_value(snapshot) -> str | None:
+backend/app/observability/alert_rules.py:13:    status = getattr(snapshot, "status", None)
+backend/app/observability/alert_rules.py:14:    return getattr(status, "value", status)
+backend/app/observability/alert_rules.py:72:    if _status_value(snapshot) == "UNHEALTHY":
+backend/app/observability/alert_rules.py:78:                    "status": "UNHEALTHY",
+backend/app/observability/metrics.py:7:    ["status"],
+backend/app/observability/metrics.py:13:    ["status"],
+backend/app/observability/metrics.py:37:    ["method", "path", "status_code"],
+backend/app/observability/metrics.py:41:    "platformiq_service_health_status",
+backend/app/observability/metrics.py:42:    "Service health status as numeric value: healthy=1, degraded=0.5, unhealthy=0, unknown=-1",
+backend/app/models.py.bak:20:    status = Column(String, nullable=False, default="PENDING")
+backend/app/models.py.bak:31:    build_status = Column(String, default="NOT_STARTED")
+backend/app/models.py.bak:32:    test_status = Column(String, default="NOT_STARTED")
+backend/app/models.py.bak:33:    sonar_status = Column(String, default="NOT_STARTED")
+backend/app/models.py.bak:34:    trivy_status = Column(String, default="NOT_STARTED")
+backend/app/models.py.bak:107:    final_status = Column(String, nullable=True)
+backend/app/models.py.bak:219:    status = Column(String, default="PENDING")
+backend/app/models.py.bak:226:    build_status = Column(String, default="NOT_STARTED")
+backend/app/models.py.bak:227:    test_status = Column(String, default="NOT_STARTED")
+backend/app/models.py.bak:228:    sonar_status = Column(String, default="NOT_STARTED")
+backend/app/models.py.bak:229:    trivy_status = Column(String, default="NOT_STARTED")
+backend/app/models.py.bak:279:    argo_sync_status = Column(String(50), nullable=True, default="UNKNOWN")
+backend/app/models.py.bak:280:    kubernetes_rollout_status = Column(String(50), nullable=True, default="UNKNOWN")
+backend/app/models.py.bak:325:    status = Column(String(50), nullable=True, default="UNKNOWN")
+backend/app/models.py.bak:343:    status = Column(String(50), nullable=True)
+backend/app/deployments/kubernetes_capture.py:197:    conditions = getattr(pod.status, "conditions", None) or []
+backend/app/deployments/kubernetes_capture.py:201:            return condition.status == "True"
+backend/app/deployments/kubernetes_capture.py:209:    container_statuses = getattr(pod.status, "container_statuses", None) or []
+backend/app/deployments/kubernetes_capture.py:211:    for container_status in container_statuses:
+backend/app/deployments/kubernetes_capture.py:212:        restart_count += _safe_int(getattr(container_status, "restart_count", 0))
+backend/app/deployments/kubernetes_capture.py:290:                getattr(deployment.status, "available_replicas", None),
+backend/app/deployments/kubernetes_capture.py:320:            pod_phase = getattr(pod.status, "phase", None)
+backend/app/deployments/schemas.py:16:    status: str = "UNKNOWN"
+backend/app/deployments/schemas.py:37:    argo_sync_status: Optional[str] = "UNKNOWN"
+backend/app/deployments/schemas.py:38:    kubernetes_rollout_status: Optional[str] = "UNKNOWN"
+backend/app/deployments/schemas.py:66:    argo_sync_status: Optional[str]
+backend/app/deployments/schemas.py:67:    kubernetes_rollout_status: Optional[str]
+backend/app/deployments/router.py:31:    status: str = "UNKNOWN"
+backend/app/deployments/router.py:52:    argo_sync_status: Optional[str] = "UNKNOWN"
+backend/app/deployments/router.py:53:    kubernetes_rollout_status: Optional[str] = "UNKNOWN"
+backend/app/deployments/router.py:81:    argo_sync_status: Optional[str]
+backend/app/deployments/router.py:82:    kubernetes_rollout_status: Optional[str]
+backend/app/deployments/router.py:128:        status=request.kubernetes_rollout_status,
+backend/app/deployments/router.py:199:        raise HTTPException(status_code=404, detail="Deployment not found")
+backend/app/deployments/router.py:219:        raise HTTPException(status_code=404, detail="Deployment not found")
+backend/app/deployments/router.py:247:        raise HTTPException(status_code=404, detail="Deployment not found")
+backend/app/deployments/router.py:254:    previous_rollout_status = (
+backend/app/deployments/router.py:255:        deployment.kubernetes_rollout_status or "UNKNOWN"
+backend/app/deployments/router.py:258:    requested_status = (request.status or "UNKNOWN").upper()
+backend/app/deployments/router.py:263:    failed_statuses = {
+backend/app/deployments/router.py:273:    completed_statuses = {
+backend/app/deployments/router.py:282:    if request.failure_reason or requested_status in failed_statuses:
+backend/app/deployments/router.py:283:        deployment.kubernetes_rollout_status = "FAILED"
+backend/app/deployments/router.py:286:            or f"Workload {request.workload_name} reported status {request.status}"
+backend/app/deployments/router.py:289:        if previous_rollout_status != "FAILED":
+backend/app/deployments/router.py:302:                    "argo_sync_status": deployment.argo_sync_status,
+backend/app/deployments/router.py:303:                    "kubernetes_rollout_status": deployment.kubernetes_rollout_status,
+backend/app/deployments/router.py:308:    elif requested_status in completed_statuses:
+backend/app/deployments/router.py:309:        deployment.argo_sync_status = "SYNCED"
+backend/app/deployments/router.py:310:        deployment.kubernetes_rollout_status = "HEALTHY"
+backend/app/deployments/router.py:312:        if previous_rollout_status != "HEALTHY":
+backend/app/deployments/router.py:325:                    "argo_sync_status": deployment.argo_sync_status,
+backend/app/deployments/router.py:326:                    "kubernetes_rollout_status": deployment.kubernetes_rollout_status,
+backend/app/deployments/router.py:333:        deployment.kubernetes_rollout_status = request.status
+backend/app/main.py:14:    status,
+backend/app/main.py:65:        status_code=status.HTTP_404_NOT_FOUND,
+backend/app/main.py:78:        status_code=status.HTTP_409_CONFLICT,
+backend/app/main.py:96:        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+backend/app/main.py:145:        status_code=str(response.status_code),
+backend/app/main.py:164:        "status": "ok",
+backend/app/main.py:182:            "status": "PENDING",
+backend/app/main.py:191:        status="PENDING",
+backend/app/main.py:209:            "status": pipeline.status,
+backend/app/main.py:225:        "status": "PENDING",
+backend/app/main.py:243:            status_code=404,
+backend/app/main.py:266:        "status": pipeline.status,
+backend/app/main.py:282:        # Step statuses
+backend/app/main.py:283:        "build_status": pipeline.build_status,
+backend/app/main.py:284:        "test_status": pipeline.test_status,
+backend/app/main.py:285:        "sonar_status": pipeline.sonar_status,
+backend/app/main.py:286:        "trivy_status": pipeline.trivy_status,
+backend/app/main.py:337:            "final_status": (
+backend/app/main.py:338:                analysis.final_status
+backend/app/main.py:353:    status: str | None = None,
+backend/app/main.py:361:    if status and status.upper() != "ALL":
+backend/app/main.py:363:            Pipeline.status == status.upper()
+backend/app/main.py:392:            "status": pipeline.status,
+backend/app/main.py:401:            # Step statuses
+backend/app/main.py:402:            "build_status": pipeline.build_status,
+backend/app/main.py:403:            "test_status": pipeline.test_status,
+backend/app/main.py:404:            "sonar_status": pipeline.sonar_status,
+backend/app/main.py:405:            "trivy_status": pipeline.trivy_status,
+backend/app/events/consumer.py:121:            existing.status = "OPEN"
+backend/app/events/consumer.py:134:                status="OPEN",
+backend/app/events/outbox.py:49:        status="PENDING",
+backend/app/events/router.py:41:    status: Optional[str] = None,
+backend/app/events/router.py:55:        status=status,
+backend/app/events/router.py:74:        raise HTTPException(status_code=404, detail="Event not found")
+backend/app/events/router.py:92:    status: Optional[str] = None,
+backend/app/events/router.py:99:        status=status,
+backend/app/events/router.py:115:        raise HTTPException(status_code=404, detail="Dead-letter event not found")
+backend/app/events/service.py:56:        "processing_status": event.processing_status,
+backend/app/events/service.py:75:        "status": event.status,
+backend/app/events/service.py:90:    status: Optional[str] = None,
+backend/app/events/service.py:111:    if status:
+backend/app/events/service.py:112:        query = query.filter(EventRecord.processing_status == status)
+backend/app/events/service.py:162:    status: Optional[str] = None,
+backend/app/events/service.py:168:    if status:
+backend/app/events/service.py:169:        query = query.filter(DeadLetterEvent.status == status)
+backend/app/events/service.py:204:        dead.status = "RESOLVED"
+backend/app/events/service.py:221:        dead.status = "FAILED"
+backend/app/events/outbox_publisher.py:37:        .filter(OutboxEvent.status == "PENDING")
+backend/app/events/outbox_publisher.py:49:            event.status = "PUBLISHING"
+backend/app/events/outbox_publisher.py:61:            event.status = "PUBLISHED"
+backend/app/events/outbox_publisher.py:83:                    failed_event.status = "FAILED"
+backend/app/events/outbox_publisher.py:85:                    failed_event.status = "PENDING"
+backend/app/events/handlers.py:140:    record.processing_status = "PROCESSED"
+backend/app/events/handlers.py:190:            deployment.status = "RUNNING"
+backend/app/events/handlers.py:193:            deployment.status = "SUCCESS"
+backend/app/events/handlers.py:196:            deployment.status = "FAILED"
+backend/app/events/handlers.py:262:    The incident uses the current Sprint 7 status, severity and
+backend/app/events/handlers.py:345:        status=IncidentStatus.DETECTED,
+backend/app/events/idempotency.py:50:        processing_status="RECEIVED",
+backend/app/schemas.py:32:    status: str
+backend/app/schemas.py:114:    status: str
+backend/app/incidents/repository.py.7a.bak:4:It should not contain HTTP or status-transition business logic."""
+backend/app/incidents/transitions.py:3:This module contains pure incident status-transition validation. It must not
+backend/app/incidents/transitions.py:51:def _normalise_status(
+backend/app/incidents/transitions.py:65:    """Raised when an incident status transition is not permitted."""
+backend/app/incidents/transitions.py:69:        current_status: IncidentStatus | str,
+backend/app/incidents/transitions.py:70:        requested_status: IncidentStatus | str,
+backend/app/incidents/transitions.py:73:        current = _normalise_status(current_status)
+backend/app/incidents/transitions.py:74:        requested = _normalise_status(requested_status)
+backend/app/incidents/transitions.py:76:        self.current_status = current
+backend/app/incidents/transitions.py:77:        self.requested_status = requested
+backend/app/incidents/transitions.py:80:        self.from_status = current
+backend/app/incidents/transitions.py:81:        self.to_status = requested
+backend/app/incidents/transitions.py:84:            "Invalid incident status transition: "
+backend/app/incidents/transitions.py:93:    current_status: IncidentStatus | str,
+backend/app/incidents/transitions.py:94:    requested_status: IncidentStatus | str,
+backend/app/incidents/transitions.py:96:    """Validate that an incident can move to the requested status.
+backend/app/incidents/transitions.py:99:        ValueError: If either supplied status cannot be converted into an
+backend/app/incidents/transitions.py:102:            requested status or the transition is not permitted.
+backend/app/incidents/transitions.py:105:    current = _normalise_status(current_status)
+backend/app/incidents/transitions.py:106:    requested = _normalise_status(requested_status)
+backend/app/incidents/transitions.py:110:            current_status=current,
+backend/app/incidents/transitions.py:111:            requested_status=requested,
+backend/app/incidents/transitions.py:113:                "Incident is already in status "
+backend/app/incidents/transitions.py:118:    allowed_statuses = ALLOWED_INCIDENT_TRANSITIONS.get(
+backend/app/incidents/transitions.py:123:    if requested not in allowed_statuses:
+backend/app/incidents/transitions.py:125:            current_status=current,
+backend/app/incidents/transitions.py:126:            requested_status=requested,
+backend/app/incidents/transitions.py:130:def validate_status_transition(
+backend/app/incidents/transitions.py:131:    current_status: IncidentStatus | str,
+backend/app/incidents/transitions.py:132:    requested_status: IncidentStatus | str,
+backend/app/incidents/transitions.py:137:        current_status=current_status,
+backend/app/incidents/transitions.py:138:        requested_status=requested_status,
+backend/app/incidents/repository.py:46:        Incident.status,
+backend/app/incidents/repository.py:135:    status: IncidentStatus | str | None = None,
+backend/app/incidents/repository.py:163:    if status is not None:
+backend/app/incidents/repository.py:165:            Incident.status == status,
+backend/app/incidents/repository.py:355:def get_latest_error_budget_status_for_snapshot(
+backend/app/incidents/repository.py:398:    terminal_statuses = (
+backend/app/incidents/repository.py:428:            Incident.status.notin_(terminal_statuses),
+backend/app/incidents/repository.py:626:def update_incident_status(
+backend/app/incidents/repository.py:630:    status: IncidentStatus,
+backend/app/incidents/repository.py:634:    Persist a status update and any service-calculated timestamps or summaries.
+backend/app/incidents/repository.py:639:    incident.status = status
+backend/app/incidents/repository.py:861:    from_status: IncidentStatus | str | None = None,
+backend/app/incidents/repository.py:862:    to_status: IncidentStatus | str | None = None,
+backend/app/incidents/repository.py:881:        from_status=_enum_value(from_status),
+backend/app/incidents/repository.py:882:        to_status=_enum_value(to_status),
+backend/app/incidents/consumer.py:156:    alert_status = ReliabilityAlertStatus(alert.status)
+backend/app/incidents/consumer.py:160:    if alert_status not in ACTIVE_RELIABILITY_ALERT_STATUSES:
+backend/app/incidents/incident_router.py:76:            status_code=404,
+backend/app/incidents/incident_router.py:88:            status_code=409,
+backend/app/incidents/incident_router.py:94:            status_code=400,
+backend/app/incidents/incident_router.py:119:    status: IncidentStatus | None = Query(
+backend/app/incidents/incident_router.py:162:            status_code=422,
+backend/app/incidents/incident_router.py:171:        status=status,
+backend/app/incidents/incident_router.py:266:    "/{incident_id}/status",
+backend/app/incidents/incident_router.py:269:def update_incident_status_endpoint(
+backend/app/incidents/incident_router.py:277:    """Apply a validated status transition to an incident."""
+backend/app/incidents/incident_router.py:279:    return incident_service.update_incident_status(
+backend/app/incidents/incident_router.py:290:    status_code=201,
+backend/app/incidents/incident_router.py:354:    status: IncidentStatus | None = Query(
+backend/app/incidents/incident_router.py:394:            status_code=422,
+backend/app/incidents/incident_router.py:403:        status=status,
+backend/app/incidents/schemas.py:44:    status: str
+backend/app/incidents/schemas.py:57:    argo_sync_status: str | None = None
+backend/app/incidents/schemas.py:58:    kubernetes_rollout_status: str | None = None
+backend/app/incidents/schemas.py:76:    from_status: IncidentStatus | None = None
+backend/app/incidents/schemas.py:77:    to_status: IncidentStatus | None = None
+backend/app/incidents/schemas.py:154:    status: IncidentStatus
+backend/app/incidents/schemas.py:361:    error_budget_status: str | None = None
+backend/app/incidents/schemas.py:397:    status: IncidentStatus
+backend/app/incidents/router.py:23:    status: str | None = Query(default=None),
+backend/app/incidents/router.py:31:    if status:
+backend/app/incidents/router.py:32:        query = query.filter(Incident.status == IncidentStatus(status))
+backend/app/incidents/router.py:56:        raise HTTPException(status_code=404, detail="Incident not found")
+backend/app/incidents/router.py:70:        raise HTTPException(status_code=400, detail=str(exc))
+backend/app/incidents/router.py:82:        raise HTTPException(status_code=400, detail=str(exc))
+backend/app/incidents/router.py:93:        raise HTTPException(status_code=404, detail="Incident not found")
+backend/app/incidents/router.py:101:    status: str | None = Query(default=None),
+backend/app/incidents/router.py:106:    if status:
+backend/app/incidents/router.py:107:        query = query.filter(Incident.status == IncidentStatus(status))
+backend/app/incidents/service.py:127:def _validate_incident_status_transition(
+backend/app/incidents/service.py:129:    current_status: IncidentStatus,
+backend/app/incidents/service.py:130:    requested_status: IncidentStatus,
+backend/app/incidents/service.py:142:            "validate_status_transition",
+backend/app/incidents/service.py:153:    if "requested_status" in parameter_names:
+backend/app/incidents/service.py:155:            current_status=current_status,
+backend/app/incidents/service.py:156:            requested_status=requested_status,
+backend/app/incidents/service.py:160:    if "new_status" in parameter_names:
+backend/app/incidents/service.py:162:            current_status=current_status,
+backend/app/incidents/service.py:163:            new_status=requested_status,
+backend/app/incidents/service.py:167:    validator(current_status, requested_status)
+backend/app/incidents/service.py:221:        status = get_enum_value(incident.status)
+backend/app/incidents/service.py:224:        if status == "RESOLVED":
+backend/app/incidents/service.py:317:        status=_enum_value(alert.status),
+backend/app/incidents/service.py:337:        argo_sync_status=deployment.argo_sync_status,
+backend/app/incidents/service.py:338:        kubernetes_rollout_status=(deployment.kubernetes_rollout_status),
+backend/app/incidents/service.py:404:        from_status=event.from_status,
+backend/app/incidents/service.py:405:        to_status=event.to_status,
+backend/app/incidents/service.py:464:        status=incident.status,
+backend/app/incidents/service.py:509:    status: IncidentStatus | str | None = None,
+backend/app/incidents/service.py:542:        status=(
+backend/app/incidents/service.py:543:            status.value
+backend/app/incidents/service.py:544:            if hasattr(status, "value")
+backend/app/incidents/service.py:545:            else status
+backend/app/incidents/service.py:648:        repository.get_latest_error_budget_status_for_snapshot(
+backend/app/incidents/service.py:672:            "error_budget_status_id": str(
+backend/app/incidents/service.py:681:            "status": str(
+backend/app/incidents/service.py:682:                _enum_value(error_budget.status)
+backend/app/incidents/service.py:883:def _latest_error_budget_status(
+backend/app/incidents/service.py:891:        status = metadata.get("status")
+backend/app/incidents/service.py:893:        if status is not None:
+backend/app/incidents/service.py:894:            return str(status)
+backend/app/incidents/service.py:935:        error_budget_status=_latest_error_budget_status(
+backend/app/incidents/service.py:1092:                status=IncidentStatus.DETECTED,
+backend/app/incidents/service.py:1154:                to_status=IncidentStatus.DETECTED,
+backend/app/incidents/service.py:1566:    requested_status: IncidentStatus,
+backend/app/incidents/service.py:1576:    if requested_status == IncidentStatus.ACKNOWLEDGED:
+backend/app/incidents/service.py:1582:    elif requested_status == IncidentStatus.INVESTIGATING:
+backend/app/incidents/service.py:1588:    elif requested_status == IncidentStatus.REMEDIATING:
+backend/app/incidents/service.py:1594:    elif requested_status == IncidentStatus.RESOLVED:
+backend/app/incidents/service.py:1597:    elif requested_status == IncidentStatus.FAILED_RECOVERY:
+backend/app/incidents/service.py:1603:def _stage_status_update(
+backend/app/incidents/service.py:1613:    """Stage one validated status transition without committing.
+backend/app/incidents/service.py:1618:    previous_status = IncidentStatus(
+backend/app/incidents/service.py:1619:        _enum_value(incident.status)
+backend/app/incidents/service.py:1621:    requested_status = IncidentStatus(
+backend/app/incidents/service.py:1622:        _enum_value(request.status)
+backend/app/incidents/service.py:1626:        _validate_incident_status_transition(
+backend/app/incidents/service.py:1627:            current_status=previous_status,
+backend/app/incidents/service.py:1628:            requested_status=requested_status,
+backend/app/incidents/service.py:1656:        requested_status=requested_status,
+backend/app/incidents/service.py:1660:    if requested_status == IncidentStatus.RESOLVED:
+backend/app/incidents/service.py:1687:    repository.update_incident_status(
+backend/app/incidents/service.py:1690:        status=requested_status,
+backend/app/incidents/service.py:1695:        "Incident status changed from "
+backend/app/incidents/service.py:1696:        f"{previous_status.value} to "
+backend/app/incidents/service.py:1697:        f"{requested_status.value}."
+backend/app/incidents/service.py:1701:        requested_status == IncidentStatus.RESOLVED
+backend/app/incidents/service.py:1710:            requested_status
+backend/app/incidents/service.py:1718:        from_status=previous_status.value,
+backend/app/incidents/service.py:1719:        to_status=requested_status.value,
+backend/app/incidents/service.py:1727:        if requested_status == IncidentStatus.ACKNOWLEDGED
+backend/app/incidents/service.py:1733:        if requested_status == IncidentStatus.ACKNOWLEDGED
+backend/app/incidents/service.py:1734:        else f"/api/incidents/{incident.id}/status"
+backend/app/incidents/service.py:1744:        "from_status": previous_status.value,
+backend/app/incidents/service.py:1745:        "to_status": requested_status.value,
+backend/app/incidents/service.py:1764:def update_incident_status(
+backend/app/incidents/service.py:1777:        _stage_status_update(
+backend/app/incidents/service.py:1838:        status_request = SimpleNamespace(
+backend/app/incidents/service.py:1839:            status=IncidentStatus.ACKNOWLEDGED,
+backend/app/incidents/service.py:1843:        # Validation happens inside this helper before any status, timeline,
+backend/app/incidents/service.py:1846:        _stage_status_update(
+backend/app/incidents/service.py:1849:            status_request,
+backend/app/incidents/service.py:1916:            _enum_value(incident.status)
+backend/app/incidents/service.py:2080:    original_status = incident.status
+backend/app/incidents/service.py:2128:        if incident.status != original_status:
+backend/app/incidents/service.py:2130:                "Adding a comment unexpectedly changed incident status"
+backend/app/incidents/service.py:2261:                        "from_status": _enum_value(event.from_status),
+backend/app/incidents/service.py:2262:                        "to_status": _enum_value(event.to_status),
+backend/app/incidents/service.py:2288:                    f"with status "
+backend/app/incidents/service.py:2289:                    f"{_enum_value(snapshot.status)}"
+backend/app/incidents/service.py:2296:                    "status": _enum_value(snapshot.status),
+backend/app/incidents/timeline.py:43:def get_status_timeline_event_type(status: IncidentStatus) -> str:
+backend/app/incidents/timeline.py:45:        status,
+backend/app/incidents/timeline.py:50:def get_status_timeline_message(
+backend/app/incidents/timeline.py:51:    status: IncidentStatus,
+backend/app/incidents/timeline.py:55:        status,
+backend/app/incidents/timeline.py:56:        f"Incident status changed to {status.value}",
+backend/app/incidents/timeline.py:75:def get_timeline_event_type(status) -> str:
+backend/app/incidents/timeline.py:77:    Return the canonical timeline event type for an incident status.
+backend/app/incidents/timeline.py:80:    status_value = getattr(status, "value", status)
+backend/app/incidents/timeline.py:95:        return event_types[str(status_value)]
+backend/app/incidents/timeline.py:98:            f"Unsupported incident status: {status_value}"
+backend/app/incidents/schemas.py.sprint5.bak:22:    status: str
+backend/app/ai_analyzer.py:10:    pipeline_status: str,
+backend/app/ai_analyzer.py:21:            pipeline_status=pipeline_status,
+backend/app/ai_analyzer.py:31:            "final_status": {
+backend/app/ai_analyzer.py:71:            "final_status",
+backend/app/ai_analyzer.py:87:Pipeline status:
+backend/app/ai_analyzer.py:88:{pipeline_status}
+backend/app/ai_analyzer.py:97:- If build/test failed, final_status must be FAILED.
+backend/app/ai_analyzer.py:98:- If build/test passed but npm audit, lint warnings, SonarQube issues, low coverage, bugs, vulnerabilities, or code smells exist, final_status should be PASS_WITH_WARNINGS.
+backend/app/ai_analyzer.py:99:- If everything is clean and quality gate passed, final_status should be PASS.
+backend/app/ai_analyzer.py:123:            pipeline_status=pipeline_status,
+backend/app/ai_analyzer.py:137:    pipeline_status: str,
+backend/app/ai_analyzer.py:161:    if pipeline_status == "FAILED":
+backend/app/ai_analyzer.py:188:    if pipeline_status == "SUCCESS" and quality_gate in ["OK", "PASSED"] and not priority_items:
+backend/app/ai_analyzer.py:189:        final_status = "PASS"
+backend/app/ai_analyzer.py:190:    elif pipeline_status == "SUCCESS":
+backend/app/ai_analyzer.py:191:        final_status = "PASS_WITH_WARNINGS"
+backend/app/ai_analyzer.py:193:        final_status = "FAILED"
+backend/app/ai_analyzer.py:196:        "final_status": final_status,
+backend/app/ai_analyzer.py:197:        "overall_summary": f"Pipeline finished with status {pipeline_status}. Quality gate: {quality_gate}.",
+backend/app/auth/dependencies.py:1:from fastapi import Depends, HTTPException, status
+backend/app/auth/dependencies.py:36:            status_code=status.HTTP_401_UNAUTHORIZED,
+backend/app/auth/dependencies.py:44:            status_code=status.HTTP_401_UNAUTHORIZED,
+backend/app/auth/dependencies.py:50:            status_code=status.HTTP_403_FORBIDDEN,
+backend/app/auth/dependencies.py:63:                status_code=status.HTTP_403_FORBIDDEN,
+backend/app/auth/router.py:1:from fastapi import APIRouter, Depends, HTTPException, status
+backend/app/auth/router.py:49:            status_code=status.HTTP_400_BAD_REQUEST,
+backend/app/auth/router.py:62:            status_code=status.HTTP_400_BAD_REQUEST,
+backend/app/auth/router.py:70:            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+backend/app/auth/router.py:97:            status_code=status.HTTP_401_UNAUTHORIZED,
+backend/app/control_plane/routes.py:83:        raise HTTPException(status_code=404, detail="Project not found")
+backend/app/control_plane/routes.py:100:        raise HTTPException(status_code=404, detail="Project not found")
+backend/app/control_plane/routes.py:141:        raise HTTPException(status_code=404, detail="Project not found")
+backend/app/control_plane/routes.py:170:        raise HTTPException(status_code=404, detail="Service not found")
+backend/app/control_plane/routes.py:195:        raise HTTPException(status_code=404, detail="Service not found")
+backend/app/control_plane/routes.py:249:        raise HTTPException(status_code=404, detail="Service not found")
+backend/app/control_plane/routes.py:301:        raise HTTPException(status_code=404, detail="Service not found")
+backend/app/control_plane/routes.py:312:            status_code=400,
+backend/app/control_plane/routes.py:323:        status="PENDING",
+backend/app/control_plane/routes.py:341:            "status": pipeline.status,
+backend/app/control_plane/routes.py:379:        status="PENDING",
+backend/app/tasks.py:69:            "status": getattr(pipeline, "status", None),
+backend/app/tasks.py:112:                "status": getattr(pipeline, "status", None),
+backend/app/tasks.py:117:                "build_status": getattr(pipeline, "build_status", None),
+backend/app/tasks.py:118:                "test_status": getattr(pipeline, "test_status", None),
+backend/app/tasks.py:119:                "sonar_status": getattr(pipeline, "sonar_status", None),
+backend/app/tasks.py:120:                "trivy_status": getattr(pipeline, "trivy_status", None),
+backend/app/tasks.py:206:            "status": getattr(pipeline, "status", None),
+backend/app/tasks.py:280:        "build_status",
+backend/app/tasks.py:281:        "test_status",
+backend/app/tasks.py:282:        "sonar_status",
+backend/app/tasks.py:283:        "trivy_status",
+backend/app/tasks.py:353:        sonar_status="SUCCESS" if quality_gate != "FAILED" else "FAILED",
+backend/app/tasks.py:367:    pipeline_status=None,
+backend/app/tasks.py:378:        if pipeline_status is None:
+backend/app/tasks.py:380:            pipeline_status = (
+backend/app/tasks.py:381:                pipeline_context.get("status")
+backend/app/tasks.py:395:            pipeline_status=pipeline_status,
+backend/app/tasks.py:427:            analysis.final_status = ai_report.get("final_status")
+backend/app/tasks.py:447:            f"AI DevOps summary generated: {ai_report.get('final_status')}",
+backend/app/tasks.py:474:            trivy_status="SKIPPED",
+backend/app/tasks.py:493:            trivy_status="SUCCESS",
+backend/app/tasks.py:519:            trivy_status="FAILED",
+backend/app/tasks.py:623:            .filter(Pipeline.status == "RUNNING")
+backend/app/tasks.py:635:            status="FAILED",
+backend/app/tasks.py:672:                "status": "FAILED",
+backend/app/tasks.py:679:            status="RUNNING",
+backend/app/tasks.py:684:            build_status="NOT_STARTED",
+backend/app/tasks.py:685:            test_status="NOT_STARTED",
+backend/app/tasks.py:686:            sonar_status="NOT_STARTED",
+backend/app/tasks.py:687:            trivy_status="NOT_STARTED",
+backend/app/tasks.py:729:                f"trivy_status={execution_result.get('trivy_status')}, "
+backend/app/tasks.py:748:                status="RUNNING",
+backend/app/tasks.py:754:                build_status="SUCCESS",
+backend/app/tasks.py:755:                test_status="SUCCESS",
+backend/app/tasks.py:765:                    sonar_status="RUNNING",
+backend/app/tasks.py:773:                    sonar_status="FAILED",
+backend/app/tasks.py:788:            latest_trivy_status = execution_result.get("trivy_status")
+backend/app/tasks.py:790:            if not latest_trivy_status or latest_trivy_status == "NOT_STARTED":
+backend/app/tasks.py:796:                        trivy_status="RUNNING",
+backend/app/tasks.py:802:                        trivy_status="SKIPPED",
+backend/app/tasks.py:825:                pipeline_status="SUCCESS",
+backend/app/tasks.py:832:                status="SUCCESS",
+backend/app/tasks.py:846:                "status": "SUCCESS",
+backend/app/tasks.py:858:            status="FAILED",
+backend/app/tasks.py:865:            build_status=execution_result.get("build_status") or "FAILED",
+backend/app/tasks.py:866:            test_status=execution_result.get("test_status") or "NOT_STARTED",
+backend/app/tasks.py:867:            sonar_status=execution_result.get("sonar_status") or "SKIPPED",
+backend/app/tasks.py:868:            trivy_status=execution_result.get("trivy_status") or "SKIPPED",
+backend/app/tasks.py:879:            pipeline_status="FAILED",
+backend/app/tasks.py:892:            "status": "FAILED",
+backend/app/tasks.py:910:                    status="RUNNING",
+backend/app/tasks.py:937:                status="FAILED",
+backend/app/tasks.py:950:                pipeline_status="FAILED",
+backend/app/tasks.py:966:            "status": "FAILED",
+backend/app/sonar_service.py:27:def normalize_quality_gate_status(status: str):
+backend/app/sonar_service.py:28:    if status == "OK":
+backend/app/sonar_service.py:30:    if status == "ERROR":
+backend/app/sonar_service.py:32:    if status == "WARN":
+backend/app/sonar_service.py:34:    return status or "UNKNOWN"
+backend/app/sonar_service.py:181:        measures_response.raise_for_status()
+backend/app/sonar_service.py:193:            f"{sonar_url}/api/qualitygates/project_status",
+backend/app/sonar_service.py:199:        gate_response.raise_for_status()
+backend/app/sonar_service.py:204:            .get("status", "UNKNOWN")
+backend/app/sonar_service.py:208:        report["quality_gate"] = normalize_quality_gate_status(raw_quality_gate)
+backend/app/sonar_service.py:221:        issues_response.raise_for_status()
+backend/app/reliability/alert_service.py:120:            error_budget.status
+backend/app/reliability/alert_service.py:170:            ReliabilityAlert.status.in_(
+backend/app/reliability/alert_service.py:183:        alert.status = (
+backend/app/reliability/alert_service.py:267:            ReliabilityAlert.status.in_(
+backend/app/reliability/alert_service.py:379:        status=ReliabilityAlertStatus.OPEN,
+backend/app/reliability/alert_service.py:443:        "error_budget_status": (
+backend/app/reliability/alert_service.py:445:                error_budget.status
+backend/app/reliability/query_service.py:83:    Return the newest error-budget status for one SLO definition.
+backend/app/reliability/query_service.py:116:    Normalize strings and Enum values for status comparisons.
+backend/app/reliability/query_service.py:126:def calculate_overall_reliability_status(
+backend/app/reliability/query_service.py:145:        _enum_value(getattr(slo, "status", None))
+backend/app/reliability/query_service.py:180:                    "status",
+backend/app/reliability/query_service.py:247:def _get_deployment_status(
+backend/app/reliability/query_service.py:251:    Resolve a readable deployment status.
+backend/app/reliability/query_service.py:254:    than a generic status field.
+backend/app/reliability/query_service.py:256:    status = getattr(
+backend/app/reliability/query_service.py:258:        "status",
+backend/app/reliability/query_service.py:262:    if status is None:
+backend/app/reliability/query_service.py:263:        status = getattr(
+backend/app/reliability/query_service.py:265:            "kubernetes_rollout_status",
+backend/app/reliability/query_service.py:269:    if status is None:
+backend/app/reliability/query_service.py:270:        status = getattr(
+backend/app/reliability/query_service.py:272:            "argo_sync_status",
+backend/app/reliability/query_service.py:276:    return _string_value(status)
+backend/app/reliability/query_service.py:290:        status=_get_deployment_status(deployment),
+backend/app/reliability/query_service.py:322:        "status": alert.status,
+backend/app/reliability/query_service.py:346:    - Use the newest error-budget status for each SLO.
+backend/app/reliability/query_service.py:350:    - Overall status ignores unevaluated optional SLOs.
+backend/app/reliability/query_service.py:392:            reliability_status = "NO_DATA"
+backend/app/reliability/query_service.py:396:            reliability_status = (
+backend/app/reliability/query_service.py:425:                status=reliability_status,
+backend/app/reliability/query_service.py:428:                    error_budget.status
+backend/app/reliability/query_service.py:435:    overall_status = (
+backend/app/reliability/query_service.py:436:        calculate_overall_reliability_status(
+backend/app/reliability/query_service.py:447:            ReliabilityAlert.status.in_(
+backend/app/reliability/query_service.py:471:        overall_status=overall_status,
+backend/app/reliability/query_service.py:547:                status=error_budget.status,
+backend/app/reliability/schemas.py:92:    status: Literal[
+backend/app/reliability/schemas.py:104:    status: str | None = None
+backend/app/reliability/schemas.py:117:    status: ReliabilityAlertStatus
+backend/app/reliability/schemas.py:139:    status: ErrorBudgetState
+backend/app/reliability/router.py:5:    status,
+backend/app/reliability/router.py:45:    status_code=status.HTTP_201_CREATED,
+backend/app/reliability/router.py:59:            status_code=status.HTTP_404_NOT_FOUND,
+backend/app/reliability/router.py:85:            status_code=status.HTTP_404_NOT_FOUND,
+backend/app/reliability/router.py:110:            status_code=status.HTTP_404_NOT_FOUND,
+backend/app/reliability/router.py:130:            status_code=status.HTTP_404_NOT_FOUND,
+backend/app/reliability/router.py:160:            status_code=status.HTTP_404_NOT_FOUND,
+backend/app/reliability/router.py:184:            status_code=status.HTTP_404_NOT_FOUND,
+backend/app/reliability/router.py:190:            status_code=status.HTTP_409_CONFLICT,
+backend/app/reliability/router.py:202:            status_code=(
+backend/app/reliability/router.py:203:                status.HTTP_503_SERVICE_UNAVAILABLE
+backend/app/reliability/router.py:216:            status_code=(
+backend/app/reliability/router.py:217:                status.HTTP_503_SERVICE_UNAVAILABLE
+backend/app/reliability/router.py:227:            status_code=status.HTTP_400_BAD_REQUEST,
+backend/app/reliability/prometheus_client.py:41:    "status_code",
+backend/app/reliability/prometheus_client.py:158:    if payload.get("status") != "success":
+backend/app/reliability/prometheus_client.py:226:    status_label = _validate_identifier(
+backend/app/reliability/prometheus_client.py:238:        f'{status_label}!~"5..",'
+backend/app/reliability/prometheus_client.py:275:    status_label = _validate_identifier(
+backend/app/reliability/prometheus_client.py:287:        f'{status_label}=~"5..",'
+backend/app/reliability/slo_engine.py:16:    create_error_budget_status,
+backend/app/reliability/slo_engine.py:147:        # the budget status and event payload.
+backend/app/reliability/slo_engine.py:152:            create_error_budget_status(
+backend/app/reliability/slo_engine.py:212:        "error_budget_status_id": (
+backend/app/reliability/slo_engine.py:233:            error_budget.status
+backend/app/reliability/error_budget.py:25:    status: ErrorBudgetState
+backend/app/reliability/error_budget.py:100:    status = classify_error_budget(
+backend/app/reliability/error_budget.py:115:        status=status,
+backend/app/reliability/error_budget.py:122:def create_error_budget_status(
+backend/app/reliability/error_budget.py:153:    status = ErrorBudgetStatus(
+backend/app/reliability/error_budget.py:169:        status=calculation.status,
+backend/app/reliability/error_budget.py:175:    db.add(status)
+backend/app/reliability/error_budget.py:178:    return status
+backend/app/metrics_service.py:20:    success_count = len([p for p in pipelines if p.status == "SUCCESS"])
+backend/app/metrics_service.py:21:    failed_pipelines = [p for p in pipelines if p.status == "FAILED"]
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:33:        sa.Column("status", sa.String(), nullable=False),
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:61:    op.create_index("ix_incidents_status", "incidents", ["status"])
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:73:    op.drop_index("ix_incidents_status", table_name="incidents")
+backend/alembic/versions/1decaa63e574_extend_pipeline_run_intelligence_fields.py:30:    op.add_column("pipeline_runs", sa.Column("build_status", sa.String(), nullable=True))
+backend/alembic/versions/1decaa63e574_extend_pipeline_run_intelligence_fields.py:31:    op.add_column("pipeline_runs", sa.Column("test_status", sa.String(), nullable=True))
+backend/alembic/versions/1decaa63e574_extend_pipeline_run_intelligence_fields.py:32:    op.add_column("pipeline_runs", sa.Column("sonar_status", sa.String(), nullable=True))
+backend/alembic/versions/1decaa63e574_extend_pipeline_run_intelligence_fields.py:33:    op.add_column("pipeline_runs", sa.Column("trivy_status", sa.String(), nullable=True))
+backend/alembic/versions/1decaa63e574_extend_pipeline_run_intelligence_fields.py:92:    op.drop_column("pipeline_runs", "trivy_status")
+backend/alembic/versions/1decaa63e574_extend_pipeline_run_intelligence_fields.py:93:    op.drop_column("pipeline_runs", "sonar_status")
+backend/alembic/versions/1decaa63e574_extend_pipeline_run_intelligence_fields.py:94:    op.drop_column("pipeline_runs", "test_status")
+backend/alembic/versions/1decaa63e574_extend_pipeline_run_intelligence_fields.py:95:    op.drop_column("pipeline_runs", "build_status")
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:32:        sa.Column("argo_sync_status", sa.String(length=50), nullable=True),
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:33:        sa.Column("kubernetes_rollout_status", sa.String(length=50), nullable=True),
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:57:        sa.Column("status", sa.String(length=50), nullable=True),
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:75:        sa.Column("status", sa.String(length=50), nullable=True),
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:28:incident_status = postgresql.ENUM(
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:33:    name="incidentstatus",
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:42:    op.execute("DROP TYPE IF EXISTS incidentstatus CASCADE")
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:46:    incident_status.create(op.get_bind(), checkfirst=True)
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:54:        sa.Column("status", incident_status, nullable=False),
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:82:    op.create_index("ix_incidents_status", "incidents", ["status"])
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:98:    op.execute("DROP TYPE IF EXISTS incidentstatus CASCADE")
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:58:reliability_alert_status_enum = postgresql.ENUM(
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:63:    name="reliability_alert_status",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:75:    reliability_alert_status_enum.create(bind, checkfirst=True)
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:203:        "error_budget_statuses",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:236:            "status",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:268:        "ix_error_budget_statuses_slo_definition_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:269:        "error_budget_statuses",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:275:        "ix_error_budget_statuses_service_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:276:        "error_budget_statuses",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:282:        "ix_error_budget_statuses_evaluated_at",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:283:        "error_budget_statuses",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:315:            "status",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:316:            reliability_alert_status_enum,
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:389:        "ix_error_budget_statuses_evaluated_at",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:390:        table_name="error_budget_statuses",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:393:        "ix_error_budget_statuses_service_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:394:        table_name="error_budget_statuses",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:397:        "ix_error_budget_statuses_slo_definition_id",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:398:        table_name="error_budget_statuses",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:400:    op.drop_table("error_budget_statuses")
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:422:    reliability_alert_status_enum.drop(bind, checkfirst=True)
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:33:        sa.Column("processing_status", sa.String(), nullable=False),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:58:        sa.Column("status", sa.String(), nullable=False),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:73:    op.create_index("ix_outbox_events_status", "outbox_events", ["status"])
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:104:        sa.Column("status", sa.String(), nullable=False),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:116:    op.create_index("ix_dead_letter_events_status", "dead_letter_events", ["status"])
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:120:    op.drop_index("ix_dead_letter_events_status", table_name="dead_letter_events")
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:131:    op.drop_index("ix_outbox_events_status", table_name="outbox_events")
+backend/alembic/versions/9b9bb1e4597e_align_event_record_and_dead_letter_.py:51:    op.create_index(op.f('ix_event_records_processing_status'), 'event_records', ['processing_status'], unique=False)
+backend/alembic/versions/9b9bb1e4597e_align_event_record_and_dead_letter_.py:64:    op.drop_index(op.f('ix_event_records_processing_status'), table_name='event_records')
+backend/alembic/versions/847c900aa085_add_service_health_snapshots.py:26:        CREATE TYPE servicehealthstatus AS ENUM ('HEALTHY', 'DEGRADED', 'UNHEALTHY', 'UNKNOWN');
+backend/alembic/versions/847c900aa085_add_service_health_snapshots.py:32:    service_health_status_enum = postgresql.ENUM(
+backend/alembic/versions/847c900aa085_add_service_health_snapshots.py:37:        name="servicehealthstatus",
+backend/alembic/versions/847c900aa085_add_service_health_snapshots.py:47:        sa.Column("status", service_health_status_enum, nullable=False),
+backend/alembic/versions/847c900aa085_add_service_health_snapshots.py:108:    op.execute("DROP TYPE IF EXISTS servicehealthstatus")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:23:incident_status_sprint7_enum = postgresql.ENUM(
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:31:    name="incidentstatus_sprint7",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:43:incident_status_enum = postgresql.ENUM(
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:51:    name="incidentstatus",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:55:legacy_incident_status_enum = postgresql.ENUM(
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:60:    name="incidentstatus_legacy",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:146:    # the final names incidentstatus and incidentseverity.
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:150:        CREATE TYPE incidentstatus_sprint7 AS ENUM (
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:202:    op.drop_index("ix_incidents_status", table_name="incidents")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:324:        sa.Column("from_status", incident_status_sprint7_enum, nullable=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:328:        sa.Column("to_status", incident_status_sprint7_enum, nullable=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:388:        WHERE status::text = 'ACKNOWLEDGED'
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:398:                'Migrated from legacy FALSE_POSITIVE status'
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:400:        WHERE status::text = 'FALSE_POSITIVE'
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:440:    # 4. Convert status and severity to the Sprint 7 enums.
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:442:    op.execute("ALTER TABLE incidents ALTER COLUMN status DROP DEFAULT")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:448:        ALTER COLUMN status TYPE incidentstatus_sprint7
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:450:            CASE status::text
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:457:        )::incidentstatus_sprint7
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:477:    op.execute("DROP TYPE incidentstatus")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:479:    op.execute("ALTER TYPE incidentstatus_sprint7 RENAME TO incidentstatus")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:485:        ALTER COLUMN status SET DEFAULT 'DETECTED'::incidentstatus
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:886:        "ix_incidents_status",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:888:        ["status"],
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1040:    op.drop_index("ix_incidents_status", table_name="incidents")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1100:        CREATE TYPE incidentstatus_legacy AS ENUM (
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1119:    op.execute("ALTER TABLE incidents ALTER COLUMN status DROP DEFAULT")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1125:        ALTER COLUMN status TYPE incidentstatus_legacy
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1127:            CASE status::text
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1132:        )::incidentstatus_legacy
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1150:    # Timeline enum columns still reference incidentstatus, so remove them
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1152:    op.drop_column("incident_timeline_events", "to_status")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1153:    op.drop_column("incident_timeline_events", "from_status")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1155:    op.execute("DROP TYPE incidentstatus")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1157:    op.execute("ALTER TYPE incidentstatus_legacy RENAME TO incidentstatus")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1163:        ALTER COLUMN status SET DEFAULT 'OPEN'::incidentstatus
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1267:        "ix_incidents_status",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1269:        ["status"],
+backend/alembic/versions/9cf7d8bd1263_extend_active_pipeline_execution_fields.py:30:    op.add_column("pipelines", sa.Column("build_status", sa.String(), nullable=True))
+backend/alembic/versions/9cf7d8bd1263_extend_active_pipeline_execution_fields.py:31:    op.add_column("pipelines", sa.Column("test_status", sa.String(), nullable=True))
+backend/alembic/versions/9cf7d8bd1263_extend_active_pipeline_execution_fields.py:32:    op.add_column("pipelines", sa.Column("sonar_status", sa.String(), nullable=True))
+backend/alembic/versions/9cf7d8bd1263_extend_active_pipeline_execution_fields.py:38:    op.drop_column("pipelines", "sonar_status")
+backend/alembic/versions/9cf7d8bd1263_extend_active_pipeline_execution_fields.py:39:    op.drop_column("pipelines", "test_status")
+backend/alembic/versions/9cf7d8bd1263_extend_active_pipeline_execution_fields.py:40:    op.drop_column("pipelines", "build_status")
+
+===== severity =====
+backend/app/models.py:591:incident_severity_enum = SQLEnum(
+backend/app/models.py:593:    name="incidentseverity",
+backend/app/models.py:633:    severity = Column(
+backend/app/models.py:634:        incident_severity_enum,
+backend/app/models.py:878:            "ix_incidents_severity",
+backend/app/models.py:879:            "severity",
+backend/app/models.py:1369:    severity_on_breach = Column(
+backend/app/models.py:1372:            name="reliability_severity",
+backend/app/models.py:1589:    severity = Column(
+backend/app/models.py:1592:            name="reliability_severity",
+backend/app/pipelineiq/security/trivy_scan.py:65:                severity = vuln.get("Severity", "UNKNOWN").upper()
+backend/app/pipelineiq/security/trivy_scan.py:66:                if severity in counts:
+backend/app/pipelineiq/security/trivy_scan.py:67:                    counts[severity] += 1
+backend/app/pipelineiq/risk/release_risk.py:56:        recommendations.append("Fix high severity Trivy vulnerabilities before release.")
+backend/app/pipelineiq/risk/release_risk.py:60:        recommendations.append("Review medium severity Trivy vulnerabilities.")
+backend/app/pipelineiq/risk/release_risk.py:168:        recommendations.append("Fix high severity Trivy vulnerabilities.")
+backend/app/pipelineiq/risk/release_risk.py:172:        recommendations.append("Review medium severity Trivy vulnerabilities.")
+backend/app/executor.py:176:            severity = str(vulnerability.get("Severity", "UNKNOWN")).upper()
+backend/app/executor.py:178:            if severity == "CRITICAL":
+backend/app/executor.py:180:            elif severity == "HIGH":
+backend/app/executor.py:182:            elif severity == "MEDIUM":
+backend/app/executor.py:184:            elif severity == "LOW":
+backend/app/observability/alert_service.py:31:        "severity": alert.severity,
+backend/app/observability/alert_service.py:39:            "severity": alert.severity,
+backend/app/observability/alert_rules.py:8:    severity: str
+backend/app/observability/alert_rules.py:24:                severity="HIGH" if snapshot.error_rate > 10 else "MEDIUM",
+backend/app/observability/alert_rules.py:36:                severity="HIGH" if snapshot.latency_ms > 2000 else "MEDIUM",
+backend/app/observability/alert_rules.py:48:                severity="HIGH",
+backend/app/observability/alert_rules.py:64:                severity="HIGH" if snapshot.available_replicas == 0 else "MEDIUM",
+backend/app/observability/alert_rules.py:76:                severity="CRITICAL",
+backend/app/observability/metrics.py:19:    ["severity"],
+backend/app/events/handlers.py:60:def normalize_legacy_severity(
+backend/app/events/handlers.py:61:    severity: Any,
+backend/app/events/handlers.py:64:    Convert Sprint 5 severity values into the Sprint 7 severity model.
+backend/app/events/handlers.py:67:    raw_value = getattr(severity, "value", severity)
+backend/app/events/handlers.py:262:    The incident uses the current Sprint 7 status, severity and
+backend/app/events/handlers.py:283:    incident_severity = normalize_legacy_severity(
+backend/app/events/handlers.py:284:        payload.get("severity", "MEDIUM")
+backend/app/events/handlers.py:344:        severity=incident_severity,
+backend/app/incidents/repository.py:47:        Incident.severity,
+backend/app/incidents/repository.py:136:    severity: IncidentSeverity | str | None = None,
+backend/app/incidents/repository.py:168:    if severity is not None:
+backend/app/incidents/repository.py:170:            Incident.severity == severity,
+backend/app/incidents/repository.py:684:def update_incident_severity(
+backend/app/incidents/repository.py:688:    severity: IncidentSeverity,
+backend/app/incidents/repository.py:691:    Persist a new incident severity.
+backend/app/incidents/repository.py:694:    incident.severity = severity
+backend/app/incidents/consumer.py:169:    high_severity_alert_count = _optional_int(
+backend/app/incidents/consumer.py:171:        "high_severity_alert_count",
+backend/app/incidents/consumer.py:186:        high_severity_alert_count=(
+backend/app/incidents/consumer.py:187:            high_severity_alert_count
+backend/app/incidents/incident_router.py:122:    severity: IncidentSeverity | None = Query(
+backend/app/incidents/incident_router.py:172:        severity=severity,
+backend/app/incidents/incident_router.py:357:    severity: IncidentSeverity | None = Query(
+backend/app/incidents/incident_router.py:404:        severity=severity,
+backend/app/incidents/schemas.py:40:    severity: str
+backend/app/incidents/schemas.py:396:    severity: IncidentSeverity
+backend/app/incidents/router.py:24:    severity: str | None = Query(default=None),
+backend/app/incidents/router.py:34:    if severity:
+backend/app/incidents/router.py:35:        query = query.filter(Incident.severity == IncidentSeverity(severity))
+backend/app/incidents/service.py:34:    calculate_incident_severity_decision,
+backend/app/incidents/service.py:198:    severity_counts = {
+backend/app/incidents/service.py:222:        severity = get_enum_value(incident.severity)
+backend/app/incidents/service.py:229:        if severity in severity_counts:
+backend/app/incidents/service.py:230:            severity_counts[severity] += 1
+backend/app/incidents/service.py:251:        sev_1_incident_count=severity_counts["SEV-1"],
+backend/app/incidents/service.py:252:        sev_2_incident_count=severity_counts["SEV-2"],
+backend/app/incidents/service.py:253:        sev_3_incident_count=severity_counts["SEV-3"],
+backend/app/incidents/service.py:313:        severity=_enum_value(alert.severity),
+backend/app/incidents/service.py:463:        severity=incident.severity,
+backend/app/incidents/service.py:510:    severity: IncidentSeverity | str | None = None,
+backend/app/incidents/service.py:547:        severity=(
+backend/app/incidents/service.py:548:            severity.value
+backend/app/incidents/service.py:549:            if hasattr(severity, "value")
+backend/app/incidents/service.py:550:            else severity
+backend/app/incidents/service.py:948:    high_severity_alert_count: int = 0,
+backend/app/incidents/service.py:1017:        alert_severity_value = _enum_value(alert.severity)
+backend/app/incidents/service.py:1035:        severity_decision = calculate_incident_severity_decision(
+backend/app/incidents/service.py:1036:            alert.severity,
+backend/app/incidents/service.py:1048:            high_severity_alert_count=high_severity_alert_count,
+backend/app/incidents/service.py:1056:        severity = severity_decision.severity
+backend/app/incidents/service.py:1091:                severity=severity,
+backend/app/incidents/service.py:1140:                    "alert_severity": alert_severity_value,
+backend/app/incidents/service.py:1159:                    "incident_severity": severity.value,
+backend/app/incidents/service.py:1160:                    "severity_reason_code": (
+backend/app/incidents/service.py:1161:                        severity_decision.reason_code
+backend/app/incidents/service.py:1163:                    "severity_explanation": (
+backend/app/incidents/service.py:1164:                        severity_decision.explanation
+backend/app/incidents/service.py:1166:                    "severity_evidence": severity_decision.evidence,
+backend/app/incidents/service.py:1189:                    "alert_severity": alert_severity_value,
+backend/app/incidents/service.py:1328:                    "severity": severity.value,
+backend/app/incidents/service.py:1329:                    "severity_reason_code": (
+backend/app/incidents/service.py:1330:                        severity_decision.reason_code
+backend/app/incidents/service.py:1332:                    "severity_explanation": (
+backend/app/incidents/service.py:1333:                        severity_decision.explanation
+backend/app/incidents/service.py:1335:                    "severity_evidence": severity_decision.evidence,
+backend/app/incidents/service.py:1378:                        "alert_severity": alert_severity_value,
+backend/app/incidents/service.py:1400:                        "alert_severity": alert_severity_value,
+backend/app/incidents/service.py:1428:                severity,
+backend/app/incidents/service.py:1429:                incident.severity,
+backend/app/incidents/service.py:1431:                previous_severity = incident.severity
+backend/app/incidents/service.py:1434:                repository.update_incident_severity(
+backend/app/incidents/service.py:1437:                    severity=severity,
+backend/app/incidents/service.py:1446:                        "Incident severity escalated from "
+backend/app/incidents/service.py:1447:                        f"{previous_severity.value} to "
+backend/app/incidents/service.py:1448:                        f"{severity.value}."
+backend/app/incidents/service.py:1454:                        "previous_severity": (
+backend/app/incidents/service.py:1455:                            previous_severity.value
+backend/app/incidents/service.py:1457:                        "new_severity": severity.value,
+backend/app/incidents/service.py:1458:                        "reason_code": severity_decision.reason_code,
+backend/app/incidents/service.py:1459:                        "explanation": severity_decision.explanation,
+backend/app/incidents/service.py:1460:                        "evidence": severity_decision.evidence,
+backend/app/incidents/service.py:1474:                        "previous_severity": (
+backend/app/incidents/service.py:1475:                            previous_severity.value
+backend/app/incidents/service.py:1477:                        "new_severity": severity.value,
+backend/app/incidents/service.py:1478:                        "reason_code": severity_decision.reason_code,
+backend/app/incidents/service.py:1479:                        "explanation": severity_decision.explanation,
+backend/app/incidents/service.py:1480:                        "evidence": severity_decision.evidence,
+backend/app/incidents/rules.py:1:"""Pure incident deduplication and severity calculation rules."""
+backend/app/incidents/rules.py:45:    """Explainable result produced by the incident severity engine."""
+backend/app/incidents/rules.py:47:    severity: IncidentSeverity
+backend/app/incidents/rules.py:123:def _normalise_reliability_severity(
+backend/app/incidents/rules.py:124:    severity: ReliabilitySeverity | str,
+backend/app/incidents/rules.py:126:    """Convert a reliability-severity string or enum to its enum."""
+backend/app/incidents/rules.py:128:    if isinstance(severity, ReliabilitySeverity):
+backend/app/incidents/rules.py:129:        return severity
+backend/app/incidents/rules.py:132:        return ReliabilitySeverity(str(severity).strip().upper())
+backend/app/incidents/rules.py:135:            f"Unsupported reliability severity: {severity!r}"
+backend/app/incidents/rules.py:143:    """Return whether the candidate severity outranks the current value."""
+backend/app/incidents/rules.py:148:def calculate_incident_severity_decision(
+backend/app/incidents/rules.py:149:    reliability_severity: ReliabilitySeverity | str,
+backend/app/incidents/rules.py:158:    high_severity_alert_count: int = 0,
+backend/app/incidents/rules.py:163:    """Calculate an explainable incident severity decision."""
+backend/app/incidents/rules.py:165:    normalised_severity = _normalise_reliability_severity(
+backend/app/incidents/rules.py:166:        reliability_severity
+backend/app/incidents/rules.py:183:    if high_severity_alert_count < 0:
+backend/app/incidents/rules.py:185:            "high_severity_alert_count cannot be negative"
+backend/app/incidents/rules.py:205:        "alert_severity": normalised_severity.value,
+backend/app/incidents/rules.py:213:        "high_severity_alert_count": high_severity_alert_count,
+backend/app/incidents/rules.py:222:            severity=IncidentSeverity.SEV_3,
+backend/app/incidents/rules.py:233:            severity=IncidentSeverity.SEV_1,
+backend/app/incidents/rules.py:246:            severity=IncidentSeverity.SEV_1,
+backend/app/incidents/rules.py:258:            severity=IncidentSeverity.SEV_1,
+backend/app/incidents/rules.py:273:            severity=IncidentSeverity.SEV_1,
+backend/app/incidents/rules.py:282:        high_severity_alert_count
+backend/app/incidents/rules.py:286:            severity=IncidentSeverity.SEV_1,
+backend/app/incidents/rules.py:289:                f"{high_severity_alert_count} high-severity alerts "
+backend/app/incidents/rules.py:295:    if normalised_severity == ReliabilitySeverity.CRITICAL:
+backend/app/incidents/rules.py:297:            severity=IncidentSeverity.SEV_1,
+backend/app/incidents/rules.py:310:            severity=IncidentSeverity.SEV_2,
+backend/app/incidents/rules.py:322:            severity=IncidentSeverity.SEV_2,
+backend/app/incidents/rules.py:333:        and normalised_severity == ReliabilitySeverity.HIGH
+backend/app/incidents/rules.py:336:            severity=IncidentSeverity.SEV_2,
+backend/app/incidents/rules.py:339:                "A high-severity production failure is correlated "
+backend/app/incidents/rules.py:347:        and normalised_severity == ReliabilitySeverity.HIGH
+backend/app/incidents/rules.py:350:            severity=IncidentSeverity.SEV_2,
+backend/app/incidents/rules.py:353:                "A high-severity alert affects a critical "
+backend/app/incidents/rules.py:359:    calculated_severity = RELIABILITY_TO_INCIDENT_SEVERITY[
+backend/app/incidents/rules.py:360:        normalised_severity
+backend/app/incidents/rules.py:364:        severity=calculated_severity,
+backend/app/incidents/rules.py:367:            f"Reliability severity {normalised_severity.value} maps "
+backend/app/incidents/rules.py:368:            f"to incident severity {calculated_severity.value}."
+backend/app/incidents/rules.py:374:def calculate_incident_severity(
+backend/app/incidents/rules.py:375:    reliability_severity: ReliabilitySeverity | str,
+backend/app/incidents/rules.py:384:    high_severity_alert_count: int = 0,
+backend/app/incidents/rules.py:389:    """Compatibility wrapper returning only the severity enum."""
+backend/app/incidents/rules.py:391:    return calculate_incident_severity_decision(
+backend/app/incidents/rules.py:392:        reliability_severity,
+backend/app/incidents/rules.py:400:        high_severity_alert_count=high_severity_alert_count,
+backend/app/incidents/rules.py:404:    ).severity
+backend/app/incidents/rules.py:407:def should_escalate_severity(
+backend/app/incidents/rules.py:411:    high_severity_alert_count: int = 0,
+backend/app/incidents/rules.py:415:    decision = calculate_incident_severity_decision(
+backend/app/incidents/rules.py:420:        high_severity_alert_count=high_severity_alert_count,
+backend/app/incidents/rules.py:423:    return decision.severity == IncidentSeverity.SEV_1
+backend/app/incidents/schemas.py.sprint5.bak:21:    severity: str
+backend/app/sonar_service.py:228:                "severity": issue.get("severity"),
+backend/app/reliability/alert_service.py:316:    severity = ReliabilitySeverity(
+backend/app/reliability/alert_service.py:317:        slo_definition.severity_on_breach
+backend/app/reliability/alert_service.py:343:        existing_alert.severity = severity
+backend/app/reliability/alert_service.py:371:        severity=severity,
+backend/app/reliability/alert_service.py:404:        "severity": severity.value,
+backend/app/reliability/query_service.py:310:        "severity": alert.severity,
+backend/app/reliability/schemas.py:28:    severity_on_breach: ReliabilitySeverity = (
+backend/app/reliability/schemas.py:67:    severity_on_breach: ReliabilitySeverity
+backend/app/reliability/schemas.py:113:    severity: ReliabilitySeverity
+backend/app/reliability/slo_service.py:28:        severity_on_breach=payload.severity_on_breach,
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:32:        sa.Column("severity", sa.String(), nullable=False),
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:60:    op.create_index("ix_incidents_severity", "incidents", ["severity"])
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:74:    op.drop_index("ix_incidents_severity", table_name="incidents")
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:19:incident_severity = postgresql.ENUM(
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:24:    name="incidentseverity",
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:43:    op.execute("DROP TYPE IF EXISTS incidentseverity CASCADE")
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:45:    incident_severity.create(op.get_bind(), checkfirst=True)
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:53:        sa.Column("severity", incident_severity, nullable=False),
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:83:    op.create_index("ix_incidents_severity", "incidents", ["severity"])
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:99:    op.execute("DROP TYPE IF EXISTS incidentseverity CASCADE")
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:29:reliability_severity_enum = postgresql.ENUM(
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:34:    name="reliability_severity",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:72:    reliability_severity_enum.create(bind, checkfirst=True)
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:94:            "severity_on_breach",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:95:            reliability_severity_enum,
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:303:            "severity",
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:304:            reliability_severity_enum,
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:425:    reliability_severity_enum.drop(bind, checkfirst=True)
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:35:incident_severity_sprint7_enum = postgresql.ENUM(
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:39:    name="incidentseverity_sprint7",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:64:legacy_incident_severity_enum = postgresql.ENUM(
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:69:    name="incidentseverity_legacy",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:146:    # the final names incidentstatus and incidentseverity.
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:163:        CREATE TYPE incidentseverity_sprint7 AS ENUM (
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:203:    op.drop_index("ix_incidents_severity", table_name="incidents")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:440:    # 4. Convert status and severity to the Sprint 7 enums.
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:443:    op.execute("ALTER TABLE incidents ALTER COLUMN severity DROP DEFAULT")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:463:        ALTER COLUMN severity TYPE incidentseverity_sprint7
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:465:            CASE severity::text
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:472:        )::incidentseverity_sprint7
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:478:    op.execute("DROP TYPE incidentseverity")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:480:    op.execute("ALTER TYPE incidentseverity_sprint7 RENAME TO incidentseverity")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:491:        ALTER COLUMN severity SET DEFAULT 'SEV-3'::incidentseverity
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:892:        "ix_incidents_severity",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:894:        ["severity"],
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1039:    op.drop_index("ix_incidents_severity", table_name="incidents")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1110:        CREATE TYPE incidentseverity_legacy AS ENUM (
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1120:    op.execute("ALTER TABLE incidents ALTER COLUMN severity DROP DEFAULT")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1138:        ALTER COLUMN severity TYPE incidentseverity_legacy
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1140:            CASE severity::text
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1146:        )::incidentseverity_legacy
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1156:    op.execute("DROP TYPE incidentseverity")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1158:    op.execute("ALTER TYPE incidentseverity_legacy RENAME TO incidentseverity")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1273:        "ix_incidents_severity",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1275:        ["severity"],
+
+===== failure_started_at =====
+backend/app/models.py:681:    failure_started_at = Column(
+backend/app/models.py:868:            self.failure_started_at = value
+backend/app/events/handlers.py:351:        failure_started_at=detected_at,
+backend/app/incidents/repository.py:42:        Incident.failure_started_at,
+backend/app/incidents/repository.py:604:    failure_started_at: datetime | None = None,
+backend/app/incidents/repository.py:611:    surrounding commit or rollback. ``failure_started_at`` must contain only
+backend/app/incidents/repository.py:618:        failure_started_at=failure_started_at,
+backend/app/incidents/schemas.py:325:    failure_started_at: datetime | None = None
+backend/app/incidents/schemas.py:409:    failure_started_at: datetime | None = None
+backend/app/incidents/schemas.py:477:    failure_started_at: datetime | None = None
+backend/app/incidents/service.py:206:            failure_started_at=incident.failure_started_at,
+backend/app/incidents/service.py:422:        failure_started_at=incident.failure_started_at,
+backend/app/incidents/service.py:437:        failure_started_at=incident.failure_started_at,
+backend/app/incidents/service.py:478:        failure_started_at=incident.failure_started_at,
+backend/app/incidents/service.py:748:        "failure_started_at": incident.failure_started_at,
+backend/app/incidents/service.py:914:        failure_started_at=incident.failure_started_at,
+backend/app/incidents/service.py:945:    failure_started_at: datetime | None = None,
+backend/app/incidents/service.py:1082:            failure_time = failure_started_at or detected_at
+backend/app/incidents/service.py:1102:                failure_started_at=failure_time,
+backend/app/incidents/metrics.py:110:    failure_started_at: datetime | None,
+backend/app/incidents/metrics.py:116:    MTTD = detected_at - failure_started_at
+backend/app/incidents/metrics.py:120:        start=failure_started_at,
+backend/app/incidents/metrics.py:161:    failure_started_at: datetime | None,
+backend/app/incidents/metrics.py:169:    MTTD is unavailable until failure_started_at is known.
+backend/app/incidents/metrics.py:175:        failure_started_at=failure_started_at,
+backend/alembic/versions/7a2aae75fdfd_clear_legacy_incident_failure_started_at.py:23:        SET failure_started_at = NULL
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:236:        sa.Column("failure_started_at", sa.DateTime(timezone=True), nullable=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:379:            failure_started_at = started_at AT TIME ZONE 'UTC',
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1243:    op.drop_column("incidents", "failure_started_at")
+
+===== detected_at =====
+backend/app/models.py:686:    detected_at = Column(
+backend/app/models.py:761:    # detected_at, and the incident-alert relationship instead.
+backend/app/models.py:890:            "ix_incidents_detected_at",
+backend/app/models.py:891:            "detected_at",
+backend/app/events/handlers.py:322:    detected_at = (
+backend/app/events/handlers.py:351:        failure_started_at=detected_at,
+backend/app/events/handlers.py:352:        detected_at=detected_at,
+backend/app/incidents/repository.py:43:        Incident.detected_at,
+backend/app/incidents/repository.py:185:            Incident.detected_at >= from_date,
+backend/app/incidents/repository.py:190:            Incident.detected_at <= to_date,
+backend/app/incidents/repository.py:220:            Incident.detected_at.desc(),
+backend/app/incidents/repository.py:259:    detected_at: datetime,
+backend/app/incidents/repository.py:282:    correlation_start = detected_at - timedelta(
+backend/app/incidents/repository.py:297:            Deployment.created_at <= detected_at,
+backend/app/incidents/repository.py:421:        Incident.detected_at,
+backend/app/incidents/repository.py:434:            Incident.detected_at.desc(),
+backend/app/incidents/schemas.py:326:    detected_at: datetime
+backend/app/incidents/schemas.py:410:    detected_at: datetime
+backend/app/incidents/service.py:207:            detected_at=incident.detected_at,
+backend/app/incidents/service.py:423:        detected_at=incident.detected_at,
+backend/app/incidents/service.py:438:        detected_at=incident.detected_at,
+backend/app/incidents/service.py:479:        detected_at=incident.detected_at,
+backend/app/incidents/service.py:591:    detected_at: datetime,
+backend/app/incidents/service.py:604:            captured_before=detected_at,
+backend/app/incidents/service.py:654:            captured_before=detected_at,
+backend/app/incidents/service.py:915:        detected_at=incident.detected_at,
+backend/app/incidents/service.py:1029:            detected_at=alert_created_at,
+backend/app/incidents/service.py:1081:            detected_at = alert_created_at
+backend/app/incidents/service.py:1082:            failure_time = failure_started_at or detected_at
+backend/app/incidents/service.py:1103:                detected_at=detected_at,
+backend/app/incidents/service.py:1122:                incident.detected_at
+backend/app/incidents/service.py:1124:                or detected_at
+backend/app/incidents/service.py:1208:                    or detected_at
+backend/app/incidents/service.py:1268:                        "incident_detected_at": (
+backend/app/incidents/service.py:1269:                            _isoformat_or_none(detected_at)
+backend/app/incidents/service.py:1304:                        "incident_detected_at": (
+backend/app/incidents/service.py:1305:                            _isoformat_or_none(detected_at)
+backend/app/incidents/service.py:1540:                detected_at=incident.detected_at,
+backend/app/incidents/metrics.py:111:    detected_at: datetime | None,
+backend/app/incidents/metrics.py:116:    MTTD = detected_at - failure_started_at
+backend/app/incidents/metrics.py:121:        end=detected_at,
+backend/app/incidents/metrics.py:127:    detected_at: datetime | None,
+backend/app/incidents/metrics.py:133:    MTTA = acknowledged_at - detected_at
+backend/app/incidents/metrics.py:137:        start=detected_at,
+backend/app/incidents/metrics.py:144:    detected_at: datetime | None,
+backend/app/incidents/metrics.py:150:    MTTR = resolved_at - detected_at
+backend/app/incidents/metrics.py:154:        start=detected_at,
+backend/app/incidents/metrics.py:162:    detected_at: datetime | None,
+backend/app/incidents/metrics.py:176:        detected_at=detected_at,
+backend/app/incidents/metrics.py:180:        detected_at=detected_at,
+backend/app/incidents/metrics.py:185:        detected_at=detected_at,
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:240:        sa.Column("detected_at", sa.DateTime(timezone=True), nullable=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:380:            detected_at = created_at AT TIME ZONE 'UTC'
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:643:        "detected_at",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:874:            incident.detected_at,
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:910:        "ix_incidents_detected_at",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:912:        ["detected_at"],
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1033:    op.drop_index("ix_incidents_detected_at", table_name="incidents")
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1242:    op.drop_column("incidents", "detected_at")
+backend/alembic/versions/a2f39e69aa46_make_legacy_incident_fields_nullable.py:64:        SET started_at = detected_at
+
+===== acknowledged_at =====
+backend/app/models.py:692:    acknowledged_at = Column(
+backend/app/incidents/repository.py:44:        Incident.acknowledged_at,
+backend/app/incidents/schemas.py:327:    acknowledged_at: datetime | None = None
+backend/app/incidents/schemas.py:411:    acknowledged_at: datetime | None = None
+backend/app/incidents/service.py:208:            acknowledged_at=incident.acknowledged_at,
+backend/app/incidents/service.py:424:        acknowledged_at=incident.acknowledged_at,
+backend/app/incidents/service.py:439:        acknowledged_at=incident.acknowledged_at,
+backend/app/incidents/service.py:480:        acknowledged_at=incident.acknowledged_at,
+backend/app/incidents/service.py:916:        acknowledged_at=incident.acknowledged_at,
+backend/app/incidents/service.py:1577:        updates["acknowledged_at"] = (
+backend/app/incidents/service.py:1578:            incident.acknowledged_at
+backend/app/incidents/metrics.py:128:    acknowledged_at: datetime | None,
+backend/app/incidents/metrics.py:133:    MTTA = acknowledged_at - detected_at
+backend/app/incidents/metrics.py:138:        end=acknowledged_at,
+backend/app/incidents/metrics.py:163:    acknowledged_at: datetime | None,
+backend/app/incidents/metrics.py:181:        acknowledged_at=acknowledged_at,
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:244:        sa.Column("acknowledged_at", sa.DateTime(timezone=True), nullable=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:387:        SET acknowledged_at = updated_at AT TIME ZONE 'UTC'
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1241:    op.drop_column("incidents", "acknowledged_at")
+
+===== investigation_started_at =====
+backend/app/models.py:697:    investigation_started_at = Column(
+backend/app/incidents/schemas.py:478:    investigation_started_at: datetime | None = None
+backend/app/incidents/service.py:749:        "investigation_started_at": (
+backend/app/incidents/service.py:750:            incident.investigation_started_at
+backend/app/incidents/service.py:1583:        updates["investigation_started_at"] = (
+backend/app/incidents/service.py:1584:            incident.investigation_started_at
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:249:            "investigation_started_at",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1240:    op.drop_column("incidents", "investigation_started_at")
+
+===== remediation_started_at =====
+backend/app/models.py:702:    remediation_started_at = Column(
+backend/app/incidents/schemas.py:479:    remediation_started_at: datetime | None = None
+backend/app/incidents/service.py:752:        "remediation_started_at": (
+backend/app/incidents/service.py:753:            incident.remediation_started_at
+backend/app/incidents/service.py:1589:        updates["remediation_started_at"] = (
+backend/app/incidents/service.py:1590:            incident.remediation_started_at
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:257:            "remediation_started_at",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1239:    op.drop_column("incidents", "remediation_started_at")
+
+===== resolved_at =====
+backend/app/models.py:707:    resolved_at = Column(
+backend/app/models.py:1623:    resolved_at = Column(
+backend/app/incidents/repository.py:45:        Incident.resolved_at,
+backend/app/incidents/repository.py:429:            Incident.resolved_at.is_(None),
+backend/app/incidents/schemas.py:46:    resolved_at: datetime | None = None
+backend/app/incidents/schemas.py:328:    resolved_at: datetime | None = None
+backend/app/incidents/schemas.py:412:    resolved_at: datetime | None = None
+backend/app/incidents/service.py:209:            resolved_at=incident.resolved_at,
+backend/app/incidents/service.py:319:        resolved_at=alert.resolved_at,
+backend/app/incidents/service.py:425:        resolved_at=incident.resolved_at,
+backend/app/incidents/service.py:440:        resolved_at=incident.resolved_at,
+backend/app/incidents/service.py:481:        resolved_at=incident.resolved_at,
+backend/app/incidents/service.py:917:        resolved_at=incident.resolved_at,
+backend/app/incidents/service.py:1595:        updates["resolved_at"] = changed_at
+backend/app/incidents/service.py:1598:        updates["resolved_at"] = None
+backend/app/incidents/metrics.py:145:    resolved_at: datetime | None,
+backend/app/incidents/metrics.py:150:    MTTR = resolved_at - detected_at
+backend/app/incidents/metrics.py:155:        end=resolved_at,
+backend/app/incidents/metrics.py:164:    resolved_at: datetime | None,
+backend/app/incidents/metrics.py:186:        resolved_at=resolved_at,
+backend/app/incidents/schemas.py.sprint5.bak:28:    resolved_at: datetime | None = None
+backend/app/reliability/alert_service.py:180:    resolved_at = datetime.now(timezone.utc)
+backend/app/reliability/alert_service.py:186:        alert.resolved_at = resolved_at
+backend/app/reliability/query_service.py:324:        "resolved_at": alert.resolved_at,
+backend/app/reliability/schemas.py:119:    resolved_at: datetime | None = None
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:60:        sa.Column("resolved_at", sa.DateTime(), nullable=True),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:327:            "resolved_at",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:499:        ALTER COLUMN resolved_at TYPE timestamptz
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:500:        USING resolved_at AT TIME ZONE 'UTC'
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1171:        ALTER COLUMN resolved_at TYPE timestamp
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1172:        USING resolved_at AT TIME ZONE 'UTC'
+
+===== suspected_deployment_id =====
+backend/app/models.py:667:    suspected_deployment_id = Column(
+backend/app/models.py:801:        foreign_keys=[suspected_deployment_id],
+backend/app/incidents/schemas.py:407:    suspected_deployment_id: UUID | None = None
+backend/app/incidents/service.py:475:        suspected_deployment_id=(
+backend/app/incidents/service.py:476:            incident.suspected_deployment_id
+backend/app/incidents/service.py:1096:                suspected_deployment_id=(
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:225:            "suspected_deployment_id",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:559:        "fk_incidents_suspected_deployment_id_deployments",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:562:        ["suspected_deployment_id"],
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1077:        "fk_incidents_suspected_deployment_id_deployments",
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1245:    op.drop_column("incidents", "suspected_deployment_id")
+

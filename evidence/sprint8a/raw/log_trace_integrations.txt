@@ -1,0 +1,10 @@
+backend/app/models.py:753:    # Temporary Sprint 5 compatibility columns.
+backend/app/models.py:1033:# Temporary import compatibility:
+backend/app/incidents/consumer.py:43:    temporarily supported for events produced before Sprint 7D.
+backend/app/incidents/schemas.py:389:    # Temporary compatibility field for the current Sprint 5 frontend.
+backend/app/incidents/incident_service.py:8:This module remains temporarily available because older event handlers and
+docker-compose.yml:303:  loki:
+docker-compose.yml:304:    image: grafana/loki:2.9.8
+docker-compose.yml:305:    container_name: platformiq-loki
+docker-compose.yml:308:    command: -config.file=/etc/loki/loki-config.yml
+docker-compose.yml:310:      - ./observability/loki/loki-config.yml:/etc/loki/loki-config.yml

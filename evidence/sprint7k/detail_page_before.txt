@@ -1,0 +1,1426 @@
+========================================
+CURRENT INCIDENT DETAIL PAGE
+========================================
+"use client";
+
+import {
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+
+import { apiFetch } from "@/lib/api";
+import {
+  canManageIncidents,
+  type AuthUser,
+} from "@/lib/auth";
+
+type IncidentStatus =
+  | "OPEN"
+  | "DETECTED"
+  | "ACKNOWLEDGED"
+  | "INVESTIGATING"
+  | "ACTION_RECOMMENDED"
+  | "REMEDIATING"
+  | "RESOLVED"
+  | "FAILED_RECOVERY";
+
+type Incident = {
+  id: string;
+  title: string;
+  description?: string | null;
+  severity: string;
+  status: IncidentStatus | string;
+  service_id: string;
+  environment: string;
+  correlation_id?: string | null;
+  triggered_by_event_id?: string | null;
+  started_at: string;
+  resolved_at?: string | null;
+};
+
+type TimelinePayload = Record<string, unknown> & {
+  event_type?: string | null;
+};
+
+type TimelineItem = {
+  id?: string | null;
+  event_id?: string | null;
+  timestamp?: string | null;
+  created_at?: string | null;
+  source?: string | null;
+  event_type?: string | null;
+  eventType?: string | null;
+  type?: string | null;
+  action?: string | null;
+  title?: string | null;
+  details?: Record<string, unknown> | null;
+  metadata?: TimelinePayload | null;
+  payload?: TimelinePayload | null;
+};
+
+const INCIDENT_EVENT_LABELS: Record<string, string> = {
+  HEALTH_SNAPSHOT_RECORDED: "Health snapshot recorded",
+  HIGH_ERROR_RATE: "High error rate detected",
+  HIGH_LATENCY: "High latency detected",
+  POD_RESTART_SPIKE: "Pod restart spike detected",
+  POD_RESTARTS: "Pod restarts detected",
+  REPLICA_UNAVAILABLE: "Replica availability degraded",
+  SERVICE_DEGRADED: "Service degraded",
+  INCIDENT_CREATED: "Incident created",
+  INCIDENT_ACKNOWLEDGED: "Incident acknowledged",
+  INCIDENT_RESOLVED: "Incident resolved",
+  INCIDENT_ESCALATED: "Incident escalated",
+};
+
+const getStatusBadgeClasses = (
+  status?: string | null,
+) => {
+  switch (status?.toUpperCase()) {
+    case "OPEN":
+    case "DETECTED":
+      return (
+        "border-red-500/30 " +
+        "bg-red-500/10 text-red-400"
+      );
+
+    case "ACKNOWLEDGED":
+      return (
+        "border-amber-500/30 " +
+        "bg-amber-500/10 text-amber-400"
+      );
+
+    case "INVESTIGATING":
+      return (
+        "border-blue-500/30 " +
+        "bg-blue-500/10 text-blue-400"
+      );
+
+    case "ACTION_RECOMMENDED":
+      return (
+        "border-violet-500/30 " +
+        "bg-violet-500/10 text-violet-400"
+      );
+
+    case "REMEDIATING":
+      return (
+        "border-cyan-500/30 " +
+        "bg-cyan-500/10 text-cyan-400"
+      );
+
+    case "RESOLVED":
+      return (
+        "border-green-500/30 " +
+        "bg-green-500/10 text-green-400"
+      );
+
+    case "FAILED_RECOVERY":
+      return (
+        "border-rose-500/30 " +
+        "bg-rose-500/10 text-rose-400"
+      );
+
+    default:
+      return (
+        "border-slate-500/30 " +
+        "bg-slate-500/10 text-slate-400"
+      );
+  }
+};
+
+const humanizeEventType = (
+  eventType?: string | null,
+) => {
+  if (!eventType) {
+    return "Incident event";
+  }
+
+  const normalizedType = eventType.toUpperCase();
+
+  if (INCIDENT_EVENT_LABELS[normalizedType]) {
+    return INCIDENT_EVENT_LABELS[normalizedType];
+  }
+
+  const readableText = normalizedType
+    .toLowerCase()
+    .replaceAll("_", " ");
+
+  return (
+    readableText.charAt(0).toUpperCase() +
+    readableText.slice(1)
+  );
+};
+
+const getTimelineEventType = (
+  event: TimelineItem,
+) => {
+  return (
+    event.event_type ??
+    event.eventType ??
+    event.type ??
+    event.action ??
+    event.metadata?.event_type ??
+    event.payload?.event_type ??
+    null
+  );
+};
+
+const getTimelineTimestamp = (
+  event: TimelineItem,
+) => {
+  return event.timestamp ?? event.created_at ?? null;
+};
+
+const getTimelineDetails = (
+  event: TimelineItem,
+) => {
+  return (
+    event.details ??
+    event.payload ??
+    event.metadata ??
+    null
+  );
+};
+
+function normalizeArray<T>(
+  value: unknown,
+): T[] {
+  if (Array.isArray(value)) {
+    return value as T[];
+  }
+
+  if (
+    value &&
+    typeof value === "object"
+  ) {
+    const record =
+      value as Record<string, unknown>;
+
+    if (Array.isArray(record.timeline)) {
+      return record.timeline as T[];
+    }
+
+    if (Array.isArray(record.events)) {
+      return record.events as T[];
+    }
+
+    if (Array.isArray(record.items)) {
+      return record.items as T[];
+    }
+
+    if (Array.isArray(record.data)) {
+      return record.data as T[];
+    }
+
+    if (Array.isArray(record.results)) {
+      return record.results as T[];
+    }
+  }
+
+  return [];
+}
+
+async function fetchIncidentData(
+  incidentId: string,
+) {
+  const [
+    rawIncidentData,
+    rawTimelineData,
+  ] = await Promise.all([
+    apiFetch(
+      `/api/incidents/${incidentId}`,
+    ),
+    apiFetch(
+      `/api/incidents/${incidentId}/timeline`,
+    ),
+  ]);
+
+  return {
+    incident: rawIncidentData as Incident,
+    timeline: normalizeArray<TimelineItem>(
+      rawTimelineData,
+    ),
+  };
+}
+
+function timelineIcon(
+  item: TimelineItem,
+) {
+  const eventType =
+    getTimelineEventType(
+      item,
+    )?.toUpperCase();
+
+  const source =
+    item.source?.toLowerCase();
+
+  if (eventType === "INCIDENT_RESOLVED") {
+    return "✅";
+  }
+
+  if (eventType === "INCIDENT_ACKNOWLEDGED") {
+    return "👀";
+  }
+
+  if (eventType === "INCIDENT_CREATED") {
+    return "🚨";
+  }
+
+  if (eventType === "INCIDENT_ESCALATED") {
+    return "🔥";
+  }
+
+  if (eventType === "HIGH_ERROR_RATE") {
+    return "📉";
+  }
+
+  if (eventType === "HIGH_LATENCY") {
+    return "🐢";
+  }
+
+  if (eventType === "POD_RESTARTS") {
+    return "🔁";
+  }
+
+  if (eventType === "POD_RESTART_SPIKE") {
+    return "🔁";
+  }
+
+  if (eventType === "REPLICA_UNAVAILABLE") {
+    return "⚠️";
+  }
+
+  if (eventType === "SERVICE_DEGRADED") {
+    return "⚠️";
+  }
+
+  if (
+    eventType ===
+    "HEALTH_SNAPSHOT_RECORDED"
+  ) {
+    return "📈";
+  }
+
+  if (
+    source ===
+    "service_health_snapshots"
+  ) {
+    return "📈";
+  }
+
+  return "•";
+}
+
+function severityClass(
+  severity: string,
+) {
+  switch (severity?.toUpperCase()) {
+    case "CRITICAL":
+    case "SEV-1":
+    case "SEV_1":
+      return (
+        "border-red-200 bg-red-100 " +
+        "text-red-700"
+      );
+
+    case "HIGH":
+    case "SEV-2":
+    case "SEV_2":
+      return (
+        "border-orange-200 bg-orange-100 " +
+        "text-orange-700"
+      );
+
+    case "MEDIUM":
+    case "SEV-3":
+    case "SEV_3":
+      return (
+        "border-yellow-200 bg-yellow-100 " +
+        "text-yellow-700"
+      );
+
+    case "LOW":
+      return (
+        "border-blue-200 bg-blue-100 " +
+        "text-blue-700"
+      );
+
+    default:
+      return (
+        "border-zinc-200 bg-zinc-100 " +
+        "text-zinc-700"
+      );
+  }
+}
+
+function subscribeToAuthChanges(
+  onStoreChange: () => void,
+) {
+  window.addEventListener(
+    "storage",
+    onStoreChange,
+  );
+
+  return () => {
+    window.removeEventListener(
+      "storage",
+      onStoreChange,
+    );
+  };
+}
+
+function getAuthSnapshot(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return localStorage.getItem(
+    "platformiq_user",
+  );
+}
+
+function getAuthServerSnapshot(): null {
+  return null;
+}
+
+function parseCurrentUser(
+  rawUser: string | null,
+): AuthUser | null {
+  if (!rawUser) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(rawUser) as AuthUser;
+  } catch {
+    return null;
+  }
+}
+
+export default function IncidentDetailPage() {
+  const params =
+    useParams<{
+      incidentId: string;
+    }>();
+
+  const incidentId = params.incidentId;
+
+  const rawCurrentUser =
+    useSyncExternalStore(
+      subscribeToAuthChanges,
+      getAuthSnapshot,
+      getAuthServerSnapshot,
+    );
+
+  const currentUser =
+    parseCurrentUser(rawCurrentUser);
+
+  const canEdit =
+    canManageIncidents(
+      currentUser?.role,
+    );
+
+  const [
+    incident,
+    setIncident,
+  ] = useState<Incident | null>(null);
+
+  const [
+    timeline,
+    setTimeline,
+  ] = useState<TimelineItem[]>([]);
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
+  const [
+    isAcknowledging,
+    setIsAcknowledging,
+  ] = useState(false);
+
+  const [
+    isResolving,
+    setIsResolving,
+  ] = useState(false);
+
+  const [
+    error,
+    setError,
+  ] = useState<string | null>(null);
+
+  async function refreshIncident() {
+    if (!incidentId) {
+      return;
+    }
+
+    const data =
+      await fetchIncidentData(
+        incidentId,
+      );
+
+    setIncident(data.incident);
+    setTimeline(data.timeline);
+    setError(null);
+  }
+
+  useEffect(() => {
+    if (!incidentId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    fetchIncidentData(incidentId)
+      .then((data) => {
+        if (cancelled) {
+          return;
+        }
+
+        setIncident(data.incident);
+        setTimeline(data.timeline);
+        setError(null);
+      })
+      .catch((err) => {
+        if (cancelled) {
+          return;
+        }
+
+        console.error(err);
+
+        setError(
+          "Failed to load incident. " +
+            "Check that the backend is running " +
+            "and the incident routes are registered.",
+        );
+      })
+      .finally(() => {
+        if (cancelled) {
+          return;
+        }
+
+========================================
+INCIDENT TYPES
+========================================
+export type IncidentSeverity =
+  | "SEV-1"
+  | "SEV-2"
+  | "SEV-3";
+
+export type IncidentStatus =
+  | "DETECTED"
+  | "ACKNOWLEDGED"
+  | "INVESTIGATING"
+  | "ACTION_RECOMMENDED"
+  | "REMEDIATING"
+  | "RESOLVED"
+  | "FAILED_RECOVERY";
+
+export type OperatorSummary = {
+  id?: string | null;
+  user_id?: string | null;
+  email?: string | null;
+  name?: string | null;
+  full_name?: string | null;
+};
+
+export type ServiceSummary = {
+  id?: string | null;
+  service_id?: string | null;
+  name?: string | null;
+  service_name?: string | null;
+  environment?: string | null;
+};
+
+export type DeploymentSummary = {
+  id: string;
+  deployment_id?: string | null;
+  version?: string | null;
+  commit_sha?: string | null;
+  commit_hash?: string | null;
+  environment?: string | null;
+  status?: string | null;
+  deployed_at?: string | null;
+  created_at?: string | null;
+};
+
+export type ReliabilityAlertSummary = {
+  id: string;
+  alert_id?: string | null;
+  alert_type?: string | null;
+  severity?: string | null;
+  status?: string | null;
+  message?: string | null;
+  slo_type?: string | null;
+  triggered_value?: number | null;
+  threshold?: number | null;
+  error_budget_status?: string | null;
+  created_at?: string | null;
+};
+
+export type IncidentAssignment = {
+  id: string;
+  incident_id: string;
+  assigned_to_user_id?: string | null;
+  assigned_by_user_id?: string | null;
+  assigned_to?: OperatorSummary | null;
+  assigned_by?: OperatorSummary | null;
+  note?: string | null;
+  assigned_at?: string | null;
+  unassigned_at?: string | null;
+  created_at: string;
+};
+
+export type IncidentComment = {
+  id: string;
+  incident_id: string;
+  author_user_id?: string | null;
+  author?: OperatorSummary | null;
+  body?: string | null;
+  comment?: string | null;
+  message?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+};
+
+export type IncidentMetric = {
+  id: string;
+  incident_id: string;
+  metric_type: string;
+  metric_name: string;
+  value: number;
+  unit: string | null;
+  source: string;
+  captured_at: string;
+  metadata_json: Record<string, unknown> | null;
+  created_at: string;
+};
+
+export type IncidentCalculatedMetrics = {
+  mttd_seconds: number | null;
+  mtta_seconds: number | null;
+  mttr_seconds: number | null;
+  mttd_display: string | null;
+  mtta_display: string | null;
+  mttr_display: string | null;
+};
+
+export type IncidentListItem = {
+  incident_id: string;
+  id: string | null;
+  incident_number: string;
+  title: string;
+  severity: IncidentSeverity;
+  status: IncidentStatus;
+  service_id: string;
+  service_name: string | null;
+  environment: string;
+  assigned_operator: OperatorSummary | null;
+  suspected_deployment_id: string | null;
+  failure_started_at: string | null;
+  detected_at: string;
+  acknowledged_at: string | null;
+  resolved_at: string | null;
+  mttd_seconds: number | null;
+  mtta_seconds: number | null;
+  mttr_seconds: number | null;
+  mttd_display: string | null;
+  mtta_display: string | null;
+  mttr_display: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type IncidentListResponse = {
+  items: IncidentListItem[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+};
+
+export type IncidentTimelineEvent = {
+  id: string;
+  incident_id: string;
+  event_type: string;
+  source: string;
+  message: string | null;
+  from_status: IncidentStatus | null;
+  to_status: IncidentStatus | null;
+  actor_user_id: string | null;
+  actor: OperatorSummary | null;
+  alert_id: string | null;
+  alert: ReliabilityAlertSummary | null;
+  deployment_id: string | null;
+  deployment: DeploymentSummary | null;
+  metadata_json: Record<string, unknown> | null;
+  occurred_at: string;
+  created_at: string;
+};
+
+export type IncidentTimelineResponse = {
+  incident_id: string;
+  events: IncidentTimelineEvent[];
+};
+
+export type IncidentMetricsResponse = {
+  incident_id: string;
+  metric_snapshot: IncidentMetric[];
+  mttd_seconds: number | null;
+  mtta_seconds: number | null;
+  mttr_seconds: number | null;
+  mttd_display: string | null;
+  mtta_display: string | null;
+  mttr_display: string | null;
+  alert_threshold: number | null;
+  triggered_value: number | null;
+  error_budget_status: string | null;
+};
+
+export type IncidentMetricsSummary = {
+  average_mttd_seconds: number | null;
+  average_mtta_seconds: number | null;
+  average_mttr_seconds: number | null;
+  average_mttd_display: string | null;
+  average_mtta_display: string | null;
+  average_mttr_display: string | null;
+  open_incident_count: number;
+  resolved_incident_count: number;
+  sev_1_incident_count: number;
+  sev_2_incident_count: number;
+  sev_3_incident_count: number;
+};
+
+export type IncidentDetail = {
+  incident: IncidentListItem;
+  description: string | null;
+  deduplication_key: string;
+
+  primary_service: ServiceSummary;
+  affected_services: ServiceSummary[];
+
+  triggering_alert_id: string | null;
+  triggering_alert: ReliabilityAlertSummary | null;
+  related_alerts: ReliabilityAlertSummary[];
+
+  suspected_deployment: DeploymentSummary | null;
+
+  failure_started_at: string | null;
+  investigation_started_at: string | null;
+  remediation_started_at: string | null;
+
+  created_by: string | null;
+  creator: OperatorSummary | null;
+
+  current_assignment: IncidentAssignment | null;
+  assignment_history: IncidentAssignment[];
+  comments: IncidentComment[];
+  metric_snapshot: IncidentMetric[];
+  timeline_summary: IncidentTimelineEvent[];
+
+  resolution_summary: string | null;
+  rca_summary: string | null;
+  remediation_summary: string | null;
+
+  calculated_incident_metrics:
+    | IncidentCalculatedMetrics
+    | null;
+};
+
+export type IncidentListFilters = {
+  status?: IncidentStatus | "";
+  severity?: IncidentSeverity | "";
+  service_id?: string;
+  environment?: string;
+  assignee_id?: string;
+  from_date?: string;
+  to_date?: string;
+  page?: number;
+  page_size?: number;
+};
+
+export type IncidentAcknowledgeRequest = {
+  note?: string | null;
+  assign_to_self?: boolean;
+};
+
+export type IncidentAssignRequest = {
+  assigned_to_user_id: string;
+  note?: string | null;
+};
+
+export type IncidentStatusUpdateRequest = {
+  status: IncidentStatus;
+  reason: string;
+};
+
+export type IncidentCommentCreateRequest = {
+  body: string;
+};
+========================================
+INCIDENT API
+========================================
+import { getAccessToken } from "@/lib/auth";
+import type {
+  IncidentAcknowledgeRequest,
+  IncidentAssignRequest,
+  IncidentComment,
+  IncidentCommentCreateRequest,
+  IncidentDetail,
+  IncidentListFilters,
+  IncidentListResponse,
+  IncidentMetricsResponse,
+  IncidentMetricsSummary,
+  IncidentStatusUpdateRequest,
+  IncidentTimelineResponse,
+} from "@/types/incidents";
+
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  "http://localhost:8000"
+).replace(/\/$/, "");
+
+type ApiErrorPayload = {
+  detail?: string;
+  message?: string;
+};
+
+async function requestJson<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
+  const token = getAccessToken();
+  const url = `${API_BASE_URL}${path}`;
+
+  const response = await fetch(url, {
+    ...init,
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+      ...(init?.body
+        ? {
+            "Content-Type": "application/json",
+          }
+        : {}),
+      ...(token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {}),
+      ...(init?.headers ?? {}),
+    },
+  });
+
+  if (!response.ok) {
+    let detail =
+      `${response.status} ${response.statusText}`;
+
+    try {
+      const errorBody =
+        (await response.json()) as ApiErrorPayload;
+
+      detail =
+        errorBody.detail ??
+        errorBody.message ??
+        detail;
+    } catch {
+      // Retain the HTTP status fallback.
+    }
+
+    throw new Error(detail);
+  }
+
+  return (await response.json()) as T;
+}
+
+function buildIncidentQuery(
+  filters: IncidentListFilters = {},
+): string {
+  const params = new URLSearchParams();
+
+  if (filters.status) {
+    params.set("status", filters.status);
+  }
+
+  if (filters.severity) {
+    params.set("severity", filters.severity);
+  }
+
+  if (filters.service_id?.trim()) {
+    params.set(
+      "service_id",
+      filters.service_id.trim(),
+    );
+  }
+
+  if (filters.environment?.trim()) {
+    params.set(
+      "environment",
+      filters.environment.trim(),
+    );
+  }
+
+  if (filters.assignee_id?.trim()) {
+    params.set(
+      "assignee_id",
+      filters.assignee_id.trim(),
+    );
+  }
+
+  if (filters.from_date) {
+    params.set("from_date", filters.from_date);
+  }
+
+  if (filters.to_date) {
+    params.set("to_date", filters.to_date);
+  }
+
+  params.set(
+    "page",
+    String(filters.page ?? 1),
+  );
+
+  params.set(
+    "page_size",
+    String(filters.page_size ?? 25),
+  );
+
+  return params.toString();
+}
+
+export function listIncidents(
+  filters: IncidentListFilters = {},
+): Promise<IncidentListResponse> {
+  const query = buildIncidentQuery(filters);
+
+  return requestJson<IncidentListResponse>(
+    `/api/incidents?${query}`,
+  );
+}
+
+export function getIncidentMetricsSummary():
+Promise<IncidentMetricsSummary> {
+  return requestJson<IncidentMetricsSummary>(
+    "/api/incidents/metrics/summary",
+  );
+}
+
+export async function getUnacknowledgedIncidentCount():
+Promise<number> {
+  const response = await listIncidents({
+    status: "DETECTED",
+    page: 1,
+    page_size: 1,
+  });
+
+  return response.total;
+}
+
+export function getIncident(
+  incidentId: string,
+): Promise<IncidentDetail> {
+  return requestJson<IncidentDetail>(
+    `/api/incidents/${encodeURIComponent(
+      incidentId,
+    )}`,
+  );
+}
+
+export function getIncidentTimeline(
+  incidentId: string,
+): Promise<IncidentTimelineResponse> {
+  return requestJson<IncidentTimelineResponse>(
+    `/api/incidents/${encodeURIComponent(
+      incidentId,
+    )}/timeline`,
+  );
+}
+
+export function getIncidentMetrics(
+  incidentId: string,
+): Promise<IncidentMetricsResponse> {
+  return requestJson<IncidentMetricsResponse>(
+    `/api/incidents/${encodeURIComponent(
+      incidentId,
+    )}/metrics`,
+  );
+}
+
+export function acknowledgeIncident(
+  incidentId: string,
+  request: IncidentAcknowledgeRequest,
+): Promise<IncidentDetail> {
+  return requestJson<IncidentDetail>(
+    `/api/incidents/${encodeURIComponent(
+      incidentId,
+    )}/acknowledge`,
+    {
+      method: "POST",
+      body: JSON.stringify(request),
+    },
+  );
+}
+
+export function assignIncident(
+  incidentId: string,
+  request: IncidentAssignRequest,
+): Promise<IncidentDetail> {
+  return requestJson<IncidentDetail>(
+    `/api/incidents/${encodeURIComponent(
+      incidentId,
+    )}/assign`,
+    {
+      method: "POST",
+      body: JSON.stringify(request),
+    },
+  );
+}
+
+export function updateIncidentStatus(
+  incidentId: string,
+  request: IncidentStatusUpdateRequest,
+): Promise<IncidentDetail> {
+  return requestJson<IncidentDetail>(
+    `/api/incidents/${encodeURIComponent(
+      incidentId,
+    )}/status`,
+    {
+      method: "POST",
+      body: JSON.stringify(request),
+    },
+  );
+}
+
+export function createIncidentComment(
+  incidentId: string,
+  request: IncidentCommentCreateRequest,
+): Promise<IncidentComment> {
+  return requestJson<IncidentComment>(
+    `/api/incidents/${encodeURIComponent(
+      incidentId,
+    )}/comments`,
+    {
+      method: "POST",
+      body: JSON.stringify(request),
+    },
+  );
+}
+
+export async function getIncidentPageData(
+  incidentId: string,
+): Promise<{
+  incident: IncidentDetail;
+  timeline: IncidentTimelineResponse;
+  metrics: IncidentMetricsResponse;
+}> {
+  const [incident, timeline, metrics] =
+    await Promise.all([
+      getIncident(incidentId),
+      getIncidentTimeline(incidentId),
+      getIncidentMetrics(incidentId),
+    ]);
+
+  return {
+    incident,
+    timeline,
+    metrics,
+  };
+}
+========================================
+CURRENT INCIDENT COMPONENTS
+========================================
+components/incidents/IncidentsTable.tsx
+--- components/incidents/IncidentsTable.tsx ---
+import Link from "next/link";
+
+import { IncidentSeverityBadge } from "@/components/incidents/IncidentSeverityBadge";
+import { IncidentStatusBadge } from "@/components/incidents/IncidentStatusBadge";
+import {
+  INCIDENT_SEVERITY_PRIORITY,
+  isOpenIncidentStatus,
+} from "@/lib/incident-status";
+import type {
+  IncidentListItem,
+  OperatorSummary,
+} from "@/types/incidents";
+
+type IncidentsTableProps = {
+  incidents: IncidentListItem[];
+  loading?: boolean;
+};
+
+function formatDate(value: string | null): string {
+  if (!value) {
+    return "—";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  return date.toLocaleString();
+}
+
+function formatDuration(totalSeconds: number): string {
+  const seconds = Math.max(
+    0,
+    Math.floor(totalSeconds),
+  );
+
+  const days = Math.floor(seconds / 86_400);
+  const hours = Math.floor(
+    (seconds % 86_400) / 3_600,
+  );
+  const minutes = Math.floor(
+    (seconds % 3_600) / 60,
+  );
+
+  if (days > 0) {
+    return `${days}d ${hours}h`;
+  }
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+
+  if (minutes > 0) {
+    return `${minutes}m`;
+  }
+
+  return `${seconds}s`;
+}
+
+function getResponseAge(
+  incident: IncidentListItem,
+): string {
+  const detectedAt = new Date(
+    incident.detected_at,
+  ).getTime();
+
+  const endedAt = incident.resolved_at
+    ? new Date(incident.resolved_at).getTime()
+    : Date.now();
+
+  if (
+    Number.isNaN(detectedAt) ||
+    Number.isNaN(endedAt)
+  ) {
+    return "—";
+  }
+
+  return formatDuration(
+    (endedAt - detectedAt) / 1_000,
+  );
+}
+
+function getOperatorLabel(
+  operator: OperatorSummary | null,
+): string {
+  if (!operator) {
+    return "Unassigned";
+  }
+
+  return (
+    operator.full_name ??
+    operator.name ??
+    operator.email ??
+    operator.user_id ??
+    operator.id ??
+    "Assigned"
+  );
+}
+
+function shortIdentifier(
+  value: string | null,
+): string {
+  if (!value) {
+    return "—";
+  }
+
+  return value.length > 12
+    ? `${value.slice(0, 12)}…`
+    : value;
+}
+
+function sortIncidents(
+  incidents: IncidentListItem[],
+): IncidentListItem[] {
+  return [...incidents].sort((left, right) => {
+    const leftOpen = isOpenIncidentStatus(
+      left.status,
+    )
+      ? 1
+      : 0;
+
+    const rightOpen = isOpenIncidentStatus(
+      right.status,
+    )
+      ? 1
+      : 0;
+
+    if (leftOpen !== rightOpen) {
+      return rightOpen - leftOpen;
+    }
+
+    const severityDifference =
+      INCIDENT_SEVERITY_PRIORITY[right.severity] -
+      INCIDENT_SEVERITY_PRIORITY[left.severity];
+
+    if (severityDifference !== 0) {
+      return severityDifference;
+    }
+
+    return (
+      new Date(right.detected_at).getTime() -
+      new Date(left.detected_at).getTime()
+    );
+  });
+}
+
+export function IncidentsTable({
+  incidents,
+  loading = false,
+}: IncidentsTableProps) {
+  if (loading) {
+    return (
+      <div className="px-6 py-16 text-center text-sm text-slate-600 dark:text-slate-400">
+        Loading incidents…
+      </div>
+    );
+  }
+
+  if (incidents.length === 0) {
+    return (
+      <div className="m-5 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-600 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400">
+        No incidents match the selected filters.
+      </div>
+    );
+  }
+
+  const sortedIncidents =
+    sortIncidents(incidents);
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[1320px] text-left text-sm">
+        <thead className="border-b border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+          <tr className="text-xs font-semibold uppercase tracking-wide">
+            <th className="px-4 py-3">Incident</th>
+            <th className="px-4 py-3">Severity</th>
+            <th className="px-4 py-3">Status</th>
+            <th className="px-4 py-3">Service</th>
+            <th className="px-4 py-3">
+              Environment
+            </th>
+            <th className="px-4 py-3">
+              Assigned operator
+            </th>
+            <th className="px-4 py-3">
+              Suspected deployment
+            </th>
+            <th className="px-4 py-3">
+              Detected at
+            </th>
+            <th className="px-4 py-3">
+              Response age
+            </th>
+          </tr>
+        </thead>
+
+        <tbody className="bg-white text-slate-700 dark:bg-slate-900 dark:text-slate-300">
+          {sortedIncidents.map((incident) => (
+            <tr
+              key={incident.incident_id}
+              className="border-b border-slate-200 transition last:border-b-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60"
+            >
+              <td className="px-4 py-4">
+                <Link
+                  href={`/incidents/${incident.incident_id}`}
+                  className="font-semibold text-blue-700 hover:underline dark:text-blue-400"
+                >
+                  {incident.incident_number}
+                </Link>
+
+                <p className="mt-1 max-w-xs text-sm text-slate-600 dark:text-slate-400">
+                  {incident.title}
+                </p>
+              </td>
+
+              <td className="px-4 py-4">
+                <IncidentSeverityBadge
+                  severity={incident.severity}
+                />
+              </td>
+
+              <td className="px-4 py-4">
+                <IncidentStatusBadge
+                  status={incident.status}
+                />
+              </td>
+
+              <td className="px-4 py-4">
+                <p className="font-medium text-slate-900 dark:text-slate-100">
+                  {incident.service_name ??
+                    incident.service_id}
+                </p>
+
+                {incident.service_name && (
+                  <p className="mt-1 max-w-[180px] truncate text-xs text-slate-500 dark:text-slate-400">
+                    {incident.service_id}
+                  </p>
+                )}
+              </td>
+
+              <td className="px-4 py-4">
+                {incident.environment}
+              </td>
+
+              <td className="px-4 py-4">
+                {getOperatorLabel(
+                  incident.assigned_operator,
+                )}
+              </td>
+
+              <td className="px-4 py-4">
+                {incident.suspected_deployment_id ? (
+                  <Link
+                    href={`/deployments/${incident.suspected_deployment_id}`}
+                    className="font-mono text-xs text-blue-700 hover:underline dark:text-blue-400"
+                  >
+                    {shortIdentifier(
+                      incident.suspected_deployment_id,
+                    )}
+                  </Link>
+                ) : (
+                  "—"
+                )}
+              </td>
+
+              <td className="px-4 py-4">
+                {formatDate(incident.detected_at)}
+              </td>
+
+              <td className="px-4 py-4">
+                <span
+                  className={
+                    incident.status === "RESOLVED"
+                      ? "text-slate-600 dark:text-slate-400"
+                      : "font-medium text-orange-700 dark:text-orange-400"
+                  }
+                >
+                  {getResponseAge(incident)}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export default IncidentsTable;
+components/incidents/IncidentStatusBadge.tsx
+--- components/incidents/IncidentStatusBadge.tsx ---
+import { formatIncidentStatus } from "@/lib/incident-status";
+import type { IncidentStatus } from "@/types/incidents";
+
+type IncidentStatusBadgeProps = {
+  status: IncidentStatus;
+  className?: string;
+};
+
+const statusClasses: Record<
+  IncidentStatus,
+  string
+> = {
+  DETECTED:
+    "border-red-300 bg-red-100 text-red-800 dark:border-red-800 dark:bg-red-950/60 dark:text-red-300",
+
+  ACKNOWLEDGED:
+    "border-blue-300 bg-blue-100 text-blue-800 dark:border-blue-800 dark:bg-blue-950/60 dark:text-blue-300",
+
+  INVESTIGATING:
+    "border-purple-300 bg-purple-100 text-purple-800 dark:border-purple-800 dark:bg-purple-950/60 dark:text-purple-300",
+
+  ACTION_RECOMMENDED:
+    "border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300",
+
+  REMEDIATING:
+    "border-orange-300 bg-orange-100 text-orange-800 dark:border-orange-800 dark:bg-orange-950/60 dark:text-orange-300",
+
+  RESOLVED:
+    "border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300",
+
+  FAILED_RECOVERY:
+    "border-red-400 bg-red-200 text-red-950 dark:border-red-700 dark:bg-red-950 dark:text-red-200",
+};
+
+export function IncidentStatusBadge({
+  status,
+  className = "",
+}: IncidentStatusBadgeProps) {
+  return (
+    <span
+      className={[
+        "inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold",
+        statusClasses[status],
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      {formatIncidentStatus(status)}
+    </span>
+  );
+}
+
+export default IncidentStatusBadge;
+components/incidents/IncidentSeverityBadge.tsx
+--- components/incidents/IncidentSeverityBadge.tsx ---
+import type { IncidentSeverity } from "@/types/incidents";
+
+type IncidentSeverityBadgeProps = {
+  severity: IncidentSeverity;
+  className?: string;
+};
+
+const severityClasses: Record<
+  IncidentSeverity,
+  string
+> = {
+  "SEV-1":
+    "border-red-300 bg-red-100 text-red-800 dark:border-red-800 dark:bg-red-950/60 dark:text-red-300",
+
+  "SEV-2":
+    "border-orange-300 bg-orange-100 text-orange-800 dark:border-orange-800 dark:bg-orange-950/60 dark:text-orange-300",
+
+  "SEV-3":
+    "border-yellow-300 bg-yellow-100 text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950/60 dark:text-yellow-300",
+};
+
+export function IncidentSeverityBadge({
+  severity,
+  className = "",
+}: IncidentSeverityBadgeProps) {
+  return (
+    <span
+      className={[
+        "inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold",
+        severityClasses[severity],
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      {severity}
+    </span>
+  );
+}
+
+export default IncidentSeverityBadge;

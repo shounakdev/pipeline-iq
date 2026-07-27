@@ -1,0 +1,395 @@
+========================================
+FRONTEND APP ROUTES
+========================================
+frontend/app/audit-logs/page.tsx
+frontend/app/deployments/[deploymentId]/page.tsx
+frontend/app/deployments/page.tsx
+frontend/app/events/[eventId]/page.tsx
+frontend/app/events/page.tsx
+frontend/app/globals.css
+frontend/app/icon.png
+frontend/app/incidents/[incidentId]/page.tsx
+frontend/app/incidents/page.tsx
+frontend/app/layout.tsx
+frontend/app/login/page.tsx
+frontend/app/observability/page.tsx
+frontend/app/page.tsx
+frontend/app/pipeline/[id]/page.tsx
+frontend/app/pipelineiq/page.tsx
+frontend/app/projects/page.tsx
+frontend/app/projects/[projectId]/page.tsx
+frontend/app/register/page.tsx
+frontend/app/releases/[correlationId]/timeline/page.tsx
+frontend/app/reliability/page.tsx
+frontend/app/services/page.tsx
+frontend/app/services/[serviceId]/health/page.tsx
+frontend/app/services/[serviceId]/page.tsx
+frontend/app/services/[serviceId]/reliability/page.tsx
+frontend/app/settings/page.tsx
+
+========================================
+FRONTEND COMPONENTS
+========================================
+frontend/components/AppShell.tsx
+frontend/components/reliability/ErrorBudgetCard.tsx
+frontend/components/reliability/MeasurementsTable.tsx
+frontend/components/reliability/MetricCard.tsx
+frontend/components/reliability/RecentMeasurementsTable.tsx
+frontend/components/reliability/ReliabilityAlertsTable.tsx
+frontend/components/reliability/ReliabilityMetricCard.tsx
+frontend/components/reliability/ReliabilityStatusBadge.tsx
+frontend/components/reliability/StatusBadge.tsx
+frontend/components/theme-provider.tsx
+frontend/components/theme-toggle.tsx
+
+========================================
+FRONTEND LIB AND TYPES
+========================================
+frontend/lib/api.ts
+frontend/lib/auth.ts
+frontend/lib/platformiq-api.ts
+frontend/lib/reliability-api.ts
+frontend/lib/reliability-format.ts
+frontend/types/reliability.ts
+
+========================================
+NAVIGATION REFERENCES
+========================================
+frontend/app/releases/[correlationId]/timeline/page.tsx:5:import { useParams } from "next/navigation";
+frontend/app/projects/[projectId]/page.tsx:4:import { useParams } from "next/navigation";
+frontend/app/register/page.tsx:6:import { useRouter } from "next/navigation";
+frontend/app/pipelineiq/page.tsx:6:import { useRouter } from "next/navigation";
+frontend/app/deployments/[deploymentId]/page.tsx:5:import { useParams } from "next/navigation";
+frontend/app/pipeline/[id]/page.tsx:6:import { useParams } from "next/navigation";
+frontend/app/events/[eventId]/page.tsx:6:import { useParams } from "next/navigation";
+frontend/app/incidents/page.tsx:109:          Operational issues created from observability alerts.
+frontend/app/incidents/[incidentId]/page.tsx:6:import { useParams } from "next/navigation";
+frontend/app/services/[serviceId]/page.tsx:5:import { useParams } from "next/navigation";
+frontend/app/services/[serviceId]/page.tsx:155:              href={`/services/${health.service_id}/reliability`}
+frontend/app/services/[serviceId]/page.tsx:158:              View Reliability
+frontend/app/services/[serviceId]/health/page.tsx:5:import { useParams } from "next/navigation";
+frontend/app/services/[serviceId]/reliability/page.tsx:4:import { useParams } from "next/navigation";
+frontend/app/services/[serviceId]/reliability/page.tsx:13:import { MetricCard } from "@/components/reliability/MetricCard";
+frontend/app/services/[serviceId]/reliability/page.tsx:14:import { RecentMeasurementsTable } from "@/components/reliability/RecentMeasurementsTable";
+frontend/app/services/[serviceId]/reliability/page.tsx:15:import { ReliabilityAlertsTable } from "@/components/reliability/ReliabilityAlertsTable";
+frontend/app/services/[serviceId]/reliability/page.tsx:16:import { StatusBadge } from "@/components/reliability/StatusBadge";
+frontend/app/services/[serviceId]/reliability/page.tsx:17:import { getServiceReliabilityPageData } from "@/lib/reliability-api";
+frontend/app/services/[serviceId]/reliability/page.tsx:28:} from "@/lib/reliability-format";
+frontend/app/services/[serviceId]/reliability/page.tsx:30:  ReliabilityAlert,
+frontend/app/services/[serviceId]/reliability/page.tsx:32:  ServiceReliabilityResponse,
+frontend/app/services/[serviceId]/reliability/page.tsx:33:} from "@/types/reliability";
+frontend/app/services/[serviceId]/reliability/page.tsx:66:  alerts: ReliabilityAlert[],
+frontend/app/services/[serviceId]/reliability/page.tsx:67:): ReliabilityAlert | null {
+frontend/app/services/[serviceId]/reliability/page.tsx:68:  const activeAlerts = alerts
+frontend/app/services/[serviceId]/reliability/page.tsx:91:    activeAlerts.find(
+frontend/app/services/[serviceId]/reliability/page.tsx:94:    activeAlerts[0] ??
+frontend/app/services/[serviceId]/reliability/page.tsx:99:export default function ServiceReliabilityPage() {
+frontend/app/services/[serviceId]/reliability/page.tsx:103:  const [reliability, setReliability] =
+frontend/app/services/[serviceId]/reliability/page.tsx:104:    useState<ServiceReliabilityResponse | null>(null);
+frontend/app/services/[serviceId]/reliability/page.tsx:117:    getServiceReliabilityPageData(serviceId)
+frontend/app/services/[serviceId]/reliability/page.tsx:123:        setReliability(data.reliability);
+frontend/app/services/[serviceId]/reliability/page.tsx:134:            : "Unable to load service reliability.",
+frontend/app/services/[serviceId]/reliability/page.tsx:158:        await getServiceReliabilityPageData(serviceId);
+frontend/app/services/[serviceId]/reliability/page.tsx:159:      setReliability(data.reliability);
+frontend/app/services/[serviceId]/reliability/page.tsx:165:          : "Unable to load service reliability.",
+frontend/app/services/[serviceId]/reliability/page.tsx:175:        reliability?.slos ?? [],
+frontend/app/services/[serviceId]/reliability/page.tsx:178:    [reliability],
+frontend/app/services/[serviceId]/reliability/page.tsx:184:        reliability?.slos ?? [],
+frontend/app/services/[serviceId]/reliability/page.tsx:187:    [reliability],
+frontend/app/services/[serviceId]/reliability/page.tsx:193:        reliability?.slos ?? [],
+frontend/app/services/[serviceId]/reliability/page.tsx:196:    [reliability],
+frontend/app/services/[serviceId]/reliability/page.tsx:204:  const activeAlerts = useMemo(
+frontend/app/services/[serviceId]/reliability/page.tsx:206:      (reliability?.open_alerts ?? []).filter((alert) =>
+frontend/app/services/[serviceId]/reliability/page.tsx:211:    [reliability],
+frontend/app/services/[serviceId]/reliability/page.tsx:216:      (reliability?.slos ?? []).flatMap((slo) => {
+frontend/app/services/[serviceId]/reliability/page.tsx:235:    [reliability],
+frontend/app/services/[serviceId]/reliability/page.tsx:239:    () => selectCorrelationAlert(activeAlerts),
+frontend/app/services/[serviceId]/reliability/page.tsx:240:    [activeAlerts],
+frontend/app/services/[serviceId]/reliability/page.tsx:247:          Loading service reliability…
+frontend/app/services/[serviceId]/reliability/page.tsx:253:  if (error || !reliability) {
+frontend/app/services/[serviceId]/reliability/page.tsx:258:            Could not load service reliability
+frontend/app/services/[serviceId]/reliability/page.tsx:275:  const latestDeployment = reliability.latest_deployment;
+frontend/app/services/[serviceId]/reliability/page.tsx:319:              href="/reliability"
+frontend/app/services/[serviceId]/reliability/page.tsx:322:              ← Reliability
+frontend/app/services/[serviceId]/reliability/page.tsx:325:              {reliability.service_name} Reliability
+frontend/app/services/[serviceId]/reliability/page.tsx:329:              active alerts.
+frontend/app/services/[serviceId]/reliability/page.tsx:515:            title="Open Reliability Alerts"
+frontend/app/services/[serviceId]/reliability/page.tsx:516:            description="OPEN alerts are shown first, followed by ACKNOWLEDGED alerts."
+frontend/app/services/[serviceId]/reliability/page.tsx:518:            <ReliabilityAlertsTable alerts={activeAlerts} />
+frontend/app/reliability/page.tsx:5:import { useRouter } from "next/navigation";
+frontend/app/reliability/page.tsx:17:import { StatusBadge } from "@/components/reliability/StatusBadge";
+frontend/app/reliability/page.tsx:20:  getServiceReliability,
+frontend/app/reliability/page.tsx:21:  listReliabilityAlerts,
+frontend/app/reliability/page.tsx:23:} from "@/lib/reliability-api";
+frontend/app/reliability/page.tsx:33:} from "@/lib/reliability-format";
+frontend/app/reliability/page.tsx:36:  ReliabilityAlert,
+frontend/app/reliability/page.tsx:37:  ReliabilitySLOState,
+frontend/app/reliability/page.tsx:38:  ReliabilityState,
+frontend/app/reliability/page.tsx:39:} from "@/types/reliability";
+frontend/app/reliability/page.tsx:41:type GlobalReliabilityRow = {
+frontend/app/reliability/page.tsx:44:  overallStatus: ReliabilityState;
+frontend/app/reliability/page.tsx:45:  availability: ReliabilitySLOState | null;
+frontend/app/reliability/page.tsx:46:  latency: ReliabilitySLOState | null;
+frontend/app/reliability/page.tsx:47:  errorRate: ReliabilitySLOState | null;
+frontend/app/reliability/page.tsx:57:  measurement: ReliabilitySLOState | null;
+frontend/app/reliability/page.tsx:110:export default function ReliabilityPage() {
+frontend/app/reliability/page.tsx:112:  const [rows, setRows] = useState<GlobalReliabilityRow[]>(
+frontend/app/reliability/page.tsx:118:  const loadReliability = useCallback(async () => {
+frontend/app/reliability/page.tsx:120:      const [services, allAlerts] = await Promise.all([
+frontend/app/reliability/page.tsx:122:        listReliabilityAlerts(),
+frontend/app/reliability/page.tsx:125:      const alertsByService = new Map<
+frontend/app/reliability/page.tsx:127:        ReliabilityAlert[]
+frontend/app/reliability/page.tsx:130:      allAlerts.forEach((alert) => {
+frontend/app/reliability/page.tsx:132:          alertsByService.get(alert.service_id) ?? [];
+frontend/app/reliability/page.tsx:134:        alertsByService.set(alert.service_id, current);
+frontend/app/reliability/page.tsx:139:          const [reliability, errorBudget] =
+frontend/app/reliability/page.tsx:141:              getServiceReliability(service.id),
+frontend/app/reliability/page.tsx:150:            reliability.overall_status ??
+frontend/app/reliability/page.tsx:152:              ...reliability.slos.map((slo) => slo.status),
+frontend/app/reliability/page.tsx:158:          const serviceAlerts =
+frontend/app/reliability/page.tsx:159:            alertsByService.get(service.id) ?? [];
+frontend/app/reliability/page.tsx:162:            [...serviceAlerts].sort(
+frontend/app/reliability/page.tsx:171:              reliability.service_name || service.name,
+frontend/app/reliability/page.tsx:174:              reliability.slos,
+frontend/app/reliability/page.tsx:178:              reliability.slos,
+frontend/app/reliability/page.tsx:182:              reliability.slos,
+frontend/app/reliability/page.tsx:187:              reliability.open_alert_count ??
+frontend/app/reliability/page.tsx:188:              reliability.open_alerts.length,
+frontend/app/reliability/page.tsx:190:          } satisfies GlobalReliabilityRow;
+frontend/app/reliability/page.tsx:199:          : "Unable to load reliability data.",
+frontend/app/reliability/page.tsx:209:    void loadReliability();
+frontend/app/reliability/page.tsx:210:  }, [loadReliability]);
+frontend/app/reliability/page.tsx:214:      void loadReliability();
+frontend/app/reliability/page.tsx:220:  }, [loadReliability]);
+frontend/app/reliability/page.tsx:234:    const openAlerts = rows.reduce(
+frontend/app/reliability/page.tsx:243:      openAlerts,
+frontend/app/reliability/page.tsx:256:              Reliability
+frontend/app/reliability/page.tsx:260:              reliability alerts.
+frontend/app/reliability/page.tsx:290:            label="Open alerts"
+frontend/app/reliability/page.tsx:291:            value={summary.openAlerts}
+frontend/app/reliability/page.tsx:293:              summary.openAlerts > 0 ? "danger" : "default"
+frontend/app/reliability/page.tsx:301:              Service reliability
+frontend/app/reliability/page.tsx:305:              backend reliability engine.
+frontend/app/reliability/page.tsx:311:              Loading reliability data…
+frontend/app/reliability/page.tsx:316:                Could not load reliability data
+frontend/app/reliability/page.tsx:345:                    <th className="px-4 py-3">Alerts</th>
+frontend/app/reliability/page.tsx:357:                    const destination = `/services/${row.serviceId}/reliability`;
+frontend/app/login/page.tsx:4:import { useRouter } from "next/navigation";
+frontend/components/AppShell.tsx:6:import { usePathname, useRouter } from "next/navigation";
+frontend/components/AppShell.tsx:12:const navItems = [
+frontend/components/AppShell.tsx:21:  { label: "Reliability", href: "/reliability" },
+frontend/components/AppShell.tsx:127:          {/* Navigation */}
+frontend/components/AppShell.tsx:129:            {navItems.map((item) => {
+frontend/components/AppShell.tsx:151:          {/* Sidebar footer */}
+frontend/components/reliability/ReliabilityAlertsTable.tsx:8:} from "@/lib/reliability-format";
+frontend/components/reliability/ReliabilityAlertsTable.tsx:10:  ReliabilityAlert,
+frontend/components/reliability/ReliabilityAlertsTable.tsx:11:  ReliabilitySeverity,
+frontend/components/reliability/ReliabilityAlertsTable.tsx:12:} from "@/types/reliability";
+frontend/components/reliability/ReliabilityAlertsTable.tsx:16:type ReliabilityAlertsTableProps = {
+frontend/components/reliability/ReliabilityAlertsTable.tsx:17:  alerts: ReliabilityAlert[];
+frontend/components/reliability/ReliabilityAlertsTable.tsx:27:  severity: ReliabilitySeverity,
+frontend/components/reliability/ReliabilityAlertsTable.tsx:43:export function ReliabilityAlertsTable({
+frontend/components/reliability/ReliabilityAlertsTable.tsx:44:  alerts,
+frontend/components/reliability/ReliabilityAlertsTable.tsx:45:}: ReliabilityAlertsTableProps) {
+frontend/components/reliability/ReliabilityAlertsTable.tsx:46:  const sortedAlerts = [...alerts].sort((left, right) => {
+frontend/components/reliability/ReliabilityAlertsTable.tsx:61:  if (sortedAlerts.length === 0) {
+frontend/components/reliability/ReliabilityAlertsTable.tsx:65:          No active reliability alerts
+frontend/components/reliability/ReliabilityAlertsTable.tsx:68:          Open and acknowledged alerts will appear here.
+frontend/components/reliability/ReliabilityAlertsTable.tsx:90:          {sortedAlerts.map((alert) => (
+frontend/components/reliability/MetricCard.tsx:5:} from "@/lib/reliability-format";
+frontend/components/reliability/MetricCard.tsx:7:  ReliabilitySLOState,
+frontend/components/reliability/MetricCard.tsx:9:} from "@/types/reliability";
+frontend/components/reliability/MetricCard.tsx:16:  measurement: ReliabilitySLOState | null;
+frontend/components/reliability/ReliabilityStatusBadge.tsx:1:import type { ReliabilityState } from "@/types/reliability";
+frontend/components/reliability/ReliabilityStatusBadge.tsx:3:type ReliabilityStatusBadgeProps = {
+frontend/components/reliability/ReliabilityStatusBadge.tsx:4:  status: ReliabilityState | null | undefined;
+frontend/components/reliability/ReliabilityStatusBadge.tsx:27:export function ReliabilityStatusBadge({
+frontend/components/reliability/ReliabilityStatusBadge.tsx:30:}: ReliabilityStatusBadgeProps) {
+frontend/components/reliability/ReliabilityStatusBadge.tsx:52:export default ReliabilityStatusBadge;
+frontend/components/reliability/StatusBadge.tsx:1:import { normalizeState } from "@/lib/reliability-format";
+frontend/components/reliability/RecentMeasurementsTable.tsx:1:import { ReliabilityStatusBadge } from "./ReliabilityStatusBadge";
+frontend/components/reliability/RecentMeasurementsTable.tsx:3:interface ReliabilityMeasurement {
+frontend/components/reliability/RecentMeasurementsTable.tsx:18:  measurements: ReliabilityMeasurement[];
+frontend/components/reliability/RecentMeasurementsTable.tsx:152:                    <ReliabilityStatusBadge
+frontend/lib/reliability-api.ts:2:  ReliabilityAlert,
+frontend/lib/reliability-api.ts:5:  ServiceReliabilityResponse,
+frontend/lib/reliability-api.ts:6:} from "@/types/reliability";
+frontend/lib/reliability-api.ts:163:export function getServiceReliability(
+frontend/lib/reliability-api.ts:165:): Promise<ServiceReliabilityResponse> {
+frontend/lib/reliability-api.ts:166:  return requestJson<ServiceReliabilityResponse>(
+frontend/lib/reliability-api.ts:169:    )}/reliability`,
+frontend/lib/reliability-api.ts:183:export function listReliabilityAlerts(): Promise<
+frontend/lib/reliability-api.ts:184:  ReliabilityAlert[]
+frontend/lib/reliability-api.ts:186:  return requestJson<ReliabilityAlert[]>(
+frontend/lib/reliability-api.ts:187:    "/api/alerts",
+frontend/lib/reliability-api.ts:191:export function getReliabilityAlert(
+frontend/lib/reliability-api.ts:193:): Promise<ReliabilityAlert> {
+frontend/lib/reliability-api.ts:194:  return requestJson<ReliabilityAlert>(
+frontend/lib/reliability-api.ts:195:    `/api/alerts/${encodeURIComponent(
+frontend/lib/reliability-api.ts:204: * active alerts before rendering the service page.
+frontend/lib/reliability-api.ts:206:export async function getServiceReliabilityPageData(
+frontend/lib/reliability-api.ts:209:  reliability: ServiceReliabilityResponse;
+frontend/lib/reliability-api.ts:212:  const [reliability, errorBudget] =
+frontend/lib/reliability-api.ts:214:      getServiceReliability(serviceId),
+frontend/lib/reliability-api.ts:218:  const openAlerts = reliability.open_alerts ?? [];
+frontend/lib/reliability-api.ts:220:  const enrichedAlerts = await Promise.all(
+frontend/lib/reliability-api.ts:221:    openAlerts.map(async (alert) => {
+frontend/lib/reliability-api.ts:230:        return await getReliabilityAlert(alert.id);
+frontend/lib/reliability-api.ts:238:    reliability: {
+frontend/lib/reliability-api.ts:239:      ...reliability,
+frontend/lib/reliability-api.ts:240:      open_alerts: enrichedAlerts,
+frontend/lib/reliability-format.ts:3:  ReliabilityAlert,
+frontend/lib/reliability-format.ts:4:  ReliabilitySLOState,
+frontend/lib/reliability-format.ts:5:  ReliabilityState,
+frontend/lib/reliability-format.ts:7:} from "@/types/reliability";
+frontend/lib/reliability-format.ts:38:): ReliabilityState {
+frontend/lib/reliability-format.ts:78:  slos: ReliabilitySLOState[],
+frontend/lib/reliability-format.ts:80:): ReliabilitySLOState | null {
+frontend/lib/reliability-format.ts:293:export function alertLabel(alert: ReliabilityAlert): string {
+frontend/lib/reliability-format.ts:318:  alert: ReliabilityAlert,
+frontend/lib/reliability-format.ts:338:  alert: ReliabilityAlert,
+
+========================================
+DATA LOADING PATTERNS
+========================================
+frontend/app/releases/[correlationId]/timeline/page.tsx:4:import { useEffect, useState } from "react";
+frontend/app/releases/[correlationId]/timeline/page.tsx:6:import { apiFetch } from "@/lib/api";
+frontend/app/releases/[correlationId]/timeline/page.tsx:28:  useEffect(() => {
+frontend/app/releases/[correlationId]/timeline/page.tsx:37:        const data = await apiFetch<TimelineResponse>(
+frontend/app/projects/[projectId]/page.tsx:5:import { useEffect, useState } from "react";
+frontend/app/projects/[projectId]/page.tsx:22:  useEffect(() => {
+frontend/app/projects/page.tsx:4:import { useEffect, useState } from "react";
+frontend/app/projects/page.tsx:12:  useEffect(() => {
+frontend/app/register/page.tsx:9:  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+frontend/app/register/page.tsx:37:      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+frontend/app/pipelineiq/page.tsx:4:import { useEffect, useState } from "react";
+frontend/app/pipelineiq/page.tsx:7:import { apiFetch, ApiError } from "@/lib/api";
+frontend/app/pipelineiq/page.tsx:48:  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+frontend/app/pipelineiq/page.tsx:70:  useEffect(() => {
+frontend/app/pipelineiq/page.tsx:108:    const res = await fetch(`${API_URL}/pipelines`, {
+frontend/app/pipelineiq/page.tsx:118:      const res = await fetch(`${API_URL}/metrics`, {
+frontend/app/pipelineiq/page.tsx:141:      await apiFetch("/pipeline/trigger", {
+frontend/app/pipelineiq/page.tsx:203:  useEffect(() => {
+frontend/app/pipelineiq/page.tsx:207:useEffect(() => {
+frontend/app/pipelineiq/page.tsx:236:useEffect(() => {
+frontend/app/pipelineiq/page.tsx:242:          fetch(`${API_URL}/pipelines`, { cache: "no-store" }),
+frontend/app/pipelineiq/page.tsx:243:          fetch(`${API_URL}/metrics`, { cache: "no-store" }),
+frontend/app/pipelineiq/page.tsx:279:}, [API_URL]);
+frontend/app/observability/page.tsx:3:import { useEffect, useState } from "react";
+frontend/app/observability/page.tsx:5:import { apiFetch } from "@/lib/api";
+frontend/app/observability/page.tsx:37:  useEffect(() => {
+frontend/app/observability/page.tsx:40:        const data = (await apiFetch(
+frontend/app/deployments/page.tsx:4:import { useEffect, useState } from "react";
+frontend/app/deployments/page.tsx:5:import { apiFetch } from "@/lib/api";
+frontend/app/deployments/page.tsx:33:  useEffect(() => {
+frontend/app/deployments/page.tsx:36:        const data = await apiFetch<Deployment[]>("/api/deployments");
+frontend/app/deployments/[deploymentId]/page.tsx:4:import { useEffect, useState } from "react";
+frontend/app/deployments/[deploymentId]/page.tsx:6:import { apiFetch } from "@/lib/api";
+frontend/app/deployments/[deploymentId]/page.tsx:54:  useEffect(() => {
+frontend/app/deployments/[deploymentId]/page.tsx:62:        const deploymentData = await apiFetch<Deployment>(
+frontend/app/deployments/[deploymentId]/page.tsx:66:        const workloadData = await apiFetch<Workload[]>(
+frontend/app/pipeline/[id]/page.tsx:4:import { useEffect, useState } from "react";
+frontend/app/pipeline/[id]/page.tsx:62:  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+frontend/app/pipeline/[id]/page.tsx:72:  useEffect(() => {
+frontend/app/pipeline/[id]/page.tsx:84:  useEffect(() => {
+frontend/app/pipeline/[id]/page.tsx:88:  useEffect(() => {
+frontend/app/pipeline/[id]/page.tsx:117:  useEffect(() => {
+frontend/app/pipeline/[id]/page.tsx:122:        const response = await fetch(`${API_URL}/pipeline/${pipelineId}`, {
+frontend/app/pipeline/[id]/page.tsx:162:  }, [API_URL, pipelineId]);
+frontend/app/events/page.tsx:4:import { useEffect, useState } from "react";
+frontend/app/events/page.tsx:5:import { apiFetch } from "@/lib/api";
+frontend/app/events/page.tsx:38:      const data = await apiFetch<{ events: EventRecord[] }>(
+frontend/app/events/page.tsx:48:  useEffect(() => {
+frontend/app/events/[eventId]/page.tsx:4:import { useEffect, useState } from "react";
+frontend/app/events/[eventId]/page.tsx:7:import { apiFetch } from "@/lib/api";
+frontend/app/events/[eventId]/page.tsx:109:  useEffect(() => {
+frontend/app/events/[eventId]/page.tsx:117:        const data = await apiFetch<EventRecord>(
+frontend/app/incidents/page.tsx:3:import { useEffect, useState } from "react";
+frontend/app/incidents/page.tsx:5:import { apiFetch } from "@/lib/api";
+frontend/app/incidents/page.tsx:68:  useEffect(() => {
+frontend/app/incidents/page.tsx:73:        const rawData = await apiFetch("/api/incidents");
+frontend/app/incidents/[incidentId]/page.tsx:4:import { useEffect, useState } from "react";
+frontend/app/incidents/[incidentId]/page.tsx:7:import { apiFetch } from "@/lib/api";
+frontend/app/incidents/[incidentId]/page.tsx:131:    apiFetch(`/api/incidents/${incidentId}`),
+frontend/app/incidents/[incidentId]/page.tsx:132:    apiFetch(`/api/incidents/${incidentId}/timeline`),
+frontend/app/incidents/[incidentId]/page.tsx:197:  useEffect(() => {
+frontend/app/incidents/[incidentId]/page.tsx:235:      await apiFetch(`/api/incidents/${incidentId}/acknowledge`, {
+frontend/app/incidents/[incidentId]/page.tsx:251:      await apiFetch(`/api/incidents/${incidentId}/resolve`, {
+frontend/app/services/page.tsx:4:import { useEffect, useState } from "react";
+frontend/app/services/page.tsx:12:  useEffect(() => {
+frontend/app/services/[serviceId]/page.tsx:3:import { useEffect, useState } from "react";
+frontend/app/services/[serviceId]/page.tsx:6:import { apiFetch } from "@/lib/api";
+frontend/app/services/[serviceId]/page.tsx:83:  useEffect(() => {
+frontend/app/services/[serviceId]/page.tsx:88:            apiFetch(`/api/observability/services/${serviceId}/health`),
+frontend/app/services/[serviceId]/page.tsx:89:            apiFetch(`/api/services/${serviceId}/incidents`),
+frontend/app/services/[serviceId]/page.tsx:90:            apiFetch(`/api/services/${serviceId}/runtime-timeline`),
+frontend/app/services/[serviceId]/health/page.tsx:3:import { useEffect, useState } from "react";
+frontend/app/services/[serviceId]/health/page.tsx:6:import { apiFetch } from "@/lib/api";
+frontend/app/services/[serviceId]/health/page.tsx:173:  useEffect(() => {
+frontend/app/services/[serviceId]/health/page.tsx:180:            apiFetch(`/api/observability/services/${serviceId}/health`),
+frontend/app/services/[serviceId]/health/page.tsx:181:            apiFetch(`/api/services/${serviceId}/incidents`),
+frontend/app/services/[serviceId]/health/page.tsx:182:            apiFetch(`/api/services/${serviceId}/runtime-timeline`),
+frontend/app/services/[serviceId]/reliability/page.tsx:7:  useCallback,
+frontend/app/services/[serviceId]/reliability/page.tsx:8:  useEffect,
+frontend/app/services/[serviceId]/reliability/page.tsx:110:  useEffect(() => {
+frontend/app/services/[serviceId]/reliability/page.tsx:148:  const handleRefresh = useCallback(async () => {
+frontend/app/reliability/page.tsx:11:  useCallback,
+frontend/app/reliability/page.tsx:12:  useEffect,
+frontend/app/reliability/page.tsx:118:  const loadReliability = useCallback(async () => {
+frontend/app/reliability/page.tsx:206:  const handleRefresh = useCallback(() => {
+frontend/app/reliability/page.tsx:212:  useEffect(() => {
+frontend/app/login/page.tsx:8:  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+frontend/app/login/page.tsx:24:      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+frontend/components/AppShell.tsx:4:import { useEffect, useState } from "react";
+frontend/components/AppShell.tsx:36:  useEffect(() => {
+frontend/lib/platformiq-api.ts:1:const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+frontend/lib/platformiq-api.ts:82:  const res = await fetch(`${API_URL}${path}`, {
+frontend/lib/reliability-api.ts:9:  process.env.NEXT_PUBLIC_API_BASE_URL ??
+frontend/lib/reliability-api.ts:47:  const response = await fetch(url, {
+frontend/lib/api.ts:4:  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+frontend/lib/api.ts:18:export async function apiFetch<T = unknown>(
+frontend/lib/api.ts:35:  const response = await fetch(url, {
+
+========================================
+AUTHORIZATION REFERENCES
+========================================
+frontend/app/register/page.tsx:14:  role?: string;
+frontend/app/register/page.tsx:24:  const [role, setRole] = useState("viewer");
+frontend/app/register/page.tsx:45:          role,
+frontend/app/register/page.tsx:91:              placeholder="viewer@example.com"
+frontend/app/register/page.tsx:112:              placeholder="viewer123"
+frontend/app/register/page.tsx:121:              htmlFor="register-role"
+frontend/app/register/page.tsx:124:              Role
+frontend/app/register/page.tsx:128:              id="register-role"
+frontend/app/register/page.tsx:129:              name="role"
+frontend/app/register/page.tsx:131:              value={role}
+frontend/app/register/page.tsx:132:              onChange={(e) => setRole(e.target.value)}
+frontend/app/register/page.tsx:134:              <option value="admin">Admin</option>
+frontend/app/register/page.tsx:135:              <option value="developer">Developer</option>
+frontend/app/register/page.tsx:136:              <option value="viewer">Viewer</option>
+frontend/app/pipelineiq/page.tsx:8:import { getCurrentUser, canTriggerPipeline } from "@/lib/auth";
+frontend/app/pipelineiq/page.tsx:68:  const allowedToTrigger = canTriggerPipeline(user?.role);
+frontend/app/pipelineiq/page.tsx:78:    setUser(getCurrentUser());
+frontend/app/pipelineiq/page.tsx:467:            title="Viewers cannot trigger pipelines"
+frontend/app/globals.css:80:[role="button"]:not(:disabled) {
+frontend/app/reliability/page.tsx:367:                        role="link"
+frontend/app/login/page.tsx:13:  const [email, setEmail] = useState("admin@example.com");
+frontend/app/login/page.tsx:14:  const [password, setPassword] = useState("admin123");
+frontend/app/login/page.tsx:71:              placeholder="admin@example.com"
+frontend/app/login/page.tsx:84:              placeholder="admin123"
+frontend/components/AppShell.tsx:9:import { getCurrentUser, logout } from "@/lib/auth";
+frontend/components/AppShell.tsx:42:      setUser(getCurrentUser());
+frontend/components/AppShell.tsx:46:      setUser(getCurrentUser());
+frontend/components/AppShell.tsx:106:                  Role: {user.role}
+frontend/lib/auth.ts:1:export type UserRole = "admin" | "developer" | "viewer";
+frontend/lib/auth.ts:6:  role: UserRole;
+frontend/lib/auth.ts:31:export function getCurrentUser(): AuthUser | null {
+frontend/lib/auth.ts:44:export function getCurrentRole(): UserRole | null {
+frontend/lib/auth.ts:45:  const user = getCurrentUser();
+frontend/lib/auth.ts:46:  return user?.role ?? null;
+frontend/lib/auth.ts:60:export function canTriggerPipeline(role?: string | null): boolean {
+frontend/lib/auth.ts:61:  if (!role) return false;
+frontend/lib/auth.ts:63:  const normalizedRole = role.toLowerCase();
+frontend/lib/auth.ts:65:  return ["admin", "developer", "devops"].includes(normalizedRole);
+frontend/lib/auth.ts:68:export function canManagePlatform(role?: string | null) {
+frontend/lib/auth.ts:69:  return role === "admin";

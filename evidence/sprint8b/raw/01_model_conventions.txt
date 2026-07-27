@@ -1,0 +1,507 @@
+# Sprint 8B Existing Model Conventions
+
+## Model classes
+backend/app/models.py:141:class User(Base):
+backend/app/models.py:607:class Incident(Base):
+backend/app/models.py:904:class IncidentTimelineEvent(Base):
+backend/app/models.py:1042:class IncidentAssignment(Base):
+backend/app/models.py:1112:class IncidentComment(Base):
+backend/app/models.py:1166:class IncidentMetric(Base):
+backend/app/models.py:1235:class IncidentAlertLink(Base):
+backend/app/incidents/enums.py:6:class IncidentStatus(str, Enum):
+backend/app/incidents/enums.py:16:class IncidentSeverity(str, Enum):
+backend/app/incidents/schemas.py:68:class IncidentTimelineEventResponse(ResponseSchema):
+backend/app/incidents/schemas.py:99:class IncidentAcknowledgeRequest(RequestSchema):
+backend/app/incidents/schemas.py:118:class IncidentAssignRequest(RequestSchema):
+backend/app/incidents/schemas.py:153:class IncidentStatusUpdateRequest(RequestSchema):
+backend/app/incidents/schemas.py:174:class IncidentAssignmentRequest(RequestSchema):
+backend/app/incidents/schemas.py:218:class IncidentResolveRequest(RequestSchema):
+backend/app/incidents/schemas.py:249:class IncidentAssignmentResponse(ResponseSchema):
+backend/app/incidents/schemas.py:271:class IncidentCommentCreateRequest(RequestSchema):
+backend/app/incidents/schemas.py:289:class IncidentCommentResponse(ResponseSchema):
+backend/app/incidents/schemas.py:307:class IncidentMetricResponse(ResponseSchema):
+backend/app/incidents/schemas.py:322:class IncidentCalculatedMetricsResponse(ResponseSchema):
+backend/app/incidents/schemas.py:344:class IncidentMetricsResponse(ResponseSchema):
+backend/app/incidents/schemas.py:364:class IncidentMetricsSummaryResponse(ResponseSchema):
+backend/app/incidents/schemas.py:386:class IncidentListItemResponse(ResponseSchema):
+backend/app/incidents/schemas.py:426:class IncidentListResponse(ResponseSchema):
+backend/app/incidents/schemas.py:457:class IncidentDetailResponse(ResponseSchema):
+backend/app/incidents/schemas.py:516:class IncidentTimelineResponse(ResponseSchema):
+backend/app/incidents/service.py:76:class IncidentNotFoundError(Exception):
+backend/app/incidents/service.py:80:class IncidentConflictError(Exception):
+backend/app/incidents/metrics.py:7:class IncidentMetricsValues(TypedDict):
+backend/app/incidents/schemas.py.sprint5.bak:8:class IncidentEventOut(BaseModel):
+backend/app/incidents/schemas.py.sprint5.bak:17:class IncidentOut(BaseModel):
+backend/app/incidents/schemas.py.sprint5.bak:33:class IncidentDetailOut(IncidentOut):
+
+## Foreign keys and relationships
+backend/app/models.py:12:    ForeignKey,
+backend/app/models.py:19:    UniqueConstraint,
+backend/app/models.py:25:from sqlalchemy.orm import relationship, validates
+backend/app/models.py:86:    logs = relationship(
+backend/app/models.py:92:    analysis = relationship(
+backend/app/models.py:104:    pipeline_id = Column(String, ForeignKey("pipelines.id"))
+backend/app/models.py:108:    pipeline = relationship("Pipeline", back_populates="logs")
+backend/app/models.py:115:    pipeline_id = Column(String, ForeignKey("pipelines.id"))
+backend/app/models.py:126:    pipeline = relationship("Pipeline", back_populates="analysis")
+backend/app/models.py:136:    Column("user_id", String, ForeignKey("users.id"), primary_key=True),
+backend/app/models.py:137:    Column("role_id", String, ForeignKey("roles.id"), primary_key=True),
+backend/app/models.py:151:    roles = relationship("Role", secondary=user_roles, back_populates="users")
+backend/app/models.py:152:    projects = relationship("Project", back_populates="creator")
+backend/app/models.py:162:    users = relationship("User", secondary=user_roles, back_populates="roles")
+backend/app/models.py:171:    created_by = Column(String, ForeignKey("users.id"), nullable=True)
+backend/app/models.py:174:    creator = relationship("User", back_populates="projects")
+backend/app/models.py:175:    services = relationship("Service", back_populates="project")
+backend/app/models.py:182:    project_id = Column(String, ForeignKey("projects.id"), nullable=False)
+backend/app/models.py:189:    project = relationship("Project", back_populates="services")
+backend/app/models.py:190:    environments = relationship("Environment", back_populates="service")
+backend/app/models.py:191:    repositories = relationship("Repository", back_populates="service")
+backend/app/models.py:192:    pipeline_runs = relationship("PipelineRun", back_populates="service")
+backend/app/models.py:193:    health_snapshots = relationship(
+backend/app/models.py:214:        ForeignKey("services.id"),
+backend/app/models.py:244:    service = relationship("Service", back_populates="health_snapshots")
+backend/app/models.py:251:    service_id = Column(String, ForeignKey("services.id"), nullable=False)
+backend/app/models.py:256:    service = relationship("Service", back_populates="environments")
+backend/app/models.py:263:    service_id = Column(String, ForeignKey("services.id"), nullable=False)
+backend/app/models.py:269:    service = relationship("Service", back_populates="repositories")
+backend/app/models.py:270:    pipeline_runs = relationship("PipelineRun", back_populates="repository")
+backend/app/models.py:278:    service_id = Column(String, ForeignKey("services.id"), nullable=True)
+backend/app/models.py:279:    repo_id = Column(String, ForeignKey("repositories.id"), nullable=True)
+backend/app/models.py:328:    service = relationship("Service", back_populates="pipeline_runs")
+backend/app/models.py:329:    repository = relationship("Repository", back_populates="pipeline_runs")
+backend/app/models.py:337:    service_id = Column(String(36), ForeignKey("services.id"), nullable=False)
+backend/app/models.py:338:    pipeline_run_id = Column(String(36), ForeignKey("pipeline_runs.id"), nullable=True)
+backend/app/models.py:339:    environment_id = Column(String(36), ForeignKey("environments.id"), nullable=True)
+backend/app/models.py:362:    workloads = relationship(
+backend/app/models.py:368:    revisions = relationship(
+backend/app/models.py:380:    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+backend/app/models.py:396:    deployment = relationship("Deployment", back_populates="workloads")
+backend/app/models.py:404:    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+backend/app/models.py:414:    deployment = relationship("Deployment", back_populates="revisions")
+backend/app/models.py:421:    actor_id = Column(String, ForeignKey("users.id"), nullable=True)
+backend/app/models.py:526:        UniqueConstraint(
+backend/app/models.py:649:        ForeignKey("services.id", ondelete="SET NULL"),
+backend/app/models.py:660:        ForeignKey(
+backend/app/models.py:662:            ondelete="SET NULL",
+backend/app/models.py:669:        ForeignKey(
+backend/app/models.py:671:            ondelete="SET NULL",
+backend/app/models.py:714:        ForeignKey("users.id", ondelete="SET NULL"),
+backend/app/models.py:748:        ForeignKey("users.id", ondelete="SET NULL"),
+backend/app/models.py:761:    # detected_at, and the incident-alert relationship instead.
+backend/app/models.py:789:    primary_service = relationship(
+backend/app/models.py:794:    triggering_alert = relationship(
+backend/app/models.py:799:    suspected_deployment = relationship(
+backend/app/models.py:804:    current_assignee = relationship(
+backend/app/models.py:809:    creator = relationship(
+backend/app/models.py:814:    events = relationship(
+backend/app/models.py:824:    assignments = relationship(
+backend/app/models.py:830:    comments = relationship(
+backend/app/models.py:836:    metrics = relationship(
+backend/app/models.py:842:    alert_links = relationship(
+backend/app/models.py:915:        ForeignKey(
+backend/app/models.py:917:            ondelete="CASCADE",
+backend/app/models.py:951:        ForeignKey("users.id", ondelete="SET NULL"),
+backend/app/models.py:957:        ForeignKey(
+backend/app/models.py:959:            ondelete="SET NULL",
+backend/app/models.py:966:        ForeignKey(
+backend/app/models.py:968:            ondelete="SET NULL",
+backend/app/models.py:990:    incident = relationship(
+backend/app/models.py:995:    actor_user = relationship(
+backend/app/models.py:1000:    alert = relationship(
+backend/app/models.py:1005:    deployment = relationship(
+backend/app/models.py:1053:        ForeignKey(
+backend/app/models.py:1055:            ondelete="CASCADE",
+backend/app/models.py:1063:        ForeignKey("users.id", ondelete="SET NULL"),
+backend/app/models.py:1069:        ForeignKey("users.id", ondelete="SET NULL"),
+backend/app/models.py:1096:    incident = relationship(
+backend/app/models.py:1101:    assigned_to_user = relationship(
+backend/app/models.py:1106:    assigned_by_user = relationship(
+backend/app/models.py:1123:        ForeignKey(
+backend/app/models.py:1125:            ondelete="CASCADE",
+backend/app/models.py:1133:        ForeignKey("users.id", ondelete="SET NULL"),
+backend/app/models.py:1155:    incident = relationship(
+backend/app/models.py:1160:    author = relationship(
+backend/app/models.py:1177:        ForeignKey(
+backend/app/models.py:1179:            ondelete="CASCADE",
+backend/app/models.py:1229:    incident = relationship(
+backend/app/models.py:1246:        ForeignKey(
+backend/app/models.py:1248:            ondelete="CASCADE",
+backend/app/models.py:1256:        ForeignKey(
+backend/app/models.py:1258:            ondelete="CASCADE",
+backend/app/models.py:1277:    incident = relationship(
+backend/app/models.py:1282:    reliability_alert = relationship(
+backend/app/models.py:1287:        UniqueConstraint(
+backend/app/models.py:1292:        UniqueConstraint(
+backend/app/models.py:1350:        ForeignKey("services.id", ondelete="CASCADE"),
+backend/app/models.py:1399:    service = relationship("Service")
+backend/app/models.py:1401:    measurements = relationship(
+backend/app/models.py:1407:    error_budget_statuses = relationship(
+backend/app/models.py:1413:    alerts = relationship(
+backend/app/models.py:1431:        ForeignKey("slo_definitions.id", ondelete="CASCADE"),
+backend/app/models.py:1438:        ForeignKey("services.id", ondelete="CASCADE"),
+backend/app/models.py:1473:    slo_definition = relationship(
+backend/app/models.py:1478:    service = relationship("Service")
+backend/app/models.py:1492:        ForeignKey("slo_definitions.id", ondelete="CASCADE"),
+backend/app/models.py:1499:        ForeignKey("services.id", ondelete="CASCADE"),
+backend/app/models.py:1550:    slo_definition = relationship(
+backend/app/models.py:1555:    service = relationship("Service")
+backend/app/models.py:1569:        ForeignKey("services.id", ondelete="CASCADE"),
+backend/app/models.py:1576:        ForeignKey("slo_definitions.id", ondelete="CASCADE"),
+backend/app/models.py:1602:        ForeignKey("deployments.id", ondelete="SET NULL"),
+backend/app/models.py:1628:    service = relationship("Service")
+backend/app/models.py:1630:    slo_definition = relationship(
+backend/app/models.py:1635:    deployment = relationship("Deployment")
+backend/app/incidents/schemas.py:399:    # These represent the primary_service_id relationship in a
+
+## JSON conventions
+backend/app/models.py:15:    JSON,
+backend/app/models.py:23:from sqlalchemy.dialects.postgresql import JSONB, UUID
+backend/app/models.py:24:from sqlalchemy.ext.mutable import MutableDict, MutableList
+backend/app/models.py:69:    sonar_issues = Column(JSON, nullable=True)
+backend/app/models.py:77:    trivy_report = Column(JSON, nullable=True)
+backend/app/models.py:84:    recommendations = Column(JSON, nullable=True)
+backend/app/models.py:304:    sonar_issues = Column(MutableList.as_mutable(JSON), default=list, nullable=False)
+backend/app/models.py:312:    trivy_report = Column(MutableDict.as_mutable(JSON), nullable=True)
+backend/app/models.py:319:    recommendations = Column(MutableList.as_mutable(JSON), default=list, nullable=False)
+backend/app/models.py:321:    logs = Column(MutableList.as_mutable(JSON), default=list, nullable=False)
+backend/app/models.py:445:    payload = Column(JSON, nullable=False, default=dict)
+backend/app/models.py:446:    raw_event = Column(JSON, nullable=False, default=dict)
+backend/app/models.py:486:    payload = Column(JSONB, nullable=False, default=dict)
+backend/app/models.py:548:    raw_event = Column(JSON, nullable=True)
+backend/app/models.py:549:    payload = Column(JSON, nullable=True)
+backend/app/models.py:974:        JSONB,
+backend/app/models.py:1219:        JSONB,
+backend/app/pipelineiq/security/trivy_scan.py:50:                "error": result.stderr or "Trivy produced no JSON output.",
+backend/app/models.py.bak:2:from sqlalchemy import Column, String, Text, DateTime, Float, ForeignKey, Integer, Boolean, JSON, Table
+backend/app/models.py.bak:7:from sqlalchemy.ext.mutable import MutableList, MutableDict
+backend/app/models.py.bak:54:    sonar_issues = Column(JSON, nullable=True)
+backend/app/models.py.bak:62:    trivy_report = Column(JSON, nullable=True)
+backend/app/models.py.bak:69:    recommendations = Column(JSON, nullable=True)
+backend/app/models.py.bak:239:    sonar_issues = Column(MutableList.as_mutable(JSON), default=list, nullable=False)
+backend/app/models.py.bak:247:    trivy_report = Column(MutableDict.as_mutable(JSON), nullable=True)
+backend/app/models.py.bak:254:    recommendations = Column(MutableList.as_mutable(JSON), default=list, nullable=False)
+backend/app/models.py.bak:256:    logs = Column(MutableList.as_mutable(JSON), default=list, nullable=False)
+backend/app/main.py:17:from fastapi.responses import JSONResponse
+backend/app/main.py:64:    return JSONResponse(
+backend/app/main.py:77:    return JSONResponse(
+backend/app/main.py:95:    return JSONResponse(
+backend/app/events/envelope.py:24:    - Do not manually shape event JSON in routers/tasks.
+backend/app/events/consumer.py:49:        raise ValueError("Event envelope must be a JSON object")
+backend/app/events/consumer.py:63:        raise ValueError("payload must be a JSON object")
+backend/app/events/consumer.py:179:                error_reason=f"Invalid JSON: {exc}",
+backend/app/events/handlers.py:47:    Return a dictionary for JSON payload fields.
+backend/app/reliability/prometheus_client.py:153:    except json.JSONDecodeError as exc:
+backend/app/reliability/prometheus_client.py:155:            "Prometheus returned invalid JSON"
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:42:        sa.Column("payload", sa.JSON(), nullable=True),
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:43:        sa.Column("raw_event", sa.JSON(), nullable=True),
+backend/alembic/versions/1decaa63e574_extend_pipeline_run_intelligence_fields.py:43:    op.add_column("pipeline_runs", sa.Column("sonar_issues", sa.JSON(), nullable=True))
+backend/alembic/versions/1decaa63e574_extend_pipeline_run_intelligence_fields.py:51:    op.add_column("pipeline_runs", sa.Column("trivy_report", sa.JSON(), nullable=True))
+backend/alembic/versions/1decaa63e574_extend_pipeline_run_intelligence_fields.py:58:    op.add_column("pipeline_runs", sa.Column("recommendations", sa.JSON(), nullable=True))
+backend/alembic/versions/1decaa63e574_extend_pipeline_run_intelligence_fields.py:60:    op.add_column("pipeline_runs", sa.Column("logs", sa.JSON(), nullable=True))
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:76:        sa.Column("metadata", sa.JSON(), nullable=True),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:32:        sa.Column("payload", postgresql.JSONB(), nullable=False),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:57:        sa.Column("payload", postgresql.JSONB(), nullable=False),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:101:        sa.Column("payload", postgresql.JSONB(), nullable=False),
+backend/alembic/versions/9b9bb1e4597e_align_event_record_and_dead_letter_.py:25:    op.add_column('dead_letter_events', sa.Column('raw_event', sa.JSON(), nullable=True))
+backend/alembic/versions/9b9bb1e4597e_align_event_record_and_dead_letter_.py:32:               existing_type=postgresql.JSONB(astext_type=sa.Text()),
+backend/alembic/versions/9b9bb1e4597e_align_event_record_and_dead_letter_.py:33:               type_=sa.JSON(),
+backend/alembic/versions/9b9bb1e4597e_align_event_record_and_dead_letter_.py:42:    op.add_column('event_records', sa.Column('raw_event', sa.JSON(), nullable=False))
+backend/alembic/versions/9b9bb1e4597e_align_event_record_and_dead_letter_.py:48:               existing_type=postgresql.JSONB(astext_type=sa.Text()),
+backend/alembic/versions/9b9bb1e4597e_align_event_record_and_dead_letter_.py:49:               type_=sa.JSON(),
+backend/alembic/versions/9b9bb1e4597e_align_event_record_and_dead_letter_.py:66:               existing_type=sa.JSON(),
+backend/alembic/versions/9b9bb1e4597e_align_event_record_and_dead_letter_.py:67:               type_=postgresql.JSONB(astext_type=sa.Text()),
+backend/alembic/versions/9b9bb1e4597e_align_event_record_and_dead_letter_.py:82:               existing_type=sa.JSON(),
+backend/alembic/versions/9b9bb1e4597e_align_event_record_and_dead_letter_.py:83:               type_=postgresql.JSONB(astext_type=sa.Text()),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:296:        existing_type=postgresql.JSON(),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:790:        sa.Column("metadata_json", postgresql.JSONB(), nullable=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:1213:        existing_type=postgresql.JSON(),
+
+## UUID and timestamp conventions
+backend/app/models.py:9:    DateTime,
+backend/app/models.py:23:from sqlalchemy.dialects.postgresql import JSONB, UUID
+backend/app/models.py:53:    created_at = Column(DateTime, default=datetime.utcnow)
+backend/app/models.py:54:    updated_at = Column(DateTime, default=datetime.utcnow)
+backend/app/models.py:56:    started_at = Column(DateTime, nullable=True)
+backend/app/models.py:57:    finished_at = Column(DateTime, nullable=True)
+backend/app/models.py:106:    timestamp = Column(DateTime, default=datetime.utcnow)
+backend/app/models.py:124:    created_at = Column(DateTime, default=datetime.utcnow)
+backend/app/models.py:130:    return str(uuid.uuid4())
+backend/app/models.py:149:    created_at = Column(DateTime, default=datetime.utcnow)
+backend/app/models.py:160:    created_at = Column(DateTime, default=datetime.utcnow)
+backend/app/models.py:172:    created_at = Column(DateTime, default=datetime.utcnow)
+backend/app/models.py:187:    created_at = Column(DateTime, default=datetime.utcnow)
+backend/app/models.py:210:    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+backend/app/models.py:239:        DateTime(timezone=True),
+backend/app/models.py:240:        server_default=func.now(),
+backend/app/models.py:254:    created_at = Column(DateTime, default=datetime.utcnow)
+backend/app/models.py:267:    created_at = Column(DateTime, default=datetime.utcnow)
+backend/app/models.py:323:    created_at = Column(DateTime(timezone=True), server_default=func.now())
+backend/app/models.py:324:    started_at = Column(DateTime(timezone=True), nullable=True)
+backend/app/models.py:325:    finished_at = Column(DateTime(timezone=True), nullable=True)
+backend/app/models.py:335:    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+backend/app/models.py:359:    created_at = Column(DateTime(timezone=True), server_default=func.now())
+backend/app/models.py:360:    deployed_at = Column(DateTime(timezone=True), nullable=True)
+backend/app/models.py:378:    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+backend/app/models.py:380:    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+backend/app/models.py:394:    created_at = Column(DateTime(timezone=True), server_default=func.now())
+backend/app/models.py:402:    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+backend/app/models.py:404:    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+backend/app/models.py:411:    created_at = Column(DateTime(timezone=True), server_default=func.now())
+backend/app/models.py:412:    deployed_at = Column(DateTime(timezone=True), nullable=True)
+backend/app/models.py:426:    created_at = Column(DateTime, default=datetime.utcnow)
+backend/app/models.py:432:    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+backend/app/models.py:443:    timestamp = Column(DateTime(timezone=True), nullable=True, index=True)
+backend/app/models.py:457:        DateTime(timezone=True),
+backend/app/models.py:458:        server_default=func.now(),
+backend/app/models.py:462:    processed_at = Column(DateTime(timezone=True), nullable=True)
+backend/app/models.py:475:    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+backend/app/models.py:492:    published_at = Column(DateTime(timezone=True), nullable=True)
+backend/app/models.py:495:        DateTime(timezone=True),
+backend/app/models.py:501:        DateTime(timezone=True),
+backend/app/models.py:511:    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+backend/app/models.py:519:        DateTime(timezone=True),
+backend/app/models.py:538:    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+backend/app/models.py:557:        DateTime(timezone=True),
+backend/app/models.py:558:        server_default=func.now(),
+backend/app/models.py:563:        DateTime(timezone=True),
+backend/app/models.py:564:        server_default=func.now(),
+backend/app/models.py:565:        onupdate=func.now(),
+backend/app/models.py:569:    last_retry_at = Column(DateTime(timezone=True), nullable=True)
+backend/app/models.py:611:        UUID(as_uuid=True),
+backend/app/models.py:613:        default=uuid.uuid4,
+backend/app/models.py:668:        UUID(as_uuid=True),
+backend/app/models.py:682:        DateTime(timezone=True),
+backend/app/models.py:687:        DateTime(timezone=True),
+backend/app/models.py:689:        server_default=func.now(),
+backend/app/models.py:693:        DateTime(timezone=True),
+backend/app/models.py:698:        DateTime(timezone=True),
+backend/app/models.py:703:        DateTime(timezone=True),
+backend/app/models.py:708:        DateTime(timezone=True),
+backend/app/models.py:734:        DateTime(timezone=True),
+backend/app/models.py:736:        server_default=func.now(),
+backend/app/models.py:740:        DateTime(timezone=True),
+backend/app/models.py:742:        server_default=func.now(),
+backend/app/models.py:743:        onupdate=func.now(),
+backend/app/models.py:781:        DateTime,
+backend/app/models.py:908:        UUID(as_uuid=True),
+backend/app/models.py:910:        default=uuid.uuid4,
+backend/app/models.py:914:        UUID(as_uuid=True),
+backend/app/models.py:965:        UUID(as_uuid=True),
+backend/app/models.py:979:        DateTime(timezone=True),
+backend/app/models.py:981:        server_default=func.now(),
+backend/app/models.py:985:        DateTime(timezone=True),
+backend/app/models.py:987:        server_default=func.now(),
+backend/app/models.py:1046:        UUID(as_uuid=True),
+backend/app/models.py:1048:        default=uuid.uuid4,
+backend/app/models.py:1052:        UUID(as_uuid=True),
+backend/app/models.py:1079:        DateTime(timezone=True),
+backend/app/models.py:1081:        server_default=func.now(),
+backend/app/models.py:1085:        DateTime(timezone=True),
+backend/app/models.py:1116:        UUID(as_uuid=True),
+backend/app/models.py:1118:        default=uuid.uuid4,
+backend/app/models.py:1122:        UUID(as_uuid=True),
+backend/app/models.py:1143:        DateTime(timezone=True),
+backend/app/models.py:1145:        server_default=func.now(),
+backend/app/models.py:1149:        DateTime(timezone=True),
+backend/app/models.py:1151:        server_default=func.now(),
+backend/app/models.py:1152:        onupdate=func.now(),
+backend/app/models.py:1170:        UUID(as_uuid=True),
+backend/app/models.py:1172:        default=uuid.uuid4,
+backend/app/models.py:1176:        UUID(as_uuid=True),
+backend/app/models.py:1213:        DateTime(timezone=True),
+backend/app/models.py:1215:        server_default=func.now(),
+backend/app/models.py:1224:        DateTime(timezone=True),
+backend/app/models.py:1226:        server_default=func.now(),
+backend/app/models.py:1239:        UUID(as_uuid=True),
+backend/app/models.py:1241:        default=uuid.uuid4,
+backend/app/models.py:1245:        UUID(as_uuid=True),
+backend/app/models.py:1265:        DateTime(timezone=True),
+backend/app/models.py:1267:        server_default=func.now(),
+backend/app/models.py:1387:        DateTime(timezone=True),
+backend/app/models.py:1389:        server_default=func.now(),
+backend/app/models.py:1393:        DateTime(timezone=True),
+backend/app/models.py:1395:        server_default=func.now(),
+backend/app/models.py:1396:        onupdate=func.now(),
+backend/app/models.py:1461:        DateTime(timezone=True),
+backend/app/models.py:1463:        server_default=func.now(),
+backend/app/models.py:1468:        DateTime(timezone=True),
+backend/app/models.py:1470:        server_default=func.now(),
+backend/app/models.py:1538:        DateTime(timezone=True),
+backend/app/models.py:1540:        server_default=func.now(),
+backend/app/models.py:1545:        DateTime(timezone=True),
+backend/app/models.py:1547:        server_default=func.now(),
+backend/app/models.py:1601:        UUID(as_uuid=True),
+backend/app/models.py:1618:        DateTime(timezone=True),
+backend/app/models.py:1620:        server_default=func.now(),
+backend/app/models.py:1624:        DateTime(timezone=True),
+backend/app/incidents/repository.py:7:from uuid import UUID
+backend/app/incidents/repository.py:65:    incident_id: UUID,
+backend/app/incidents/repository.py:69:    """Return one incident by UUID, optionally locking it for mutation."""
+backend/app/incidents/repository.py:445:    incident_id: UUID,
+backend/app/incidents/repository.py:478:    incident_id: UUID,
+backend/app/incidents/repository.py:502:    incident_id: UUID,
+backend/app/incidents/repository.py:526:    incident_id: UUID,
+backend/app/incidents/repository.py:550:    incident_id: UUID,
+backend/app/incidents/repository.py:574:    incident_id: UUID,
+backend/app/incidents/repository.py:705:    incident_id: UUID,
+backend/app/incidents/repository.py:754:    incident_id: UUID,
+backend/app/incidents/repository.py:786:    incident_id: UUID,
+backend/app/incidents/repository.py:813:    incident_id: UUID,
+backend/app/incidents/repository.py:831:    incident_id: UUID,
+backend/app/incidents/repository.py:841:        id=uuid.uuid4(),
+backend/app/incidents/repository.py:857:    incident_id: UUID,
+backend/app/incidents/repository.py:865:    deployment_id: UUID | None = None,
+backend/app/incidents/repository.py:876:        id=uuid.uuid4(),
+backend/app/incidents/repository.py:899:    incident_id: UUID,
+backend/app/incidents/repository.py:951:        id=str(uuid.uuid4()),
+backend/app/incidents/incident_router.py:12:from uuid import UUID
+backend/app/incidents/incident_router.py:184:# attempt to interpret "metrics" as an incident UUID.
+backend/app/incidents/incident_router.py:207:    incident_id: UUID,
+backend/app/incidents/incident_router.py:226:    incident_id: UUID,
+backend/app/incidents/incident_router.py:248:    incident_id: UUID,
+backend/app/incidents/incident_router.py:270:    incident_id: UUID,
+backend/app/incidents/incident_router.py:293:    incident_id: UUID,
+backend/app/incidents/incident_router.py:315:    incident_id: UUID,
+backend/app/incidents/incident_router.py:334:    incident_id: UUID,
+backend/app/incidents/schemas.py:6:from uuid import UUID
+backend/app/incidents/schemas.py:43:    deployment_id: UUID | None = None
+backend/app/incidents/schemas.py:50:    id: UUID
+backend/app/incidents/schemas.py:69:    id: UUID
+backend/app/incidents/schemas.py:70:    incident_id: UUID
+backend/app/incidents/schemas.py:85:    deployment_id: UUID | None = None
+backend/app/incidents/schemas.py:250:    id: UUID
+backend/app/incidents/schemas.py:251:    incident_id: UUID
+backend/app/incidents/schemas.py:290:    id: UUID
+backend/app/incidents/schemas.py:291:    incident_id: UUID
+backend/app/incidents/schemas.py:308:    id: UUID
+backend/app/incidents/schemas.py:309:    incident_id: UUID
+backend/app/incidents/schemas.py:323:    incident_id: UUID
+backend/app/incidents/schemas.py:345:    incident_id: UUID
+backend/app/incidents/schemas.py:387:    incident_id: UUID
+backend/app/incidents/schemas.py:390:    # Both values will contain the same incident UUID.
+backend/app/incidents/schemas.py:391:    id: UUID | None = None
+backend/app/incidents/schemas.py:407:    suspected_deployment_id: UUID | None = None
+backend/app/incidents/schemas.py:517:    incident_id: UUID
+backend/app/incidents/router.py:1:from uuid import UUID
+backend/app/incidents/router.py:50:    incident_id: UUID,
+backend/app/incidents/router.py:63:    incident_id: UUID,
+backend/app/incidents/router.py:75:    incident_id: UUID,
+backend/app/incidents/router.py:87:    incident_id: UUID,
+backend/app/incidents/service.py:17:from uuid import UUID
+backend/app/incidents/service.py:90:    incident_id: UUID,
+backend/app/incidents/service.py:807:    incident_id: UUID,
+backend/app/incidents/service.py:851:    incident_id: UUID,
+backend/app/incidents/service.py:901:    incident_id: UUID,
+backend/app/incidents/service.py:1766:    incident_id: UUID,
+backend/app/incidents/service.py:1799:    incident_id: UUID,
+backend/app/incidents/service.py:1898:    incident_id: UUID,
+backend/app/incidents/service.py:2070:    incident_id: UUID,
+backend/app/incidents/service.py:2144:    incident_id: UUID,
+backend/app/incidents/schemas.py.sprint5.bak:3:from uuid import UUID
+backend/app/incidents/schemas.py.sprint5.bak:9:    id: UUID
+backend/app/incidents/schemas.py.sprint5.bak:10:    incident_id: UUID
+backend/app/incidents/schemas.py.sprint5.bak:18:    id: UUID
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:47:            sa.DateTime(timezone=True),
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:48:            server_default=sa.func.now(),
+backend/alembic/versions/34cd9e1fdbc6_add_incidents_table.py:51:        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:25:        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:42:        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=True),
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:43:        sa.Column("deployed_at", sa.DateTime(timezone=True), nullable=True),
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:52:        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:53:        sa.Column("deployment_id", postgresql.UUID(as_uuid=True), nullable=False),
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:58:        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=True),
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:59:        sa.Column("deployed_at", sa.DateTime(timezone=True), nullable=True),
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:66:        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:67:        sa.Column("deployment_id", postgresql.UUID(as_uuid=True), nullable=False),
+backend/alembic/versions/533b2a32e166_add_deployment_models.py:77:        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=True),
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:50:        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:59:        sa.Column("started_at", sa.DateTime(), nullable=False),
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:60:        sa.Column("resolved_at", sa.DateTime(), nullable=True),
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:61:        sa.Column("created_at", sa.DateTime(), nullable=False),
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:62:        sa.Column("updated_at", sa.DateTime(), nullable=False),
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:67:        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:70:            postgresql.UUID(as_uuid=True),
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:77:        sa.Column("created_at", sa.DateTime(), nullable=False),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:107:            sa.DateTime(timezone=True),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:109:            server_default=sa.text("now()"),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:113:            sa.DateTime(timezone=True),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:115:            server_default=sa.text("now()"),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:158:            sa.DateTime(timezone=True),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:160:            server_default=sa.text("now()"),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:164:            sa.DateTime(timezone=True),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:166:            server_default=sa.text("now()"),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:244:            sa.DateTime(timezone=True),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:246:            server_default=sa.text("now()"),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:250:            sa.DateTime(timezone=True),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:252:            server_default=sa.text("now()"),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:311:            postgresql.UUID(as_uuid=True),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:322:            sa.DateTime(timezone=True),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:324:            server_default=sa.text("now()"),
+backend/alembic/versions/fbe13f728ba0_add_reliability_tables.py:328:            sa.DateTime(timezone=True),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:34:        sa.Column("received_at", sa.DateTime(timezone=True), nullable=True),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:35:        sa.Column("processed_at", sa.DateTime(timezone=True), nullable=True),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:36:        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:61:        sa.Column("published_at", sa.DateTime(timezone=True), nullable=True),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:62:        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:63:        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:82:        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:105:        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+backend/alembic/versions/4d8e1746b82e_add_event_backbone_tables.py:106:        sa.Column("last_retry_at", sa.DateTime(timezone=True), nullable=True),
+backend/alembic/versions/9b9bb1e4597e_align_event_record_and_dead_letter_.py:27:    op.add_column('dead_letter_events', sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True))
+backend/alembic/versions/9b9bb1e4597e_align_event_record_and_dead_letter_.py:41:    op.add_column('event_records', sa.Column('timestamp', sa.DateTime(timezone=True), nullable=True))
+backend/alembic/versions/9b9bb1e4597e_align_event_record_and_dead_letter_.py:61:    op.add_column('event_records', sa.Column('received_at', postgresql.TIMESTAMP(timezone=True), autoincrement=False, nullable=True))
+backend/alembic/versions/847c900aa085_add_service_health_snapshots.py:43:        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+backend/alembic/versions/847c900aa085_add_service_health_snapshots.py:58:            sa.DateTime(timezone=True),
+backend/alembic/versions/847c900aa085_add_service_health_snapshots.py:59:            server_default=sa.text("now()"),
+backend/alembic/versions/847c900aa085_add_service_health_snapshots.py:82:        existing_type=postgresql.TIMESTAMP(timezone=True),
+backend/alembic/versions/847c900aa085_add_service_health_snapshots.py:84:        existing_server_default=sa.text("now()"),
+backend/alembic/versions/847c900aa085_add_service_health_snapshots.py:93:        existing_type=postgresql.TIMESTAMP(timezone=True),
+backend/alembic/versions/847c900aa085_add_service_health_snapshots.py:95:        existing_server_default=sa.text("now()"),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:226:            postgresql.UUID(as_uuid=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:236:        sa.Column("failure_started_at", sa.DateTime(timezone=True), nullable=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:240:        sa.Column("detected_at", sa.DateTime(timezone=True), nullable=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:244:        sa.Column("acknowledged_at", sa.DateTime(timezone=True), nullable=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:250:            sa.DateTime(timezone=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:258:            sa.DateTime(timezone=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:342:            postgresql.UUID(as_uuid=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:348:        sa.Column("occurred_at", sa.DateTime(timezone=True), nullable=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:644:        existing_type=sa.DateTime(timezone=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:646:        server_default=sa.text("now()"),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:664:        existing_type=sa.DateTime(timezone=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:666:        server_default=sa.text("now()"),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:676:            postgresql.UUID(as_uuid=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:681:            postgresql.UUID(as_uuid=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:689:            sa.DateTime(timezone=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:691:            server_default=sa.text("now()"),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:693:        sa.Column("unassigned_at", sa.DateTime(timezone=True), nullable=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:725:            postgresql.UUID(as_uuid=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:730:            postgresql.UUID(as_uuid=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:737:            sa.DateTime(timezone=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:739:            server_default=sa.text("now()"),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:743:            sa.DateTime(timezone=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:745:            server_default=sa.text("now()"),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:766:            postgresql.UUID(as_uuid=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:771:            postgresql.UUID(as_uuid=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:786:            sa.DateTime(timezone=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:788:            server_default=sa.text("now()"),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:793:            sa.DateTime(timezone=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:795:            server_default=sa.text("now()"),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:810:            postgresql.UUID(as_uuid=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:815:            postgresql.UUID(as_uuid=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:825:            sa.DateTime(timezone=True),
+backend/alembic/versions/26e5497f9375_add_sprint_7b_incident_response_data_.py:827:            server_default=sa.text("now()"),
+backend/alembic/versions/a2f39e69aa46_make_legacy_incident_fields_nullable.py:39:        existing_type=sa.DateTime(),
+backend/alembic/versions/a2f39e69aa46_make_legacy_incident_fields_nullable.py:72:        existing_type=sa.DateTime(),
+backend/alembic/versions/4869788f7f72_fix_event_timestamp_defaults.py:24:        existing_type=sa.DateTime(timezone=True),
+backend/alembic/versions/4869788f7f72_fix_event_timestamp_defaults.py:26:        server_default=sa.text("now()"),
+backend/alembic/versions/4869788f7f72_fix_event_timestamp_defaults.py:32:        existing_type=sa.DateTime(timezone=True),
+backend/alembic/versions/4869788f7f72_fix_event_timestamp_defaults.py:34:        server_default=sa.text("now()"),
+backend/alembic/versions/4869788f7f72_fix_event_timestamp_defaults.py:40:        existing_type=sa.DateTime(timezone=True),
+backend/alembic/versions/4869788f7f72_fix_event_timestamp_defaults.py:42:        server_default=sa.text("now()"),
+backend/alembic/versions/4869788f7f72_fix_event_timestamp_defaults.py:50:        existing_type=sa.DateTime(timezone=True),
+backend/alembic/versions/4869788f7f72_fix_event_timestamp_defaults.py:58:        existing_type=sa.DateTime(timezone=True),
+backend/alembic/versions/4869788f7f72_fix_event_timestamp_defaults.py:66:        existing_type=sa.DateTime(timezone=True),
+
+## SQLAlchemy Base
+backend/app/database.py:6:from sqlalchemy.orm import declarative_base, sessionmaker
+backend/app/database.py:71:Base = declarative_base()

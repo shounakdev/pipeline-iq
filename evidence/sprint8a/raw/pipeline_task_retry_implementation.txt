@@ -1,0 +1,345 @@
+        db.close()
+
+    for stale_pipeline_id in stale_pipeline_ids:
+        update_pipeline_fields(
+            stale_pipeline_id,
+            status="FAILED",
+            stage="FAILED",
+            progress=100,
+            error_message="Pipeline timed out or worker stopped unexpectedly.",
+            failure_reason="Pipeline timed out or worker stopped unexpectedly.",
+            finished_at=datetime.utcnow(),
+        )
+
+        add_log_safe(
+            stale_pipeline_id,
+            "Pipeline marked as failed because it was stuck in RUNNING state.",
+        )
+
+        emit_pipeline_terminal_event(stale_pipeline_id, PIPELINE_FAILED)
+
+    return len(stale_pipeline_ids)
+
+
+@celery_app.task(
+    name="app.tasks.execute_pipeline_task",
+    bind=True,
+    max_retries=2,
+    default_retry_delay=30,
+)
+def execute_pipeline_task(self, pipeline_id: str):
+    pipeline_id = str(pipeline_id)
+    started_at = datetime.utcnow()
+    workspace_path = None
+
+    mark_stale_running_pipelines_failed()
+
+    try:
+        pipeline = get_pipeline_context(pipeline_id)
+
+        if not pipeline:
+            return {
+                "success": False,
+                "status": "FAILED",
+                "pipeline_id": pipeline_id,
+                "error": f"Pipeline with id {pipeline_id} not found",
+            }
+
+        update_pipeline_fields(
+            pipeline_id,
+            status="RUNNING",
+            progress=5,
+            error_message=None,
+            failure_reason=None,
+            stage="STARTED",
+            build_status="NOT_STARTED",
+            test_status="NOT_STARTED",
+            sonar_status="NOT_STARTED",
+            trivy_status="NOT_STARTED",
+            risk_score=None,
+            risk_level=None,
+            risk_summary=None,
+            recommendations=[],
+            started_at=started_at,
+        )
+
+        add_log_safe(pipeline_id, "Pipeline started.")
+        add_log_safe(pipeline_id, f"Repository: {pipeline['repo_url']}")
+        add_log_safe(pipeline_id, f"Branch: {pipeline['branch']}")
+
+        def update_stage(stage_name: str, **extra_fields):
+            update_payload = {
+                "stage": stage_name,
+                "progress": _progress_for_stage(stage_name),
+            }
+            update_payload.update(extra_fields)
+            update_pipeline_fields(pipeline_id, **update_payload)
+
+        execution_result = execute_node_pipeline(
+            repo_url=pipeline["repo_url"],
+            branch=pipeline["branch"],
+            stage_fn=update_stage,
+            cleanup=False,
+        )
+
+        workspace_path, repo_path = _workspace_repo_path(execution_result)
+
+        for log in execution_result.get("logs", []):
+            add_log_safe(pipeline_id, log)
+            
+        add_log_safe(
+            pipeline_id,
+            "Execution result keys: " + ", ".join(sorted(execution_result.keys())),
+            )
+
+        add_log_safe(
+            pipeline_id,
+            (
+                "Persisting execution result: "
+                f"critical={execution_result.get('trivy_critical')}, "
+                f"trivy_status={execution_result.get('trivy_status')}, "
+                f"high={execution_result.get('trivy_high')}, "
+                f"medium={execution_result.get('trivy_medium')}, "
+                f"total={execution_result.get('trivy_total')}, "
+                f"risk_score={execution_result.get('risk_score')}, "
+                f"risk_level={execution_result.get('risk_level')}"
+            ),
+        )
+
+        save_execution_result_fields(pipeline_id, execution_result)
+
+        finished_at = datetime.utcnow()
+        duration_seconds = (finished_at - started_at).total_seconds()
+
+        execution_logs = get_pipeline_logs_safe(pipeline_id)
+
+        if execution_result.get("success"):
+            update_pipeline_fields(
+                pipeline_id,
+                status="RUNNING",
+                progress=85,
+                error_message=None,
+                failure_reason=None,
+                commit_sha=execution_result.get("commit_sha"),
+                commit_message=execution_result.get("commit_message"),
+                build_status="SUCCESS",
+                test_status="SUCCESS",
+            )
+
+            sonar_report = None
+
+            try:
+                update_pipeline_fields(
+                    pipeline_id,
+                    stage="SONAR",
+                    progress=75,
+                    sonar_status="RUNNING",
+                )
+
+                sonar_report = save_sonar_metrics(pipeline_id)
+
+            except Exception as sonar_error:
+                update_pipeline_fields(
+                    pipeline_id,
+                    sonar_status="FAILED",
+                )
+
+                add_log_safe(
+                    pipeline_id,
+                    f"Could not fetch SonarQube report: {str(sonar_error)}",
+                )
+
+                sonar_report = {
+                    "available": False,
+                    "quality_gate": "UNKNOWN",
+                    "issues": [],
+                }
+
+            # Fallback only: if executor did not return Trivy data, run Trivy here.
+            latest_trivy_status = execution_result.get("trivy_status")
+
+            if not latest_trivy_status or latest_trivy_status == "NOT_STARTED":
+                if repo_path:
+                    update_pipeline_fields(
+                        pipeline_id,
+                        stage="TRIVY",
+                        progress=85,
+                        trivy_status="RUNNING",
+                    )
+                    run_trivy_scan_for_pipeline(pipeline_id, repo_path)
+                else:
+                    update_pipeline_fields(
+                        pipeline_id,
+                        trivy_status="SKIPPED",
+                    )
+                    add_log_safe(
+                        pipeline_id,
+                        "Trivy scan skipped: repo path not available.",
+                    )
+
+            update_pipeline_fields(
+                pipeline_id,
+                stage="RISK",
+                progress=90,
+            )
+
+            calculate_release_risk_for_pipeline(pipeline_id)
+
+            update_pipeline_fields(
+                pipeline_id,
+                stage="AI_SUMMARY",
+                progress=95,
+            )
+
+            generate_pipeline_ai_report(
+                pipeline_id=pipeline_id,
+                pipeline_status="SUCCESS",
+                execution_logs=get_pipeline_logs_safe(pipeline_id),
+                sonar_report=sonar_report,
+            )
+
+            update_pipeline_fields(
+                pipeline_id,
+                status="SUCCESS",
+                stage="COMPLETED",
+                progress=100,
+                error_message=None,
+                failure_reason=None,
+                finished_at=finished_at,
+                duration_seconds=duration_seconds,
+            )
+
+            add_log_safe(pipeline_id, "Pipeline completed successfully.")
+            emit_pipeline_terminal_event(pipeline_id, PIPELINE_COMPLETED)
+
+            return {
+                "success": True,
+                "status": "SUCCESS",
+                "pipeline_id": pipeline_id,
+            }
+
+        error_message = (
+            execution_result.get("failure_reason")
+            or execution_result.get("error")
+            or "Pipeline execution failed"
+        )
+
+        update_pipeline_fields(
+            pipeline_id,
+            status="FAILED",
+            stage="FAILED",
+            progress=100,
+            error_message=error_message,
+            failure_reason=error_message,
+            commit_sha=execution_result.get("commit_sha"),
+            commit_message=execution_result.get("commit_message"),
+            build_status=execution_result.get("build_status") or "FAILED",
+            test_status=execution_result.get("test_status") or "NOT_STARTED",
+            sonar_status=execution_result.get("sonar_status") or "SKIPPED",
+            trivy_status=execution_result.get("trivy_status") or "SKIPPED",
+            finished_at=finished_at,
+            duration_seconds=duration_seconds,
+        )
+
+        calculate_release_risk_for_pipeline(pipeline_id)
+
+        add_log_safe(pipeline_id, f"Pipeline failed: {error_message}")
+
+        generate_pipeline_ai_report(
+            pipeline_id=pipeline_id,
+            pipeline_status="FAILED",
+            execution_logs=execution_logs,
+            sonar_report={
+                "available": False,
+                "quality_gate": "UNKNOWN",
+                "issues": [],
+            },
+        )
+
+        emit_pipeline_terminal_event(pipeline_id, PIPELINE_FAILED)
+
+        return {
+            "success": False,
+            "status": "FAILED",
+            "pipeline_id": pipeline_id,
+            "error": error_message,
+        }
+
+    except Exception as e:
+        finished_at = datetime.utcnow()
+        duration_seconds = (finished_at - started_at).total_seconds()
+
+        current_retry = self.request.retries
+        max_retries = self.max_retries or 2
+
+        if current_retry < max_retries:
+            retry_number = current_retry + 1
+
+            try:
+                update_pipeline_fields(
+                    pipeline_id,
+                    status="RUNNING",
+                    stage="RETRYING",
+                    progress=5,
+                    error_message=str(e),
+                    failure_reason=(
+                        f"Worker error. Retrying attempt "
+                        f"{retry_number}/{max_retries}: {str(e)}"
+                    ),
+                )
+
+                add_log_safe(
+                    pipeline_id,
+                    (
+                        "Unexpected worker error occurred. "
+                        f"Retrying in 30 seconds "
+                        f"({retry_number}/{max_retries}): {str(e)}"
+                    ),
+                )
+
+            except Exception:
+                pass
+
+            raise self.retry(exc=e, countdown=30)
+
+        try:
+            update_pipeline_fields(
+                pipeline_id,
+                status="FAILED",
+                stage="FAILED",
+                progress=100,
+                error_message=str(e),
+                failure_reason=str(e),
+                finished_at=finished_at,
+                duration_seconds=duration_seconds,
+            )
+
+            add_log_safe(pipeline_id, f"Pipeline failed after retries: {str(e)}")
+
+            generate_pipeline_ai_report(
+                pipeline_id=pipeline_id,
+                pipeline_status="FAILED",
+                execution_logs=get_pipeline_logs_safe(pipeline_id),
+                sonar_report={
+                    "available": False,
+                    "quality_gate": "UNKNOWN",
+                    "issues": [],
+                },
+            )
+
+            emit_pipeline_terminal_event(pipeline_id, PIPELINE_FAILED)
+
+        except Exception:
+            pass
+
+        return {
+            "success": False,
+            "status": "FAILED",
+            "pipeline_id": pipeline_id,
+            "error": str(e),
+        }
+        
+        
+    finally:
+        if workspace_path:
+            shutil.rmtree(workspace_path, ignore_errors=True)

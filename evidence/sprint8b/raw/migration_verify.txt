@@ -1,0 +1,9 @@
+]633;E;echo "# Alembic current";90d3a1a2-76f0-4cf7-8629-0c5cf4db9cd7]633;C# Alembic current
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+588e4ea72ee4 (head)
+
+# RCA tables in database
+incident_evidence True
+rca_reports True
+rca_feedback True

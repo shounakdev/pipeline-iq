@@ -1,0 +1,197 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- /usr/local/bin/python3.11
+cachedir: .pytest_cache
+rootdir: /app
+configfile: pytest.ini
+plugins: anyio-4.13.0
+collecting ... collected 112 items
+
+tests/test_incident_audit_logging.py::test_status_change_creates_timeline_and_audit PASSED [  0%]
+tests/test_incident_audit_logging.py::test_duplicate_acknowledgement_does_not_duplicate_events FAILED [  1%]
+tests/test_incident_comments.py::test_comment_creates_incident_comment PASSED [  2%]
+tests/test_incident_comments.py::test_comment_creates_timeline_event PASSED [  3%]
+tests/test_incident_comments.py::test_comment_creates_audit_event PASSED [  4%]
+tests/test_incident_comments.py::test_comment_does_not_change_incident_status PASSED [  5%]
+tests/test_incident_comments.py::test_blank_comment_is_rejected PASSED   [  6%]
+tests/test_incident_comments.py::test_comment_text_is_preserved PASSED   [  7%]
+tests/test_incident_comments.py::test_viewer_cannot_create_comment PASSED [  8%]
+tests/test_incident_deduplication_repository.py::test_returns_matching_open_incident_inside_window PASSED [  8%]
+tests/test_incident_deduplication_repository.py::test_returns_incident_at_exact_window_boundary PASSED [  9%]
+tests/test_incident_deduplication_repository.py::test_does_not_return_incident_outside_window PASSED [ 10%]
+tests/test_incident_deduplication_repository.py::test_does_not_return_resolved_incident_inside_window PASSED [ 11%]
+tests/test_incident_deduplication_repository.py::test_does_not_return_incident_with_different_key PASSED [ 12%]
+tests/test_incident_deduplication_repository.py::test_deduplication_lock_blocks_competing_transaction PASSED [ 13%]
+tests/test_incident_deduplication_service.py::test_duplicate_alerts_update_one_incident_and_escalate PASSED [ 14%]
+tests/test_incident_deduplication_service.py::test_alert_outside_window_creates_new_incident PASSED [ 15%]
+tests/test_incident_deduplication_service.py::test_different_environment_creates_new_incident PASSED [ 16%]
+tests/test_incident_deployment_correlation_repository.py::test_returns_latest_matching_deployment PASSED [ 16%]
+tests/test_incident_deployment_correlation_repository.py::test_excludes_deployment_for_different_service PASSED [ 17%]
+tests/test_incident_deployment_correlation_repository.py::test_excludes_deployment_for_different_environment PASSED [ 18%]
+tests/test_incident_deployment_correlation_repository.py::test_excludes_deployment_after_detection PASSED [ 19%]
+tests/test_incident_deployment_correlation_repository.py::test_excludes_deployment_older_than_window PASSED [ 20%]
+tests/test_incident_deployment_correlation_repository.py::test_accepts_deployment_at_exact_window_boundary PASSED [ 21%]
+tests/test_incident_deployment_correlation_repository.py::test_returns_none_when_no_deployments_exist PASSED [ 22%]
+tests/test_incident_deployment_correlation_service.py::test_service_stores_suspected_deployment_and_timeline_event PASSED [ 23%]
+tests/test_incident_deployment_correlation_service.py::test_service_allows_incident_without_matching_deployment PASSED [ 24%]
+tests/test_incident_lifecycle.py::test_status_update_sets_acknowledged_timestamp PASSED [ 25%]
+tests/test_incident_lifecycle.py::test_resolution_sets_timestamp_and_summary PASSED [ 25%]
+tests/test_incident_lifecycle.py::test_service_rejects_empty_resolution_reason PASSED [ 26%]
+tests/test_incident_lifecycle.py::test_repeated_acknowledgement_is_rejected PASSED [ 27%]
+tests/test_incident_lifecycle.py::test_acknowledge_can_assign_to_self PASSED [ 28%]
+tests/test_incident_lifecycle.py::test_assignment_closes_previous_assignment PASSED [ 29%]
+tests/test_incident_lifecycle.py::test_invalid_transition_maps_to_http_409 PASSED [ 30%]
+tests/test_incident_lifecycle.py::test_normal_value_error_maps_to_http_400 PASSED [ 31%]
+tests/test_incident_lifecycle.py::test_viewer_cannot_modify_incidents PASSED [ 32%]
+tests/test_incident_lifecycle.py::test_admin_and_developer_can_modify_incidents[admin] PASSED [ 33%]
+tests/test_incident_lifecycle.py::test_admin_and_developer_can_modify_incidents[developer] PASSED [ 33%]
+tests/test_incident_lifecycle.py::test_resolution_request_rejects_whitespace PASSED [ 34%]
+tests/test_incident_metric_snapshot_service.py::test_captures_historical_reliability_snapshot PASSED [ 35%]
+tests/test_incident_metric_snapshot_service.py::test_later_evaluations_do_not_change_incident_snapshot PASSED [ 36%]
+tests/test_incident_metric_snapshot_service.py::test_incident_remains_valid_without_reliability_history PASSED [ 37%]
+tests/test_incident_metrics.py::test_incident_metrics_use_timezone_aware_timestamps PASSED [ 38%]
+tests/test_incident_metrics.py::test_mttd_is_null_when_failure_start_is_missing PASSED [ 39%]
+tests/test_incident_metrics.py::test_mtta_is_null_before_acknowledgement PASSED [ 40%]
+tests/test_incident_metrics.py::test_mttr_is_null_before_resolution PASSED [ 41%]
+tests/test_incident_metrics.py::test_missing_detected_at_produces_null_metrics PASSED [ 41%]
+tests/test_incident_metrics.py::test_negative_duration_is_not_reported_as_zero PASSED [ 42%]
+tests/test_incident_metrics.py::test_format_duration PASSED              [ 43%]
+tests/test_incident_metrics.py::test_aggregate_averages_exclude_missing_timestamps PASSED [ 44%]
+tests/test_incident_rules.py::test_build_deduplication_key_normalises_values PASSED [ 45%]
+tests/test_incident_rules.py::test_high_production_alert_maps_to_sev_2 PASSED [ 46%]
+tests/test_incident_rules.py::test_non_production_alert_maps_to_sev_3 PASSED [ 47%]
+tests/test_incident_rules.py::test_critical_availability_maps_to_sev_1 PASSED [ 48%]
+tests/test_incident_rules.py::test_availability_at_critical_boundary_does_not_force_sev_1 PASSED [ 49%]
+tests/test_incident_rules.py::test_complete_unavailability_maps_to_sev_1 PASSED [ 50%]
+tests/test_incident_rules.py::test_multiple_related_services_map_to_sev_1 PASSED [ 50%]
+tests/test_incident_rules.py::test_repeated_high_severity_alerts_map_to_sev_1 PASSED [ 51%]
+tests/test_incident_rules.py::test_error_budget_exhaustion_maps_to_sev_2 PASSED [ 52%]
+tests/test_incident_rules.py::test_critical_latency_ratio_maps_to_sev_2 PASSED [ 53%]
+tests/test_incident_rules.py::test_high_alert_on_critical_service_maps_to_sev_2 PASSED [ 54%]
+tests/test_incident_rules.py::test_deployment_correlated_high_alert_maps_to_sev_2 PASSED [ 55%]
+tests/test_incident_rules.py::test_severity_comparison_allows_only_upward_escalation PASSED [ 56%]
+tests/test_incident_rules.py::test_compatibility_wrapper_returns_enum PASSED [ 57%]
+tests/test_incident_rules.py::test_deduplication_lock_id_is_stable_and_signed_64_bit PASSED [ 58%]
+tests/test_incident_timeline.py::test_timeline_is_ordered_by_occurred_at_then_id PASSED [ 58%]
+tests/test_incident_timeline.py::test_timeline_response_does_not_expose_audit_details PASSED [ 59%]
+tests/test_incident_transitions.py::test_allows_valid_incident_transition[DETECTED-ACKNOWLEDGED] PASSED [ 60%]
+tests/test_incident_transitions.py::test_allows_valid_incident_transition[ACKNOWLEDGED-INVESTIGATING] PASSED [ 61%]
+tests/test_incident_transitions.py::test_allows_valid_incident_transition[INVESTIGATING-ACTION_RECOMMENDED] PASSED [ 62%]
+tests/test_incident_transitions.py::test_allows_valid_incident_transition[INVESTIGATING-REMEDIATING] PASSED [ 63%]
+tests/test_incident_transitions.py::test_allows_valid_incident_transition[ACTION_RECOMMENDED-REMEDIATING] PASSED [ 64%]
+tests/test_incident_transitions.py::test_allows_valid_incident_transition[REMEDIATING-RESOLVED] PASSED [ 65%]
+tests/test_incident_transitions.py::test_allows_valid_incident_transition[REMEDIATING-FAILED_RECOVERY] PASSED [ 66%]
+tests/test_incident_transitions.py::test_allows_valid_incident_transition[FAILED_RECOVERY-INVESTIGATING] PASSED [ 66%]
+tests/test_incident_transitions.py::test_allows_valid_incident_transition[FAILED_RECOVERY-REMEDIATING] PASSED [ 67%]
+tests/test_incident_transitions.py::test_rejects_invalid_incident_transition[DETECTED-RESOLVED] PASSED [ 68%]
+tests/test_incident_transitions.py::test_rejects_invalid_incident_transition[DETECTED-REMEDIATING] PASSED [ 69%]
+tests/test_incident_transitions.py::test_rejects_invalid_incident_transition[ACKNOWLEDGED-ACTION_RECOMMENDED] PASSED [ 70%]
+tests/test_incident_transitions.py::test_rejects_invalid_incident_transition[ACKNOWLEDGED-RESOLVED] PASSED [ 71%]
+tests/test_incident_transitions.py::test_rejects_invalid_incident_transition[INVESTIGATING-RESOLVED] PASSED [ 72%]
+tests/test_incident_transitions.py::test_rejects_invalid_incident_transition[ACTION_RECOMMENDED-INVESTIGATING] PASSED [ 73%]
+tests/test_incident_transitions.py::test_rejects_invalid_incident_transition[ACTION_RECOMMENDED-RESOLVED] PASSED [ 74%]
+tests/test_incident_transitions.py::test_rejects_invalid_incident_transition[FAILED_RECOVERY-ACTION_RECOMMENDED] PASSED [ 75%]
+tests/test_incident_transitions.py::test_rejects_invalid_incident_transition[RESOLVED-INVESTIGATING] PASSED [ 75%]
+tests/test_incident_transitions.py::test_resolved_incident_has_no_allowed_transitions PASSED [ 76%]
+tests/test_incident_transitions.py::test_repeating_same_status_is_not_a_valid_transition PASSED [ 77%]
+tests/incidents/test_incident_api.py::test_list_incidents_returns_paginated_response PASSED [ 78%]
+tests/incidents/test_incident_api.py::test_list_incidents_filters_by_status PASSED [ 79%]
+tests/incidents/test_incident_api.py::test_list_incidents_filters_by_severity PASSED [ 80%]
+tests/incidents/test_incident_api.py::test_list_incidents_filters_by_service PASSED [ 81%]
+tests/incidents/test_incident_api.py::test_list_incidents_filters_by_environment PASSED [ 82%]
+tests/incidents/test_incident_api.py::test_list_incidents_filters_by_assignee PASSED [ 83%]
+tests/incidents/test_incident_api.py::test_list_incidents_filters_by_date_range PASSED [ 83%]
+tests/incidents/test_incident_api.py::test_list_incidents_rejects_invalid_page PASSED [ 84%]
+tests/incidents/test_incident_api.py::test_list_incidents_rejects_invalid_date_range PASSED [ 85%]
+tests/incidents/test_incident_api.py::test_get_incident_detail PASSED    [ 86%]
+tests/incidents/test_incident_api.py::test_get_missing_incident_returns_404 PASSED [ 87%]
+tests/incidents/test_incident_api.py::test_acknowledge_incident PASSED   [ 88%]
+tests/incidents/test_incident_api.py::test_acknowledge_incident_assigns_to_self PASSED [ 89%]
+tests/incidents/test_incident_api.py::test_acknowledge_already_acknowledged_returns_409 PASSED [ 90%]
+tests/incidents/test_incident_api.py::test_assign_incident PASSED        [ 91%]
+tests/incidents/test_incident_api.py::test_assign_current_assignee_returns_409 PASSED [ 91%]
+tests/incidents/test_incident_api.py::test_change_incident_status PASSED [ 92%]
+tests/incidents/test_incident_api.py::test_invalid_status_transition_returns_409 PASSED [ 93%]
+tests/incidents/test_incident_api.py::test_resolve_incident_sets_resolved_at PASSED [ 94%]
+tests/incidents/test_incident_api.py::test_add_comment PASSED            [ 95%]
+tests/incidents/test_incident_api.py::test_blank_comment_returns_422 PASSED [ 96%]
+tests/incidents/test_incident_api.py::test_timeline_is_chronological PASSED [ 97%]
+tests/incidents/test_incident_api.py::test_incident_metrics_response PASSED [ 98%]
+tests/incidents/test_incident_api.py::test_read_role_is_required PASSED  [ 99%]
+tests/incidents/test_incident_api.py::test_modify_role_is_required PASSED [100%]
+
+=================================== FAILURES ===================================
+___________ test_duplicate_acknowledgement_does_not_duplicate_events ___________
+
+client = <starlette.testclient.TestClient object at 0x7fced3ac2090>
+db_session = <sqlalchemy.orm.session.Session object at 0x7fced39a0150>
+
+    def test_duplicate_acknowledgement_does_not_duplicate_events(
+        client,
+        db_session: Session,
+    ) -> None:
+        incident = _create_incident(db_session)
+        headers = _developer_headers(client)
+    
+        first_response = _acknowledge_incident(
+            client,
+            incident_id=incident.id,
+            headers=headers,
+        )
+    
+        assert first_response.status_code == 200, (
+            first_response.text
+        )
+    
+        db_session.expire_all()
+        db_session.refresh(incident)
+    
+        first_acknowledged_at = incident.acknowledged_at
+    
+        timeline_count_after_first = (
+            _acknowledgement_timeline_count(
+                db_session,
+                incident.id,
+            )
+        )
+    
+        audit_count_after_first = (
+            _acknowledgement_audit_count(
+                db_session,
+                incident.id,
+            )
+        )
+    
+        assert timeline_count_after_first == 1
+        assert audit_count_after_first == 1
+    
+        second_response = _acknowledge_incident(
+            client,
+            incident_id=incident.id,
+            headers=headers,
+        )
+    
+>       assert second_response.status_code == 200, (
+            second_response.text
+        )
+E       AssertionError: {"detail":"Incident is already in status ACKNOWLEDGED"}
+E       assert 409 == 200
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_incident_audit_logging.py:237: AssertionError
+=============================== warnings summary ===============================
+../usr/local/lib/python3.11/site-packages/passlib/utils/__init__.py:854
+  /usr/local/lib/python3.11/site-packages/passlib/utils/__init__.py:854: DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13
+    from crypt import crypt as _crypt
+
+app/observability/schemas.py:7
+  /app/app/observability/schemas.py:7: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    class ServiceHealthSnapshotResponse(BaseModel):
+
+app/observability/schemas.py:27
+  /app/app/observability/schemas.py:27: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    class HealthSummaryItem(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_incident_audit_logging.py::test_duplicate_acknowledgement_does_not_duplicate_events
+================== 1 failed, 111 passed, 3 warnings in 11.83s ==================

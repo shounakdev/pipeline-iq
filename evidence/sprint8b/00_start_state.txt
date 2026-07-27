@@ -1,0 +1,12 @@
+# Sprint 8B start
+2026-07-25T17:37:40+05:30
+
+## Branch
+sprint-8
+
+## Head
+ccc238038cf576fbf9a9eeb0fbb7e659802cdd56
+
+## Working tree
+?? backend/app/rca/
+?? evidence/

@@ -1,0 +1,87 @@
+backend/app/observability/service.py:8:        db.query(ServiceHealthSnapshot)
+backend/app/observability/service.py:17:        db.query(ServiceHealthSnapshot)
+backend/app/observability/service.py:27:        db.query(ServiceHealthSnapshot)
+backend/app/observability/metrics.py:1:from prometheus_client import Counter, Histogram, Gauge
+backend/app/observability/metrics_router.py:2:from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+backend/app/reliability/alert_service.py:42:    query = db.query(Deployment).filter(
+backend/app/reliability/alert_service.py:70:            db.query(Environment)
+backend/app/reliability/alert_service.py:162:        db.query(ReliabilityAlert)
+backend/app/reliability/alert_service.py:259:        db.query(ReliabilityAlert)
+backend/app/reliability/query_service.py:44:        db.query(Service)
+backend/app/reliability/query_service.py:65:        db.query(SLOMeasurement)
+backend/app/reliability/query_service.py:86:        db.query(ErrorBudgetStatus)
+backend/app/reliability/query_service.py:358:        db.query(SLODefinition)
+backend/app/reliability/query_service.py:443:        db.query(ReliabilityAlert)
+backend/app/reliability/query_service.py:458:        db.query(Deployment)
+backend/app/reliability/query_service.py:501:        db.query(SLODefinition)
+backend/app/reliability/query_service.py:570:        db.query(ReliabilityAlert)
+backend/app/reliability/query_service.py:592:        db.query(ReliabilityAlert)
+backend/app/reliability/query_service.py:606:            db.query(SLODefinition)
+backend/app/reliability/query_service.py:618:            db.query(Deployment)
+backend/app/reliability/router.py:24:from app.reliability.prometheus_client import (
+backend/app/reliability/router.py:25:    PrometheusClientError,
+backend/app/reliability/router.py:26:    PrometheusNoDataError,
+backend/app/reliability/router.py:200:    except PrometheusNoDataError as exc:
+backend/app/reliability/router.py:207:                    "Prometheus returned no usable "
+backend/app/reliability/router.py:214:    except PrometheusClientError as exc:
+backend/app/reliability/router.py:220:                "message": "Prometheus query failed",
+backend/app/reliability/prometheus_client.py:5:from urllib.error import HTTPError, URLError
+backend/app/reliability/prometheus_client.py:6:from urllib.parse import urlencode
+backend/app/reliability/prometheus_client.py:7:from urllib.request import Request, urlopen
+backend/app/reliability/prometheus_client.py:12:    "http://prometheus:9090",
+backend/app/reliability/prometheus_client.py:50:class PrometheusClientError(RuntimeError):
+backend/app/reliability/prometheus_client.py:51:    """Raised when Prometheus cannot successfully answer a query."""
+backend/app/reliability/prometheus_client.py:54:class PrometheusNoDataError(PrometheusClientError):
+backend/app/reliability/prometheus_client.py:111:def query_prometheus(query: str) -> float:
+backend/app/reliability/prometheus_client.py:135:        raise PrometheusClientError(
+backend/app/reliability/prometheus_client.py:136:            f"Prometheus returned HTTP {exc.code}"
+backend/app/reliability/prometheus_client.py:140:        raise PrometheusClientError(
+backend/app/reliability/prometheus_client.py:141:            f"Unable to connect to Prometheus at "
+backend/app/reliability/prometheus_client.py:146:        raise PrometheusClientError(
+backend/app/reliability/prometheus_client.py:147:            "Prometheus query timed out"
+backend/app/reliability/prometheus_client.py:154:        raise PrometheusClientError(
+backend/app/reliability/prometheus_client.py:155:            "Prometheus returned invalid JSON"
+backend/app/reliability/prometheus_client.py:161:            "Prometheus query failed",
+backend/app/reliability/prometheus_client.py:164:        raise PrometheusClientError(error_message)
+backend/app/reliability/prometheus_client.py:174:            raise PrometheusNoDataError(
+backend/app/reliability/prometheus_client.py:175:                f"Prometheus returned no time series "
+backend/app/reliability/prometheus_client.py:192:        raise PrometheusNoDataError(
+backend/app/reliability/prometheus_client.py:193:            f"Unsupported or empty Prometheus result "
+backend/app/reliability/prometheus_client.py:201:        raise PrometheusNoDataError(
+backend/app/reliability/prometheus_client.py:202:            f"Prometheus returned a non-numeric "
+backend/app/reliability/prometheus_client.py:207:        raise PrometheusNoDataError(
+backend/app/reliability/prometheus_client.py:208:            "Prometheus returned NaN or an infinite "
+backend/app/reliability/prometheus_client.py:261:    return query_prometheus(query)
+backend/app/reliability/prometheus_client.py:310:    return query_prometheus(query)
+backend/app/reliability/prometheus_client.py:342:    return query_prometheus(query)
+backend/app/reliability/slo_service.py:12:        db.query(Service)
+backend/app/reliability/slo_service.py:48:        db.query(SLODefinition)
+backend/app/reliability/slo_service.py:60:        db.query(SLODefinition)
+backend/app/reliability/slo_service.py:75:        db.query(SLODefinition)
+backend/app/reliability/tasks.py:9:from app.reliability.prometheus_client import (
+backend/app/reliability/tasks.py:10:    PrometheusClientError,
+backend/app/reliability/tasks.py:11:    PrometheusNoDataError,
+backend/app/reliability/tasks.py:36:    Each SLO is handled independently so one Prometheus or database
+backend/app/reliability/tasks.py:68:                PrometheusNoDataError,
+backend/app/reliability/tasks.py:69:                PrometheusClientError,
+backend/app/reliability/slo_engine.py:18:from app.reliability.prometheus_client import (
+backend/app/reliability/slo_engine.py:69:        db.query(SLODefinition)
+backend/app/reliability/slo_engine.py:84:        db.query(Service)
+backend/app/deployments/router.py:164:    query = db.query(Deployment)
+backend/app/deployments/router.py:178:        db.query(Deployment)
+backend/app/deployments/router.py:193:        db.query(Deployment)
+backend/app/deployments/router.py:213:        db.query(Deployment)
+backend/app/deployments/router.py:222:        db.query(KubernetesWorkload)
+backend/app/deployments/router.py:241:        db.query(Deployment)
+backend/app/incidents/repository.py:321:    reliability evaluations and current Prometheus values.
+backend/app/incidents/repository.py:416:        .scalar_subquery()
+backend/app/incidents/consumer.py:43:    temporarily supported for events produced before Sprint 7D.
+backend/app/incidents/consumer.py:118:        db.query(ReliabilityAlert)
+backend/app/incidents/schemas.py:389:    # Temporary compatibility field for the current Sprint 5 frontend.
+backend/app/incidents/router.py:29:    query = db.query(Incident)
+backend/app/incidents/router.py:53:    incident = db.query(Incident).filter(Incident.id == incident_id).first()
+backend/app/incidents/router.py:90:    incident = db.query(Incident).filter(Incident.id == incident_id).first()
+backend/app/incidents/router.py:104:    query = db.query(Incident).filter(Incident.service_id == service_id)
+backend/app/incidents/router.py:120:    query = db.query(Incident).filter(Incident.service_id == service_id)
+backend/app/incidents/service.py:596:    These records are independent of later Prometheus queries and later
+backend/app/incidents/incident_service.py:8:This module remains temporarily available because older event handlers and

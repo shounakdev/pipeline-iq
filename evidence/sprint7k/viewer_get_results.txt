@@ -1,0 +1,5 @@
+list=200
+summary=200
+detail=200
+timeline=200
+metrics=200

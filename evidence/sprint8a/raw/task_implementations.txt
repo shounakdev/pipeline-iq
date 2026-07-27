@@ -1,0 +1,472 @@
+]633;E;echo "# Main tasks";90d3a1a2-76f0-4cf7-8629-0c5cf4db9cd7]633;C# Main tasks
+import json
+import os
+import shutil
+from datetime import datetime, timedelta
+from typing import Any
+
+from app.celery_app import celery_app
+from app.database import SessionLocal
+from app.models import Pipeline, PipelineLog, Analysis
+from app.executor import execute_node_pipeline
+from app.sonar_service import get_sonar_report
+from app.ai_analyzer import analyze_pipeline_report
+from app.shared.log_sanitizer import sanitize_log_text
+
+from app.events.constants import PIPELINE_COMPLETED, PIPELINE_FAILED
+from app.events.service import record_platform_event
+
+try:
+    from app.pipelineiq.security.trivy_scan import (
+        run_trivy_filesystem_scan,
+        summarize_trivy_report,
+    )
+except Exception:
+    run_trivy_filesystem_scan = None
+    summarize_trivy_report = None
+
+try:
+    from app.pipelineiq.intelligence.risk_engine import calculate_risk_score
+except Exception:
+    calculate_risk_score = None
+
+
+def update_pipeline_fields(pipeline_id: str, **fields):
+    """
+    Open a short-lived DB session, update only the provided pipeline fields,
+    commit, and close the session immediately.
+    """
+    db = SessionLocal()
+
+    try:
+        pipeline = (
+            db.query(Pipeline)
+            .filter(Pipeline.id == str(pipeline_id))
+            .first()
+        )
+
+        if not pipeline:
+            return None
+        
+        ignored_fields = []
+
+        for key, value in fields.items():
+            if hasattr(pipeline, key):
+                setattr(pipeline, key, value)
+            else:
+                ignored_fields.append(key)
+        
+        if ignored_fields:
+            print(f"Ignored pipeline fields: {ignored_fields}")
+
+        if hasattr(pipeline, "updated_at"):
+            pipeline.updated_at = datetime.utcnow()
+
+        db.commit()
+        db.refresh(pipeline)
+
+        return {
+            "id": pipeline.id,
+            "status": getattr(pipeline, "status", None),
+            "error_message": getattr(pipeline, "error_message", None),
+            "failure_reason": getattr(pipeline, "failure_reason", None),
+        }
+
+    except Exception:
+        db.rollback()
+        raise
+
+    finally:
+        db.close()
+
+
+
+def emit_pipeline_terminal_event(pipeline_id: str, event_type: str):
+    """
+    Record PIPELINE_COMPLETED / PIPELINE_FAILED into the transactional outbox.
+
+    This uses a fresh DB session because the worker helper functions in this file
+    also use short-lived sessions.
+    """
+    db = SessionLocal()
+
+    try:
+        pipeline = (
+            db.query(Pipeline)
+            .filter(Pipeline.id == str(pipeline_id))
+            .first()
+        )
+
+        if not pipeline:
+            return None
+
+        service_id = getattr(pipeline, "service_id", None)
+
+        event = record_platform_event(
+            db,
+            event_type=event_type,
+            correlation_id=str(pipeline.id),
+            service_id=str(service_id) if service_id else None,
+            environment=getattr(pipeline, "environment", None) or "staging",
+            payload={
+                "pipeline_run_id": str(pipeline.id),
+                "status": getattr(pipeline, "status", None),
+                "stage": getattr(pipeline, "stage", None),
+                "risk_score": getattr(pipeline, "risk_score", None),
+                "risk_level": getattr(pipeline, "risk_level", None),
+                "commit_sha": getattr(pipeline, "commit_sha", None),
+                "build_status": getattr(pipeline, "build_status", None),
+                "test_status": getattr(pipeline, "test_status", None),
+                "sonar_status": getattr(pipeline, "sonar_status", None),
+                "trivy_status": getattr(pipeline, "trivy_status", None),
+                "failure_reason": getattr(pipeline, "failure_reason", None),
+            },
+        )
+
+        db.commit()
+        return event
+
+    except Exception as exc:
+        db.rollback()
+        print(f"Failed to record {event_type} for pipeline {pipeline_id}: {exc}")
+        return None
+
+    finally:
+        db.close()
+
+
+def add_log_safe(pipeline_id: str, message: str):
+    """
+    Save a pipeline log using a fresh DB session.
+
+    Behavior:
+    - ignore empty messages
+    - sanitize logs
+    - trim whitespace
+    - prevent immediate duplicate logs
+    """
+    if not message:
+        return
+
+    clean_message = sanitize_log_text(str(message).strip())
+
+    if not clean_message:
+        return
+
+    db = SessionLocal()
+
+    try:
+        last_log = (
+            db.query(PipelineLog)
+            .filter(PipelineLog.pipeline_id == str(pipeline_id))
+            .order_by(PipelineLog.timestamp.desc())
+            .first()
+        )
+
+        if last_log and last_log.log_text == clean_message:
+            return
+
+        log = PipelineLog(
+            pipeline_id=str(pipeline_id),
+            log_text=clean_message,
+            timestamp=datetime.utcnow(),
+        )
+
+        db.add(log)
+        db.commit()
+
+    except Exception:
+        db.rollback()
+        raise
+
+    finally:
+        db.close()
+
+
+def get_pipeline_context(pipeline_id: str):
+    """
+    Read the pipeline fields needed by the worker, then close the DB session.
+    Do not return the SQLAlchemy model object because it becomes detached.
+    """
+    db = SessionLocal()
+
+    try:
+        pipeline = (
+            db.query(Pipeline)
+            .filter(Pipeline.id == str(pipeline_id))
+            .first()
+        )
+
+        if not pipeline:
+            return None
+
+        return {
+            "id": pipeline.id,
+            "repo_url": pipeline.repo_url,
+            "branch": pipeline.branch or "main",
+            "status": getattr(pipeline, "status", None),
+            "error_message": getattr(pipeline, "error_message", None),
+            "failure_reason": getattr(pipeline, "failure_reason", None),
+        }
+
+    finally:
+        db.close()
+
+
+def get_pipeline_logs_safe(pipeline_id: str):
+    """
+    Fetch all logs using a fresh DB session.
+    """
+    db = SessionLocal()
+
+    try:
+        pipeline_logs = (
+            db.query(PipelineLog)
+            .filter(PipelineLog.pipeline_id == str(pipeline_id))
+            .order_by(PipelineLog.timestamp.asc())
+            .all()
+        )
+
+        return [log.log_text for log in pipeline_logs]
+
+    finally:
+        db.close()
+
+
+def _json_dumps(value: Any):
+    return json.dumps(value, default=str)
+
+
+def _safe_int(value: Any, default: int = 0) -> int:
+    try:
+        if value is None or value == "":
+            return default
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
+
+
+def _workspace_repo_path(execution_result: dict[str, Any]) -> tuple[str | None, str | None]:
+    """
+    Supports the latest executor.py shape:
+    - workspace_path points to the temp run folder when cleanup=False
+    - repo is inside workspace_path/repo
+    """
+    workspace_path = execution_result.get("workspace_path") or execution_result.get("run_folder")
+    repo_path = execution_result.get("repo_path")
+
+    if not repo_path and workspace_path:
+        candidate = os.path.join(workspace_path, "repo")
+        if os.path.exists(candidate):
+            repo_path = candidate
+
+    return workspace_path, repo_path
+
+
+def save_execution_result_fields(pipeline_id: str, execution_result: dict[str, Any]):
+    """
+    Persist fields returned by execute_node_pipeline.
+
+    Important:
+    Only save fields that are actually present in execution_result.
+    This prevents missing Trivy values from overwriting values already saved
+    by stage_fn/update_stage.
+    """
+    fields = {}
+
+    simple_keys = [
+        "commit_sha",
+        "commit_message",
+
+        "build_status",
+        "test_status",
+        "sonar_status",
+        "trivy_status",
+
+        "coverage",
+        "bugs",
+        "vulnerabilities",
+        "code_smells",
+        "duplicated_lines_density",
+        "quality_gate",
+        "sonar_report_url",
+
+        "trivy_report",
+
+        "risk_score",
+        "risk_level",
+        "risk_summary",
+        "ai_summary",
+    ]
+
+    for key in simple_keys:
+        if key in execution_result and execution_result.get(key) is not None:
+            fields[key] = execution_result.get(key)
+
+    if "sonar_issues" in execution_result:
+        sonar_issues = execution_result.get("sonar_issues") or []
+        fields["sonar_issues"] = sonar_issues
+        fields["sonar_issues"] = sonar_issues or []
+
+    if "recommendations" in execution_result:
+        fields["recommendations"] = execution_result.get("recommendations") or []
+
+    int_keys = [
+        "trivy_critical",
+        "trivy_high",
+        "trivy_medium",
+        "trivy_low",
+        "trivy_unknown",
+        "trivy_total",
+    ]
+
+# Reliability tasks
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+from celery import shared_task
+
+from app.database import SessionLocal
+from app.reliability.prometheus_client import (
+    PrometheusClientError,
+    PrometheusNoDataError,
+)
+from app.reliability.slo_engine import (
+    evaluate_slo,
+    get_enabled_slo_definitions,
+)
+
+
+logger = logging.getLogger(__name__)
+
+
+def _enum_value(value: Any) -> Any:
+    """
+    Convert Enum values into readable log values.
+    """
+    return getattr(value, "value", value)
+
+
+@shared_task(
+    name="app.reliability.tasks.evaluate_all_slos",
+)
+def evaluate_all_slos() -> dict[str, int]:
+    """
+    Evaluate every enabled SLO definition.
+
+    Each SLO is handled independently so one Prometheus or database
+    failure does not prevent the remaining SLOs from being evaluated.
+    """
+
+    db = SessionLocal()
+
+    summary = {
+        "enabled": 0,
+        "evaluated": 0,
+        "breached": 0,
+        "alerts_created": 0,
+        "failed": 0,
+    }
+
+    try:
+        slo_definitions = get_enabled_slo_definitions(db)
+
+        summary["enabled"] = len(slo_definitions)
+
+        logger.info(
+            "Evaluating SLOs... enabled=%s",
+            len(slo_definitions),
+        )
+
+        for slo_definition in slo_definitions:
+            try:
+                result = evaluate_slo(
+                    db=db,
+                    slo_definition=slo_definition,
+                )
+
+            except (
+                PrometheusNoDataError,
+                PrometheusClientError,
+            ) as exc:
+                db.rollback()
+                summary["failed"] += 1
+
+                logger.warning(
+                    "SLO evaluation skipped "
+                    "slo_definition_id=%s "
+                    "service_id=%s "
+                    "metric_type=%s "
+                    "reason=%s",
+                    slo_definition.id,
+                    slo_definition.service_id,
+                    _enum_value(slo_definition.metric_type),
+                    str(exc),
+                )
+
+                continue
+
+            except Exception:
+                db.rollback()
+                summary["failed"] += 1
+
+                logger.exception(
+                    "SLO evaluation failed "
+                    "slo_definition_id=%s "
+                    "service_id=%s "
+                    "metric_type=%s",
+                    slo_definition.id,
+                    slo_definition.service_id,
+                    _enum_value(slo_definition.metric_type),
+                )
+
+                continue
+
+            summary["evaluated"] += 1
+
+            if result["is_breached"]:
+                summary["breached"] += 1
+
+            if result.get("alert_created", False):
+                summary["alerts_created"] += 1
+
+            logger.info(
+                "%s %s measured=%.3f "
+                "target=%.3f breached=%s",
+                result["service_name"],
+                _enum_value(result["metric_type"]),
+                result["measured_value"],
+                result["target_value"],
+                result["is_breached"],
+            )
+
+            if result.get("alert_created", False):
+                logger.warning(
+                    "Reliability alert created "
+                    "alert_id=%s "
+                    "alert_type=%s "
+                    "service=%s",
+                    result.get("reliability_alert_id"),
+                    _enum_value(
+                        result.get("reliability_alert_type")
+                    ),
+                    result["service_name"],
+                )
+
+        logger.info(
+            "SLO evaluation completed "
+            "enabled=%s evaluated=%s breached=%s "
+            "alerts_created=%s failed=%s",
+            summary["enabled"],
+            summary["evaluated"],
+            summary["breached"],
+            summary["alerts_created"],
+            summary["failed"],
+        )
+
+        return summary
+
+    finally:
+        db.close()

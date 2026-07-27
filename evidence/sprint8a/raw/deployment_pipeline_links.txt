@@ -1,0 +1,206 @@
+backend/app/deployments/kubernetes_capture.py:8:    KUBERNETES_DEPLOYMENT_HEALTHY,
+backend/app/deployments/kubernetes_capture.py:9:    KUBERNETES_DEPLOYMENT_UNHEALTHY,
+backend/app/deployments/kubernetes_capture.py:30:_PREVIOUS_DEPLOYMENT_AVAILABLE_REPLICAS: Dict[str, int] = {}
+backend/app/deployments/kubernetes_capture.py:79:                event_type=KUBERNETES_DEPLOYMENT_HEALTHY,
+backend/app/deployments/kubernetes_capture.py:96:                event_type=KUBERNETES_DEPLOYMENT_UNHEALTHY,
+backend/app/deployments/kubernetes_capture.py:296:            previous_available_replicas = _PREVIOUS_DEPLOYMENT_AVAILABLE_REPLICAS.get(
+backend/app/deployments/kubernetes_capture.py:316:            _PREVIOUS_DEPLOYMENT_AVAILABLE_REPLICAS[key] = available_replicas
+backend/app/deployments/schemas.py:22:    deployment_id: UUID
+backend/app/deployments/schemas.py:30:    pipeline_run_id: Optional[UUID] = None
+backend/app/deployments/schemas.py:33:    commit_sha: Optional[str] = None
+backend/app/deployments/schemas.py:34:    image_tag: str
+backend/app/deployments/schemas.py:59:    pipeline_run_id: Optional[UUID]
+backend/app/deployments/schemas.py:62:    commit_sha: Optional[str]
+backend/app/deployments/schemas.py:63:    image_tag: str
+backend/app/deployments/router.py:13:    DEPLOYMENT_STARTED,
+backend/app/deployments/router.py:14:    DEPLOYMENT_COMPLETED,
+backend/app/deployments/router.py:15:    DEPLOYMENT_FAILED,
+backend/app/deployments/router.py:37:    deployment_id: UUID
+backend/app/deployments/router.py:45:    pipeline_run_id: Optional[str] = None
+backend/app/deployments/router.py:48:    commit_sha: Optional[str] = None
+backend/app/deployments/router.py:49:    image_tag: str
+backend/app/deployments/router.py:74:    pipeline_run_id: Optional[str]
+backend/app/deployments/router.py:77:    commit_sha: Optional[str]
+backend/app/deployments/router.py:78:    image_tag: str
+backend/app/deployments/router.py:118:                deployment_id=deployment.id,
+backend/app/deployments/router.py:124:        deployment_id=deployment.id,
+backend/app/deployments/router.py:126:        image_tag=request.image_tag,
+backend/app/deployments/router.py:127:        commit_sha=request.commit_sha,
+backend/app/deployments/router.py:136:        event_type=DEPLOYMENT_STARTED,
+backend/app/deployments/router.py:137:        correlation_id=str(deployment.pipeline_run_id or deployment.id),
+backend/app/deployments/router.py:141:            "deployment_id": str(deployment.id),
+backend/app/deployments/router.py:142:            "pipeline_run_id": str(deployment.pipeline_run_id)
+backend/app/deployments/router.py:143:            if deployment.pipeline_run_id
+backend/app/deployments/router.py:145:            "image_tag": deployment.image_tag,
+backend/app/deployments/router.py:187:@router.get("/deployments/{deployment_id}", response_model=DeploymentOut)
+backend/app/deployments/router.py:189:    deployment_id: UUID,
+backend/app/deployments/router.py:194:        .filter(Deployment.id == deployment_id)
+backend/app/deployments/router.py:205:    "/deployments/{deployment_id}/workloads",
+backend/app/deployments/router.py:209:    deployment_id: UUID,
+backend/app/deployments/router.py:214:        .filter(Deployment.id == deployment_id)
+backend/app/deployments/router.py:223:        .filter(KubernetesWorkload.deployment_id == deployment_id)
+backend/app/deployments/router.py:232:    "/deployments/{deployment_id}/workloads",
+backend/app/deployments/router.py:236:    deployment_id: UUID,
+backend/app/deployments/router.py:242:        .filter(Deployment.id == deployment_id)
+backend/app/deployments/router.py:250:        deployment_id=deployment_id,
+backend/app/deployments/router.py:292:                event_type=DEPLOYMENT_FAILED,
+backend/app/deployments/router.py:293:                correlation_id=str(deployment.pipeline_run_id or deployment.id),
+backend/app/deployments/router.py:297:                    "deployment_id": str(deployment.id),
+backend/app/deployments/router.py:298:                    "pipeline_run_id": str(deployment.pipeline_run_id)
+backend/app/deployments/router.py:299:                    if deployment.pipeline_run_id
+backend/app/deployments/router.py:301:                    "image_tag": deployment.image_tag,
+backend/app/deployments/router.py:315:                event_type=DEPLOYMENT_COMPLETED,
+backend/app/deployments/router.py:316:                correlation_id=str(deployment.pipeline_run_id or deployment.id),
+backend/app/deployments/router.py:320:                    "deployment_id": str(deployment.id),
+backend/app/deployments/router.py:321:                    "pipeline_run_id": str(deployment.pipeline_run_id)
+backend/app/deployments/router.py:322:                    if deployment.pipeline_run_id
+backend/app/deployments/router.py:324:                    "image_tag": deployment.image_tag,
+backend/app/events/router.py:10:    get_release_timeline,
+backend/app/events/router.py:79:@router.get("/releases/{correlation_id}/timeline")
+backend/app/events/router.py:80:def api_release_timeline(correlation_id: str, db: Session = Depends(get_db)):
+backend/app/events/router.py:81:    events = get_release_timeline(db, correlation_id)
+backend/app/events/service.py:145:def get_release_timeline(db: Session, correlation_id: str):
+backend/app/events/handlers.py:157:    deployment_id = payload.get("deployment_id")
+backend/app/events/handlers.py:159:    if not deployment_id:
+backend/app/events/handlers.py:178:                == deployment_id
+backend/app/events/handlers.py:186:                f"deployment_id={deployment_id}"
+backend/app/events/constants.py:5:TOPIC_DEPLOYMENT_EVENTS = "deployment.events"
+backend/app/events/constants.py:25:DEPLOYMENT_STARTED = "DEPLOYMENT_STARTED"
+backend/app/events/constants.py:26:DEPLOYMENT_COMPLETED = "DEPLOYMENT_COMPLETED"
+backend/app/events/constants.py:27:DEPLOYMENT_FAILED = "DEPLOYMENT_FAILED"
+backend/app/events/constants.py:31:KUBERNETES_DEPLOYMENT_HEALTHY = "KUBERNETES_DEPLOYMENT_HEALTHY"
+backend/app/events/constants.py:32:KUBERNETES_DEPLOYMENT_UNHEALTHY = "KUBERNETES_DEPLOYMENT_UNHEALTHY"
+backend/app/events/constants.py:73:    RELEASE_APPROVED: TOPIC_DEPLOYMENT_EVENTS,
+backend/app/events/constants.py:74:    DEPLOYMENT_STARTED: TOPIC_DEPLOYMENT_EVENTS,
+backend/app/events/constants.py:75:    DEPLOYMENT_COMPLETED: TOPIC_DEPLOYMENT_EVENTS,
+backend/app/events/constants.py:76:    DEPLOYMENT_FAILED: TOPIC_DEPLOYMENT_EVENTS,
+backend/app/events/constants.py:79:    KUBERNETES_DEPLOYMENT_HEALTHY: TOPIC_KUBERNETES_EVENTS,
+backend/app/events/constants.py:80:    KUBERNETES_DEPLOYMENT_UNHEALTHY: TOPIC_KUBERNETES_EVENTS,
+backend/app/incidents/repository.py:243:    PostgreSQL automatically releases this transaction-level advisory
+backend/app/incidents/repository.py:865:    deployment_id: UUID | None = None,
+backend/app/incidents/repository.py:885:        deployment_id=deployment_id,
+backend/app/incidents/consumer.py:9:from app.incidents import repository
+backend/app/incidents/consumer.py:130:        repository.get_incident_alert_link_by_alert_id(
+backend/app/incidents/schemas.py:43:    deployment_id: UUID | None = None
+backend/app/incidents/schemas.py:54:    image_tag: str
+backend/app/incidents/schemas.py:56:    commit_sha: str | None = None
+backend/app/incidents/schemas.py:85:    deployment_id: UUID | None = None
+backend/app/incidents/schemas.py:407:    suspected_deployment_id: UUID | None = None
+backend/app/incidents/service.py:22:from app.incidents import repository, transitions
+backend/app/incidents/service.py:25:    INCIDENT_DEPLOYMENT_CORRELATION_WINDOW_MINUTES,
+backend/app/incidents/service.py:94:    incident = repository.get_incident_by_id(
+backend/app/incidents/service.py:189:    incidents = repository.get_incidents_for_metrics(db)
+backend/app/incidents/service.py:316:        deployment_id=alert.deployment_id,
+backend/app/incidents/service.py:334:        image_tag=deployment.image_tag,
+backend/app/incidents/service.py:336:        commit_sha=deployment.commit_sha,
+backend/app/incidents/service.py:410:        deployment_id=event.deployment_id,
+backend/app/incidents/service.py:475:        suspected_deployment_id=(
+backend/app/incidents/service.py:476:            incident.suspected_deployment_id
+backend/app/incidents/service.py:540:    incidents, total = repository.list_incidents(
+backend/app/incidents/service.py:601:        repository.get_latest_slo_measurements_for_snapshot(
+backend/app/incidents/service.py:613:        repository.create_metric_snapshot(
+backend/app/incidents/service.py:648:        repository.get_latest_error_budget_status_for_snapshot(
+backend/app/incidents/service.py:661:    repository.create_metric_snapshot(
+backend/app/incidents/service.py:814:    alerts = repository.get_incident_alerts(
+backend/app/incidents/service.py:818:    current_assignment = repository.get_latest_active_assignment(
+backend/app/incidents/service.py:822:    assignments = repository.get_incident_assignments(
+backend/app/incidents/service.py:826:    comments = repository.get_incident_comments(
+backend/app/incidents/service.py:830:    metrics = repository.get_incident_metrics(
+backend/app/incidents/service.py:834:    timeline_events = repository.get_incident_timeline(
+backend/app/incidents/service.py:858:    events = repository.get_incident_timeline(
+backend/app/incidents/service.py:908:    snapshots = repository.get_incident_metrics(
+backend/app/incidents/service.py:963:            repository.get_incident_alert_link_by_alert_id(
+backend/app/incidents/service.py:1011:        repository.acquire_incident_deduplication_lock(
+backend/app/incidents/service.py:1025:        suspected_deployment = repository.find_suspected_deployment(
+backend/app/incidents/service.py:1031:                INCIDENT_DEPLOYMENT_CORRELATION_WINDOW_MINUTES
+backend/app/incidents/service.py:1062:        incident = repository.find_open_incident_by_deduplication_key(
+backend/app/incidents/service.py:1084:            incident = repository.create_incident(
+backend/app/incidents/service.py:1096:                suspected_deployment_id=(
+backend/app/incidents/service.py:1110:            alert_link = repository.link_alert_to_incident(
+backend/app/incidents/service.py:1127:            repository.create_timeline_event(
+backend/app/incidents/service.py:1145:            repository.create_timeline_event(
+backend/app/incidents/service.py:1174:            repository.create_timeline_event(
+backend/app/incidents/service.py:1185:                deployment_id=alert.deployment_id,
+backend/app/incidents/service.py:1202:                    or suspected_deployment.image_tag
+backend/app/incidents/service.py:1205:                deployment_released_at = (
+backend/app/incidents/service.py:1212:                repository.create_timeline_event(
+backend/app/incidents/service.py:1215:                    event_type="DEPLOYMENT_RELEASED",
+backend/app/incidents/service.py:1216:                    source="DEPLOYMENT",
+backend/app/incidents/service.py:1218:                        f"Deployment {deployment_label} released "
+backend/app/incidents/service.py:1222:                    deployment_id=suspected_deployment.id,
+backend/app/incidents/service.py:1226:                        "deployment_id": str(
+backend/app/incidents/service.py:1232:                        "image_tag": suspected_deployment.image_tag,
+backend/app/incidents/service.py:1234:                    occurred_at=deployment_released_at,
+backend/app/incidents/service.py:1237:                repository.create_timeline_event(
+backend/app/incidents/service.py:1240:                    event_type="DEPLOYMENT_CORRELATED",
+backend/app/incidents/service.py:1241:                    source="DEPLOYMENT_CORRELATION",
+backend/app/incidents/service.py:1250:                    deployment_id=suspected_deployment.id,
+backend/app/incidents/service.py:1255:                        "deployment_id": str(
+backend/app/incidents/service.py:1263:                        "deployment_released_at": (
+backend/app/incidents/service.py:1272:                            INCIDENT_DEPLOYMENT_CORRELATION_WINDOW_MINUTES
+backend/app/incidents/service.py:1278:                repository.create_audit_event(
+backend/app/incidents/service.py:1280:                    action="INCIDENT_DEPLOYMENT_CORRELATED",
+backend/app/incidents/service.py:1289:                        "deployment_id": str(
+backend/app/incidents/service.py:1299:                        "deployment_released_at": (
+backend/app/incidents/service.py:1311:                            INCIDENT_DEPLOYMENT_CORRELATION_WINDOW_MINUTES
+backend/app/incidents/service.py:1316:            repository.create_audit_event(
+backend/app/incidents/service.py:1340:            linked_alerts = repository.get_incident_alerts(
+backend/app/incidents/service.py:1353:                alert_link = repository.link_alert_to_incident(
+backend/app/incidents/service.py:1365:                repository.create_timeline_event(
+backend/app/incidents/service.py:1383:                # Emit ALERT_ATTACHED only when the repository call above
+backend/app/incidents/service.py:1385:                repository.create_timeline_event(
+backend/app/incidents/service.py:1396:                    deployment_id=alert.deployment_id,
+backend/app/incidents/service.py:1410:                repository.create_audit_event(
+backend/app/incidents/service.py:1434:                repository.update_incident_severity(
+backend/app/incidents/service.py:1440:                repository.create_timeline_event(
+backend/app/incidents/service.py:1452:                    deployment_id=alert.deployment_id,
+backend/app/incidents/service.py:1465:                repository.create_audit_event(
+backend/app/incidents/service.py:1489:            repository.create_metric_snapshot(
+backend/app/incidents/service.py:1512:            repository.create_metric_snapshot(
+backend/app/incidents/service.py:1687:    repository.update_incident_status(
+backend/app/incidents/service.py:1706:    repository.create_timeline_event(
+backend/app/incidents/service.py:1753:    repository.create_audit_event(
+backend/app/incidents/service.py:1863:            repository.close_current_assignment(
+backend/app/incidents/service.py:1869:            repository.create_assignment(
+backend/app/incidents/service.py:1878:            repository.update_incident(
+backend/app/incidents/service.py:1933:        target_user = repository.get_user_by_id(
+backend/app/incidents/service.py:1944:            repository.get_latest_active_assignment(
+backend/app/incidents/service.py:1982:        repository.close_current_assignment(
+backend/app/incidents/service.py:1988:        repository.create_assignment(
+backend/app/incidents/service.py:1997:        repository.update_incident(
+backend/app/incidents/service.py:2009:        repository.create_timeline_event(
+backend/app/incidents/service.py:2029:        repository.create_audit_event(
+backend/app/incidents/service.py:2083:        comment = repository.create_comment(
+backend/app/incidents/service.py:2090:        repository.create_timeline_event(
+backend/app/incidents/service.py:2106:        repository.create_audit_event(
+backend/app/incidents/service.py:2164:        metric = repository.create_metric_snapshot(
+backend/app/incidents/service.py:2176:        repository.create_timeline_event(
+backend/app/incidents/service.py:2197:        repository.create_audit_event(
+backend/app/incidents/service.py:2235:    incidents, _total = repository.list_incidents(
+backend/app/incidents/service.py:2246:        events = repository.get_incident_timeline(
+backend/app/incidents/service.py:2264:                        "deployment_id": (
+backend/app/incidents/service.py:2265:                            str(event.deployment_id) if event.deployment_id else None
+backend/app/incidents/config.py:49:INCIDENT_DEPLOYMENT_CORRELATION_WINDOW_MINUTES = _positive_int_from_env(
+backend/app/incidents/config.py:50:    "INCIDENT_DEPLOYMENT_CORRELATION_WINDOW_MINUTES",
+backend/app/incidents/rules.py:337:            reason_code="DEPLOYMENT_CORRELATED_FAILURE",
+backend/app/incidents/timeline.py:7:DEPLOYMENT_RELEASED = "DEPLOYMENT_RELEASED"
+backend/app/incidents/timeline.py:8:DEPLOYMENT_CORRELATED = "DEPLOYMENT_CORRELATED"
+backend/app/models.py:45:    commit_sha = Column(String, nullable=True)
+backend/app/models.py:104:    pipeline_id = Column(String, ForeignKey("pipelines.id"))
+backend/app/models.py:115:    pipeline_id = Column(String, ForeignKey("pipelines.id"))
+backend/app/models.py:270:    pipeline_runs = relationship("PipelineRun", back_populates="repository")
+backend/app/models.py:288:    commit_sha = Column(String, nullable=True)
+backend/app/models.py:329:    repository = relationship("Repository", back_populates="pipeline_runs")
+backend/app/models.py:338:    pipeline_run_id = Column(String(36), ForeignKey("pipeline_runs.id"), nullable=True)
+backend/app/models.py:341:    commit_sha = Column(String(100), nullable=True)
+backend/app/models.py:342:    image_tag = Column(String(255), nullable=False)
+backend/app/models.py:380:    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+backend/app/models.py:404:    deployment_id = Column(UUID(as_uuid=True), ForeignKey("deployments.id"), nullable=False)
+backend/app/models.py:407:    image_tag = Column(String(255), nullable=True)
+backend/app/models.py:408:    commit_sha = Column(String(100), nullable=True)
+backend/app/models.py:466:    "ix_event_records_release_timeline",
+backend/app/models.py:667:    suspected_deployment_id = Column(
+backend/app/models.py:801:        foreign_keys=[suspected_deployment_id],
+backend/app/models.py:964:    deployment_id = Column(
+backend/app/models.py:1007:        foreign_keys=[deployment_id],
+backend/app/models.py:1600:    deployment_id = Column(

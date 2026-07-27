@@ -1,0 +1,62 @@
+]633;E;grep --color=auto -RInE "os\\.getenv|os\\.environ|BaseSettings|Settings|FEATURE|ENABLED|DISABLED|TIMEOUT|MAX_RETRIES|CELERY|REDIS|BROKER|RESULT_BACKEND" backend/app docker-compose.yml --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__;90d3a1a2-76f0-4cf7-8629-0c5cf4db9cd7]633;Cbackend/app/executor.py:36:        env = os.environ.copy()
+backend/app/executor.py:664:        project_key = os.getenv("SONARQUBE_PROJECT_KEY", "cicd-demo")
+backend/app/celery_app.py:18:CELERY_BROKER_URL = (
+backend/app/celery_app.py:19:    os.getenv("CELERY_BROKER_URL")
+backend/app/celery_app.py:20:    or os.getenv("REDIS_URL")
+backend/app/celery_app.py:23:if not CELERY_BROKER_URL:
+backend/app/celery_app.py:24:    REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+backend/app/celery_app.py:25:    REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+backend/app/celery_app.py:27:    CELERY_BROKER_URL = (
+backend/app/celery_app.py:28:        f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
+backend/app/celery_app.py:38:    broker=CELERY_BROKER_URL,
+backend/app/celery_app.py:115:if CELERY_BROKER_URL.startswith("rediss://"):
+backend/app/deployments/kubernetes_capture.py:23:DEFAULT_NAMESPACE = os.getenv("KUBERNETES_NAMESPACE", "platformiq-demo")
+backend/app/deployments/kubernetes_capture.py:24:DEFAULT_ENVIRONMENT = os.getenv("PLATFORMIQ_ENVIRONMENT", "staging")
+backend/app/main.py:106:    os.getenv("FRONTEND_URL", ""),
+backend/app/main.py:177:    if os.getenv("TESTING") == "1":
+backend/app/events/consumer.py:15:KAFKA_BOOTSTRAP_SERVERS = os.getenv(
+backend/app/events/consumer.py:20:KAFKA_CONSUMER_GROUP_ID = os.getenv(
+backend/app/events/consumer.py:26:    os.getenv("KAFKA_CONSUMER_BATCH_SIZE", "25")
+backend/app/events/consumer.py:29:KAFKA_CONSUMER_TOPICS = os.getenv(
+backend/app/events/consumer.py:34:DEAD_LETTER_TOPIC = os.getenv("DEAD_LETTER_TOPIC", "dead-letter.events")
+backend/app/events/kafka_producer.py:9:KAFKA_BOOTSTRAP_SERVERS = os.getenv(
+backend/app/events/kafka_producer.py:14:KAFKA_CLIENT_ID = os.getenv(
+backend/app/events/outbox_publisher.py:11:OUTBOX_BATCH_SIZE = int(os.getenv("KAFKA_OUTBOX_BATCH_SIZE", "25"))
+backend/app/events/outbox_publisher.py:12:OUTBOX_MAX_RETRIES = int(os.getenv("KAFKA_OUTBOX_MAX_RETRIES", "5"))
+backend/app/events/outbox_publisher.py:82:                if failed_event.retry_count >= OUTBOX_MAX_RETRIES:
+backend/app/pipeline_runner.py:35:            env={**os.environ, **(env or {})},
+backend/app/pipeline_runner.py:71:    base_workdir = Path(os.getenv("PIPELINE_WORKDIR", "/tmp/intelligent-cicd-runs"))
+backend/app/pipeline_runner.py:189:        keep_workdir = os.getenv("KEEP_PIPELINE_WORKDIR", "false").lower() == "true"
+backend/app/incidents/config.py:11:    raw_value = os.getenv(name, str(default))
+backend/app/incidents/config.py:29:    raw_value = os.getenv(name, str(default))
+backend/app/ai_analyzer.py:14:    api_key = os.getenv("OPENAI_API_KEY")
+backend/app/ai_analyzer.py:15:    model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+backend/app/auth/security.py:8:SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-only-change-this-secret")
+backend/app/auth/security.py:10:ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
+backend/app/shared/log_sanitizer.py:37:        os.getenv("SONARQUBE_TOKEN"),
+backend/app/shared/log_sanitizer.py:38:        os.getenv("SONAR_TOKEN"),
+backend/app/database.py:10:DATABASE_URL = os.getenv("DATABASE_URL")
+backend/app/sonar_service.py:12:        os.getenv("SONARQUBE_URL")
+backend/app/sonar_service.py:13:        or os.getenv("SONARQUBE_HOST")
+backend/app/sonar_service.py:14:        or os.getenv("SONARQUBE_HOST_URL")
+backend/app/sonar_service.py:20:    return os.getenv("SONARQUBE_TOKEN", "")
+backend/app/sonar_service.py:24:    return os.getenv("SONARQUBE_PROJECT_KEY", "cicd-demo")
+backend/app/sonar_service.py:79:        env = os.environ.copy()
+backend/app/sonar_service.py:131:    browser_sonar_url = os.getenv("SONARQUBE_BROWSER_URL", "http://localhost:9000")
+backend/app/reliability/prometheus_client.py:10:PROMETHEUS_URL = os.getenv(
+backend/app/reliability/prometheus_client.py:15:PROMETHEUS_TIMEOUT_SECONDS = float(
+backend/app/reliability/prometheus_client.py:16:    os.getenv("PROMETHEUS_TIMEOUT_SECONDS", "5")
+backend/app/reliability/prometheus_client.py:19:HTTP_REQUEST_COUNT_METRIC = os.getenv(
+backend/app/reliability/prometheus_client.py:24:HTTP_REQUEST_BUCKET_METRIC = os.getenv(
+backend/app/reliability/prometheus_client.py:29:SERVICE_LABEL = os.getenv(
+backend/app/reliability/prometheus_client.py:34:SERVICE_VALUE_OVERRIDE = os.getenv(
+backend/app/reliability/prometheus_client.py:39:HTTP_STATUS_LABEL = os.getenv(
+backend/app/reliability/prometheus_client.py:130:            timeout=PROMETHEUS_TIMEOUT_SECONDS,
+docker-compose.yml:29:      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+docker-compose.yml:88:      DYNAMIC_CONFIG_ENABLED: "true"
+docker-compose.yml:114:      REDIS_URL: redis://redis:6379/0
+docker-compose.yml:123:      CELERY_BROKER_URL: redis://redis:6379/0
+docker-compose.yml:165:      REDIS_URL: redis://redis:6379/0
+docker-compose.yml:178:      CELERY_BROKER_URL: redis://redis:6379/0
+docker-compose.yml:217:      REDIS_URL: redis://redis:6379/0
+docker-compose.yml:222:      CELERY_BROKER_URL: redis://redis:6379/0

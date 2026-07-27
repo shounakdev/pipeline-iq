@@ -1,0 +1,21 @@
+backend/app/pipelineiq/reliability/stale_runs.py:1:from datetime import datetime, timedelta
+backend/app/pipelineiq/reliability/stale_runs.py:7:    cutoff = datetime.utcnow() - timedelta(minutes=max_age_minutes)
+backend/app/executor.py:452:    cleanup: bool = True,
+backend/app/executor.py:540:        if not cleanup:
+backend/app/executor.py:758:        if cleanup:
+backend/app/pipeline_runner.py:62:    cleanup: bool = True,
+backend/app/pipeline_runner.py:191:        if cleanup and not keep_workdir and run_folder.exists():
+backend/app/incidents/repository.py:4:from datetime import datetime, timedelta, timezone
+backend/app/incidents/repository.py:282:    correlation_start = detected_at - timedelta(
+backend/app/incidents/repository.py:297:            Deployment.created_at <= detected_at,
+backend/app/incidents/service.py:12:from datetime import datetime, timedelta, timezone
+backend/app/incidents/service.py:1058:        correlation_cutoff = alert_created_at - timedelta(
+backend/app/auth/security.py:2:from datetime import datetime, timedelta, timezone
+backend/app/auth/security.py:26:    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+backend/app/auth/security.py:28:    to_encode.update({"exp": expire})
+backend/app/tasks.py:4:from datetime import datetime, timedelta
+backend/app/tasks.py:251:    - workspace_path points to the temp run folder when cleanup=False
+backend/app/tasks.py:615:    cutoff = datetime.utcnow() - timedelta(minutes=timeout_minutes)
+backend/app/tasks.py:711:            cleanup=False,
+backend/app/reliability/alert_service.py:44:        Deployment.created_at <= correlation_time,
+backend/alembic/versions/fef4a77ac3b0_add_incidents_and_incident_events.py:39:    # Local/dev cleanup from previous incident-table attempts.

@@ -1,0 +1,291 @@
+backend/app/tasks.py:15:from app.events.constants import PIPELINE_COMPLETED, PIPELINE_FAILED
+backend/app/tasks.py:18:try:
+backend/app/tasks.py:23:except Exception:
+backend/app/tasks.py:27:try:
+backend/app/tasks.py:29:except Exception:
+backend/app/tasks.py:40:    try:
+backend/app/tasks.py:71:            "failure_reason": getattr(pipeline, "failure_reason", None),
+backend/app/tasks.py:74:    except Exception:
+backend/app/tasks.py:75:        db.rollback()
+backend/app/tasks.py:85:    Record PIPELINE_COMPLETED / PIPELINE_FAILED into the transactional outbox.
+backend/app/tasks.py:92:    try:
+backend/app/tasks.py:121:                "failure_reason": getattr(pipeline, "failure_reason", None),
+backend/app/tasks.py:128:    except Exception as exc:
+backend/app/tasks.py:129:        db.rollback()
+backend/app/tasks.py:157:    try:
+backend/app/tasks.py:177:    except Exception:
+backend/app/tasks.py:178:        db.rollback()
+backend/app/tasks.py:192:    try:
+backend/app/tasks.py:208:            "failure_reason": getattr(pipeline, "failure_reason", None),
+backend/app/tasks.py:221:    try:
+backend/app/tasks.py:240:    try:
+backend/app/tasks.py:244:    except (TypeError, ValueError):
+backend/app/tasks.py:353:        sonar_status="SUCCESS" if quality_gate != "FAILED" else "FAILED",
+backend/app/tasks.py:374:    try:
+backend/app/tasks.py:411:        try:
+backend/app/tasks.py:424:            analysis.failure_reason = ai_report.get("overall_summary")
+backend/app/tasks.py:432:        except Exception:
+backend/app/tasks.py:433:            db.rollback()
+backend/app/tasks.py:452:    except Exception as ai_error:
+backend/app/tasks.py:453:        try:
+backend/app/tasks.py:458:        except Exception:
+backend/app/tasks.py:484:    try:
+backend/app/tasks.py:516:    except Exception as e:
+backend/app/tasks.py:519:            trivy_status="FAILED",
+backend/app/tasks.py:539:    try:
+backend/app/tasks.py:585:    except Exception as e:
+backend/app/tasks.py:586:        db.rollback()
+backend/app/tasks.py:608:        "FAILED": 100,
+backend/app/tasks.py:614:def mark_stale_running_pipelines_failed(timeout_minutes: int = 45):
+backend/app/tasks.py:615:    cutoff = datetime.utcnow() - timedelta(minutes=timeout_minutes)
+backend/app/tasks.py:619:    try:
+backend/app/tasks.py:635:            status="FAILED",
+backend/app/tasks.py:636:            stage="FAILED",
+backend/app/tasks.py:639:            failure_reason="Pipeline timed out or worker stopped unexpectedly.",
+backend/app/tasks.py:648:        emit_pipeline_terminal_event(stale_pipeline_id, PIPELINE_FAILED)
+backend/app/tasks.py:656:    max_retries=2,
+backend/app/tasks.py:666:    try:
+backend/app/tasks.py:672:                "status": "FAILED",
+backend/app/tasks.py:682:            failure_reason=None,
+backend/app/tasks.py:751:                failure_reason=None,
+backend/app/tasks.py:760:            try:
+backend/app/tasks.py:770:            except Exception as sonar_error:
+backend/app/tasks.py:773:                    sonar_status="FAILED",
+backend/app/tasks.py:836:                failure_reason=None,
+backend/app/tasks.py:851:            execution_result.get("failure_reason")
+backend/app/tasks.py:858:            status="FAILED",
+backend/app/tasks.py:859:            stage="FAILED",
+backend/app/tasks.py:862:            failure_reason=error_message,
+backend/app/tasks.py:865:            build_status=execution_result.get("build_status") or "FAILED",
+backend/app/tasks.py:879:            pipeline_status="FAILED",
+backend/app/tasks.py:888:        emit_pipeline_terminal_event(pipeline_id, PIPELINE_FAILED)
+backend/app/tasks.py:892:            "status": "FAILED",
+backend/app/tasks.py:897:    except Exception as e:
+backend/app/tasks.py:902:        max_retries = self.max_retries or 2
+backend/app/tasks.py:904:        if current_retry < max_retries:
+backend/app/tasks.py:907:            try:
+backend/app/tasks.py:914:                    failure_reason=(
+backend/app/tasks.py:916:                        f"{retry_number}/{max_retries}: {str(e)}"
+backend/app/tasks.py:925:                        f"({retry_number}/{max_retries}): {str(e)}"
+backend/app/tasks.py:929:            except Exception:
+backend/app/tasks.py:932:            raise self.retry(exc=e, countdown=30)
+backend/app/tasks.py:934:        try:
+backend/app/tasks.py:937:                status="FAILED",
+backend/app/tasks.py:938:                stage="FAILED",
+backend/app/tasks.py:941:                failure_reason=str(e),
+backend/app/tasks.py:950:                pipeline_status="FAILED",
+backend/app/tasks.py:959:            emit_pipeline_terminal_event(pipeline_id, PIPELINE_FAILED)
+backend/app/tasks.py:961:        except Exception:
+backend/app/tasks.py:966:            "status": "FAILED",
+backend/app/reliability/tasks.py:50:    try:
+backend/app/reliability/tasks.py:61:            try:
+backend/app/reliability/tasks.py:67:            except (
+backend/app/reliability/tasks.py:71:                db.rollback()
+backend/app/reliability/tasks.py:88:            except Exception:
+backend/app/reliability/tasks.py:89:                db.rollback()
+backend/app/events/consumer.py:12:from app.models import DeadLetterEvent
+backend/app/events/consumer.py:49:        raise ValueError("Event envelope must be a JSON object")
+backend/app/events/consumer.py:54:        raise ValueError(f"Invalid event envelope. Missing fields: {missing}")
+backend/app/events/consumer.py:57:        raise ValueError("Missing event_id")
+backend/app/events/consumer.py:60:        raise ValueError("Missing event_type")
+backend/app/events/consumer.py:63:        raise ValueError("payload must be a JSON object")
+backend/app/events/consumer.py:66:def publish_dead_letter_to_kafka(
+backend/app/events/consumer.py:71:    dead_letter_event_id: str,
+backend/app/events/consumer.py:81:        "event_id": dead_letter_event_id,
+backend/app/events/consumer.py:84:        "correlation_id": dead_letter_event_id,
+backend/app/events/consumer.py:96:        key=dead_letter_event_id,
+backend/app/events/consumer.py:102:def save_dead_letter_event(
+backend/app/events/consumer.py:110:    try:
+backend/app/events/consumer.py:112:        dead_letter_event_id = envelope.get("event_id") or f"dlq_{uuid.uuid4()}"
+backend/app/events/consumer.py:114:        existing = db.query(DeadLetterEvent).filter(
+backend/app/events/consumer.py:115:            DeadLetterEvent.event_id == dead_letter_event_id
+backend/app/events/consumer.py:124:            dead = DeadLetterEvent(
+backend/app/events/consumer.py:125:                event_id=dead_letter_event_id,
+backend/app/events/consumer.py:140:        return dead_letter_event_id
+backend/app/events/consumer.py:142:    except Exception:
+backend/app/events/consumer.py:143:        db.rollback()
+backend/app/events/consumer.py:149:def send_to_dead_letter(
+backend/app/events/consumer.py:155:    dead_letter_event_id = save_dead_letter_event(
+backend/app/events/consumer.py:161:    publish_dead_letter_to_kafka(
+backend/app/events/consumer.py:165:        dead_letter_event_id=dead_letter_event_id,
+backend/app/events/consumer.py:172:    try:
+backend/app/events/consumer.py:173:        try:
+backend/app/events/consumer.py:175:        except Exception as exc:
+backend/app/events/consumer.py:176:            send_to_dead_letter(
+backend/app/events/consumer.py:183:        try:
+backend/app/events/consumer.py:201:        except Exception as exc:
+backend/app/events/consumer.py:202:            db.rollback()
+backend/app/events/consumer.py:204:            send_to_dead_letter(
+backend/app/events/consumer.py:232:    try:
+backend/app/events/consumer.py:238:            timeout=5.0,
+backend/app/events/kafka_producer.py:49:    producer.flush(timeout=10)
+backend/app/events/kafka_producer.py:52:        raise RuntimeError("; ".join(delivery_errors))
+backend/app/events/outbox.py:30:        raise ValueError(f"No Kafka topic mapped for event_type={event_type}")
+backend/app/events/router.py:11:    list_dead_letter_records,
+backend/app/events/router.py:13:    retry_dead_letter_record,
+backend/app/events/router.py:22:    try:
+backend/app/events/router.py:74:        raise HTTPException(status_code=404, detail="Event not found")
+backend/app/events/router.py:91:def api_list_dead_letter_events(
+backend/app/events/router.py:97:    events = list_dead_letter_records(
+backend/app/events/router.py:105:        "dead_letter_events": events,
+backend/app/events/router.py:111:def api_retry_dead_letter_event(event_id: str, db: Session = Depends(get_db)):
+backend/app/events/router.py:112:    event = retry_dead_letter_record(db, event_id)
+backend/app/events/router.py:115:        raise HTTPException(status_code=404, detail="Dead-letter event not found")
+backend/app/events/service.py:11:from app.models import DeadLetterEvent, EventRecord
+backend/app/events/service.py:57:        "processing_error": event.processing_error,
+backend/app/events/service.py:63:def serialize_dead_letter_event(event: DeadLetterEvent) -> dict:
+backend/app/events/service.py:159:def list_dead_letter_records(
+backend/app/events/service.py:166:    query = db.query(DeadLetterEvent)
+backend/app/events/service.py:169:        query = query.filter(DeadLetterEvent.status == status)
+backend/app/events/service.py:172:        query.order_by(DeadLetterEvent.created_at.desc())
+backend/app/events/service.py:178:    return [serialize_dead_letter_event(event) for event in events]
+backend/app/events/service.py:181:def retry_dead_letter_record(db: Session, event_id: str):
+backend/app/events/service.py:182:    dead = db.query(DeadLetterEvent).filter(DeadLetterEvent.event_id == event_id).first()
+backend/app/events/service.py:187:    try:
+backend/app/events/service.py:211:        return serialize_dead_letter_event(dead)
+backend/app/events/service.py:213:    except Exception as exc:
+backend/app/events/service.py:214:        db.rollback()
+backend/app/events/service.py:216:        dead = db.query(DeadLetterEvent).filter(DeadLetterEvent.event_id == event_id).first()
+backend/app/events/service.py:221:        dead.status = "FAILED"
+backend/app/events/service.py:229:        return serialize_dead_letter_event(dead)
+backend/app/events/outbox_publisher.py:48:        try:
+backend/app/events/outbox_publisher.py:63:            event.last_error = None
+backend/app/events/outbox_publisher.py:68:        except Exception as exc:
+backend/app/events/outbox_publisher.py:69:            db.rollback()
+backend/app/events/outbox_publisher.py:79:                failed_event.last_error = str(exc)[:2000]
+backend/app/events/outbox_publisher.py:83:                    failed_event.status = "FAILED"
+backend/app/events/outbox_publisher.py:96:    try:
+backend/app/events/handlers.py:90:        raise ValueError(
+backend/app/events/handlers.py:95:        raise ValueError(
+backend/app/events/handlers.py:136:        raise ValueError(
+backend/app/events/handlers.py:141:    record.processing_error = None
+backend/app/events/handlers.py:162:    try:
+backend/app/events/handlers.py:184:            raise ValueError(
+backend/app/events/handlers.py:195:        elif record.event_type.endswith("_FAILED"):
+backend/app/events/handlers.py:196:            deployment.status = "FAILED"
+backend/app/events/handlers.py:198:    except ValueError:
+backend/app/events/handlers.py:201:    except Exception as exc:
+backend/app/events/handlers.py:202:        raise RuntimeError(
+backend/app/events/handlers.py:272:        raise ValueError(
+backend/app/events/handlers.py:278:        raise ValueError(
+backend/app/events/constants.py:18:PIPELINE_FAILED = "PIPELINE_FAILED"
+backend/app/events/constants.py:27:DEPLOYMENT_FAILED = "DEPLOYMENT_FAILED"
+backend/app/events/constants.py:35:KUBERNETES_ROLLOUT_FAILED = "KUBERNETES_ROLLOUT_FAILED"
+backend/app/events/constants.py:61:REMEDIATION_FAILED = "REMEDIATION_FAILED"
+backend/app/events/constants.py:68:    PIPELINE_FAILED: TOPIC_PIPELINE_EVENTS,
+backend/app/events/constants.py:76:    DEPLOYMENT_FAILED: TOPIC_DEPLOYMENT_EVENTS,
+backend/app/events/constants.py:83:    KUBERNETES_ROLLOUT_FAILED: TOPIC_KUBERNETES_EVENTS,
+backend/app/events/constants.py:97:    REMEDIATION_FAILED: TOPIC_REMEDIATION_RESULTS,
+backend/app/events/idempotency.py:17:    try:
+backend/app/events/idempotency.py:19:    except Exception:
+backend/app/events/idempotency.py:32:        raise ValueError("Missing event_id")
+backend/app/events/idempotency.py:55:    try:
+backend/app/events/idempotency.py:59:    except IntegrityError:
+backend/app/events/idempotency.py:60:        db.rollback()
+backend/app/events/idempotency.py:73:        # Re-raise so the consumer can dead-letter it instead of pretending
+backend/app/incidents/transitions.py:34:        IncidentStatus.FAILED_RECOVERY,
+backend/app/incidents/transitions.py:36:    IncidentStatus.FAILED_RECOVERY: {
+backend/app/incidents/transitions.py:109:        raise InvalidIncidentTransitionError(
+backend/app/incidents/transitions.py:124:        raise InvalidIncidentTransitionError(
+backend/app/incidents/repository.py:278:        raise ValueError(
+backend/app/incidents/repository.py:400:        IncidentStatus.FAILED_RECOVERY,
+backend/app/incidents/repository.py:668:            raise ValueError(
+backend/app/incidents/repository.py:673:            raise ValueError(
+backend/app/incidents/consumer.py:52:        raise ValueError(
+backend/app/incidents/consumer.py:70:    try:
+backend/app/incidents/consumer.py:72:    except (TypeError, ValueError) as exc:
+backend/app/incidents/consumer.py:73:        raise ValueError(
+backend/app/incidents/consumer.py:87:    try:
+backend/app/incidents/consumer.py:89:    except (TypeError, ValueError) as exc:
+backend/app/incidents/consumer.py:90:        raise ValueError(
+backend/app/incidents/consumer.py:124:        raise ValueError(
+backend/app/incidents/consumer.py:142:        raise ValueError(
+backend/app/incidents/incident_router.py:75:        raise HTTPException(
+backend/app/incidents/incident_router.py:87:        raise HTTPException(
+backend/app/incidents/incident_router.py:93:        raise HTTPException(
+backend/app/incidents/incident_router.py:98:    raise error
+backend/app/incidents/incident_router.py:161:        raise HTTPException(
+backend/app/incidents/incident_router.py:393:        raise HTTPException(
+backend/app/incidents/enums.py:13:    FAILED_RECOVERY = "FAILED_RECOVERY"
+backend/app/incidents/schemas.py:113:            raise ValueError("Note cannot be blank")
+backend/app/incidents/schemas.py:135:            raise ValueError(
+backend/app/incidents/schemas.py:148:            raise ValueError("Note cannot be blank")
+backend/app/incidents/schemas.py:167:            raise ValueError("Reason cannot be blank")
+backend/app/incidents/schemas.py:193:            raise ValueError(
+backend/app/incidents/schemas.py:211:            raise ValueError(
+backend/app/incidents/schemas.py:237:            raise ValueError(
+backend/app/incidents/schemas.py:284:            raise ValueError("Comment cannot be blank")
+backend/app/incidents/router.py:56:        raise HTTPException(status_code=404, detail="Incident not found")
+backend/app/incidents/router.py:66:    try:
+backend/app/incidents/router.py:69:    except ValueError as exc:
+backend/app/incidents/router.py:70:        raise HTTPException(status_code=400, detail=str(exc))
+backend/app/incidents/router.py:78:    try:
+backend/app/incidents/router.py:81:    except ValueError as exc:
+backend/app/incidents/router.py:82:        raise HTTPException(status_code=400, detail=str(exc))
+backend/app/incidents/router.py:93:        raise HTTPException(status_code=404, detail="Incident not found")
+backend/app/incidents/service.py:101:        raise IncidentNotFoundError(
+backend/app/incidents/service.py:147:        raise RuntimeError(
+backend/app/incidents/service.py:292:        raise ValueError("Incident primary service could not be loaded")
+backend/app/incidents/service.py:454:        raise ValueError(
+backend/app/incidents/service.py:520:        raise ValueError(
+backend/app/incidents/service.py:525:        raise ValueError(
+backend/app/incidents/service.py:534:        raise ValueError(
+backend/app/incidents/service.py:961:    try:
+backend/app/incidents/service.py:979:                raise RuntimeError(
+backend/app/incidents/service.py:989:            raise ValueError("Incident environment must not be empty")
+backend/app/incidents/service.py:1552:            raise RuntimeError(
+backend/app/incidents/service.py:1558:    except Exception:
+backend/app/incidents/service.py:1559:        db.rollback()
+backend/app/incidents/service.py:1597:    elif requested_status == IncidentStatus.FAILED_RECOVERY:
+backend/app/incidents/service.py:1625:    try:
+backend/app/incidents/service.py:1630:    except IncidentConflictError:
+backend/app/incidents/service.py:1632:    except ValueError as exc:
+backend/app/incidents/service.py:1633:        raise IncidentConflictError(str(exc)) from exc
+backend/app/incidents/service.py:1666:            raise IncidentConflictError(
+backend/app/incidents/service.py:1771:    try:
+backend/app/incidents/service.py:1793:    except Exception:
+backend/app/incidents/service.py:1794:        db.rollback()
+backend/app/incidents/service.py:1810:    try:
+backend/app/incidents/service.py:1830:                raise IncidentConflictError(
+backend/app/incidents/service.py:1892:    except Exception:
+backend/app/incidents/service.py:1893:        db.rollback()
+backend/app/incidents/service.py:1908:    try:
+backend/app/incidents/service.py:1918:            raise IncidentConflictError(
+backend/app/incidents/service.py:1929:            raise ValueError(
+backend/app/incidents/service.py:1939:            raise IncidentNotFoundError(
+backend/app/incidents/service.py:1971:            raise IncidentConflictError(
+backend/app/incidents/service.py:2063:    except Exception:
+backend/app/incidents/service.py:2064:        db.rollback()
+backend/app/incidents/service.py:2082:    try:
+backend/app/incidents/service.py:2129:            raise RuntimeError(
+backend/app/incidents/service.py:2138:    except Exception:
+backend/app/incidents/service.py:2139:        db.rollback()
+backend/app/incidents/service.py:2155:    try:
+backend/app/incidents/service.py:2218:    except Exception:
+backend/app/incidents/service.py:2219:        db.rollback()
+backend/app/incidents/config.py:13:    try:
+backend/app/incidents/config.py:15:    except ValueError as exc:
+backend/app/incidents/config.py:16:        raise ValueError(
+backend/app/incidents/config.py:21:        raise ValueError(f"{name} must be greater than zero")
+backend/app/incidents/config.py:31:    try:
+backend/app/incidents/config.py:33:    except ValueError as exc:
+backend/app/incidents/config.py:34:        raise ValueError(
+backend/app/incidents/config.py:39:        raise ValueError(f"{name} must be greater than zero")
+backend/app/incidents/rules.py:66:        raise ValueError(f"{field_name} is required")
+backend/app/incidents/rules.py:71:        raise ValueError(f"{field_name} must not be empty")
+backend/app/incidents/rules.py:108:        raise ValueError("deduplication_key must not be empty")
+backend/app/incidents/rules.py:131:    try:
+backend/app/incidents/rules.py:133:    except ValueError as exc:
+backend/app/incidents/rules.py:134:        raise ValueError(
+backend/app/incidents/rules.py:181:        raise ValueError("affected_service_count cannot be negative")
+backend/app/incidents/rules.py:184:        raise ValueError(
+backend/app/incidents/rules.py:190:            raise ValueError(
+backend/app/incidents/timeline.py:16:RECOVERY_FAILED = "RECOVERY_FAILED"
+backend/app/incidents/timeline.py:28:    IncidentStatus.FAILED_RECOVERY: RECOVERY_FAILED,
+backend/app/incidents/timeline.py:38:    IncidentStatus.FAILED_RECOVERY: "Recovery attempt failed",
+backend/app/incidents/timeline.py:91:        "FAILED_RECOVERY": "INCIDENT_FAILED_RECOVERY",
+backend/app/incidents/timeline.py:94:    try:
+backend/app/incidents/timeline.py:96:    except KeyError as exc:
+backend/app/incidents/timeline.py:97:        raise ValueError(
+backend/app/incidents/metrics.py:37:        raise ValueError(
+backend/app/incidents/metrics.py:74:        raise ValueError("Duration cannot be negative")

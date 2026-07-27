@@ -1,0 +1,182 @@
+backend/app/deployments/kubernetes_capture.py:29:# Later, move this to a kubernetes_workloads table.
+backend/app/deployments/kubernetes_capture.py:34:def emit_kubernetes_workload_events(
+backend/app/deployments/kubernetes_capture.py:40:    namespace: str,
+backend/app/deployments/kubernetes_capture.py:42:    desired_replicas: int | None = None,
+backend/app/deployments/kubernetes_capture.py:43:    available_replicas: int | None = None,
+backend/app/deployments/kubernetes_capture.py:44:    previous_available_replicas: int | None = None,
+backend/app/deployments/kubernetes_capture.py:45:    pod_name: str | None = None,
+backend/app/deployments/kubernetes_capture.py:46:    pod_phase: str | None = None,
+backend/app/deployments/kubernetes_capture.py:47:    pod_ready: bool | None = None,
+backend/app/deployments/kubernetes_capture.py:48:    restart_count: int | None = None,
+backend/app/deployments/kubernetes_capture.py:49:    previous_restart_count: int | None = None,
+backend/app/deployments/kubernetes_capture.py:52:    Emits only meaningful Kubernetes workload events.
+backend/app/deployments/kubernetes_capture.py:55:    - Do not emit every tiny pod update.
+backend/app/deployments/kubernetes_capture.py:56:    - Emit health changes, unhealthy pods, and restart increases.
+backend/app/deployments/kubernetes_capture.py:61:    has_deployment_replica_data = (
+backend/app/deployments/kubernetes_capture.py:62:        desired_replicas is not None and available_replicas is not None
+backend/app/deployments/kubernetes_capture.py:65:    if has_deployment_replica_data:
+backend/app/deployments/kubernetes_capture.py:67:            desired_replicas > 0 and available_replicas >= desired_replicas
+backend/app/deployments/kubernetes_capture.py:71:            previous_available_replicas is not None
+backend/app/deployments/kubernetes_capture.py:72:            and desired_replicas > 0
+backend/app/deployments/kubernetes_capture.py:73:            and previous_available_replicas >= desired_replicas
+backend/app/deployments/kubernetes_capture.py:84:                    "namespace": namespace,
+backend/app/deployments/kubernetes_capture.py:86:                    "desired_replicas": desired_replicas,
+backend/app/deployments/kubernetes_capture.py:87:                    "available_replicas": available_replicas,
+backend/app/deployments/kubernetes_capture.py:88:                    "previous_available_replicas": previous_available_replicas,
+backend/app/deployments/kubernetes_capture.py:101:                    "namespace": namespace,
+backend/app/deployments/kubernetes_capture.py:103:                    "desired_replicas": desired_replicas,
+backend/app/deployments/kubernetes_capture.py:104:                    "available_replicas": available_replicas,
+backend/app/deployments/kubernetes_capture.py:105:                    "previous_available_replicas": previous_available_replicas,
+backend/app/deployments/kubernetes_capture.py:110:    pod_is_unhealthy = pod_name and (
+backend/app/deployments/kubernetes_capture.py:111:        pod_phase not in ("Running", "Succeeded") or pod_ready is False
+backend/app/deployments/kubernetes_capture.py:114:    if pod_is_unhealthy:
+backend/app/deployments/kubernetes_capture.py:122:                "namespace": namespace,
+backend/app/deployments/kubernetes_capture.py:124:                "pod_name": pod_name,
+backend/app/deployments/kubernetes_capture.py:125:                "pod_phase": pod_phase,
+backend/app/deployments/kubernetes_capture.py:126:                "pod_ready": pod_ready,
+backend/app/deployments/kubernetes_capture.py:132:        pod_name
+backend/app/deployments/kubernetes_capture.py:133:        and restart_count is not None
+backend/app/deployments/kubernetes_capture.py:134:        and previous_restart_count is not None
+backend/app/deployments/kubernetes_capture.py:135:        and restart_count > previous_restart_count
+backend/app/deployments/kubernetes_capture.py:146:                "namespace": namespace,
+backend/app/deployments/kubernetes_capture.py:148:                "pod_name": pod_name,
+backend/app/deployments/kubernetes_capture.py:149:                "restart_count": restart_count,
+backend/app/deployments/kubernetes_capture.py:150:                "previous_restart_count": previous_restart_count,
+backend/app/deployments/kubernetes_capture.py:178:def _deployment_key(namespace: str, deployment_name: str) -> str:
+backend/app/deployments/kubernetes_capture.py:179:    return f"{namespace}/{deployment_name}"
+backend/app/deployments/kubernetes_capture.py:182:def _pod_key(namespace: str, pod_name: str) -> str:
+backend/app/deployments/kubernetes_capture.py:183:    return f"{namespace}/{pod_name}"
+backend/app/deployments/kubernetes_capture.py:196:def _is_pod_ready(pod) -> bool:
+backend/app/deployments/kubernetes_capture.py:197:    conditions = getattr(pod.status, "conditions", None) or []
+backend/app/deployments/kubernetes_capture.py:199:    for condition in conditions:
+backend/app/deployments/kubernetes_capture.py:200:        if condition.type == "Ready":
+backend/app/deployments/kubernetes_capture.py:201:            return condition.status == "True"
+backend/app/deployments/kubernetes_capture.py:206:def _get_pod_restart_count(pod) -> int:
+backend/app/deployments/kubernetes_capture.py:207:    restart_count = 0
+backend/app/deployments/kubernetes_capture.py:209:    container_statuses = getattr(pod.status, "container_statuses", None) or []
+backend/app/deployments/kubernetes_capture.py:211:    for container_status in container_statuses:
+backend/app/deployments/kubernetes_capture.py:212:        restart_count += _safe_int(getattr(container_status, "restart_count", 0))
+backend/app/deployments/kubernetes_capture.py:214:    return restart_count
+backend/app/deployments/kubernetes_capture.py:217:def _infer_deployment_name_from_pod(pod) -> str:
+backend/app/deployments/kubernetes_capture.py:218:    labels = getattr(pod.metadata, "labels", None) or {}
+backend/app/deployments/kubernetes_capture.py:229:    owner_references = getattr(pod.metadata, "owner_references", None) or []
+backend/app/deployments/kubernetes_capture.py:245:    return getattr(pod.metadata, "name", "unknown-pod")
+backend/app/deployments/kubernetes_capture.py:248:def capture_kubernetes_workloads(
+backend/app/deployments/kubernetes_capture.py:251:    namespace: str = DEFAULT_NAMESPACE,
+backend/app/deployments/kubernetes_capture.py:257:    Captures Kubernetes workload state and emits meaningful events.
+backend/app/deployments/kubernetes_capture.py:260:    - deployment health events are based on desired vs available replicas
+backend/app/deployments/kubernetes_capture.py:261:    - pod unhealthy events are based on phase/readiness
+backend/app/deployments/kubernetes_capture.py:278:        deployments = apps_v1.list_namespaced_deployment(namespace=namespace).items
+backend/app/deployments/kubernetes_capture.py:279:        pods = core_v1.list_namespaced_pod(namespace=namespace).items
+backend/app/deployments/kubernetes_capture.py:284:            desired_replicas = _safe_int(
+backend/app/deployments/kubernetes_capture.py:285:                getattr(deployment.spec, "replicas", None),
+backend/app/deployments/kubernetes_capture.py:289:            available_replicas = _safe_int(
+backend/app/deployments/kubernetes_capture.py:290:                getattr(deployment.status, "available_replicas", None),
+backend/app/deployments/kubernetes_capture.py:294:            key = _deployment_key(namespace, deployment_name)
+backend/app/deployments/kubernetes_capture.py:296:            previous_available_replicas = _PREVIOUS_DEPLOYMENT_AVAILABLE_REPLICAS.get(
+backend/app/deployments/kubernetes_capture.py:304:            emitted_count += emit_kubernetes_workload_events(
+backend/app/deployments/kubernetes_capture.py:309:                namespace=namespace,
+backend/app/deployments/kubernetes_capture.py:311:                desired_replicas=desired_replicas,
+backend/app/deployments/kubernetes_capture.py:312:                available_replicas=available_replicas,
+backend/app/deployments/kubernetes_capture.py:313:                previous_available_replicas=previous_available_replicas,
+backend/app/deployments/kubernetes_capture.py:316:            _PREVIOUS_DEPLOYMENT_AVAILABLE_REPLICAS[key] = available_replicas
+backend/app/deployments/kubernetes_capture.py:318:        for pod in pods:
+backend/app/deployments/kubernetes_capture.py:319:            pod_name = pod.metadata.name
+backend/app/deployments/kubernetes_capture.py:320:            pod_phase = getattr(pod.status, "phase", None)
+backend/app/deployments/kubernetes_capture.py:321:            pod_ready = _is_pod_ready(pod)
+backend/app/deployments/kubernetes_capture.py:322:            restart_count = _get_pod_restart_count(pod)
+backend/app/deployments/kubernetes_capture.py:324:            deployment_name = _infer_deployment_name_from_pod(pod)
+backend/app/deployments/kubernetes_capture.py:326:            key = _pod_key(namespace, pod_name)
+backend/app/deployments/kubernetes_capture.py:327:            previous_restart_count = _PREVIOUS_POD_RESTART_COUNTS.get(key)
+backend/app/deployments/kubernetes_capture.py:330:                correlation_id or service_id or deployment_name or pod_name
+backend/app/deployments/kubernetes_capture.py:333:            emitted_count += emit_kubernetes_workload_events(
+backend/app/deployments/kubernetes_capture.py:338:                namespace=namespace,
+backend/app/deployments/kubernetes_capture.py:340:                pod_name=pod_name,
+backend/app/deployments/kubernetes_capture.py:341:                pod_phase=pod_phase,
+backend/app/deployments/kubernetes_capture.py:342:                pod_ready=pod_ready,
+backend/app/deployments/kubernetes_capture.py:343:                restart_count=restart_count,
+backend/app/deployments/kubernetes_capture.py:344:                previous_restart_count=previous_restart_count,
+backend/app/deployments/kubernetes_capture.py:347:            _PREVIOUS_POD_RESTART_COUNTS[key] = restart_count
+backend/app/deployments/kubernetes_capture.py:369:    return capture_kubernetes_workloads()
+backend/app/deployments/kubernetes_capture.py:373:def capture_kubernetes_workload_state(*args, **kwargs) -> int:
+backend/app/deployments/kubernetes_capture.py:374:    return capture_kubernetes_workloads(*args, **kwargs)
+backend/app/deployments/kubernetes_capture.py:378:    return capture_kubernetes_workloads(*args, **kwargs)
+backend/app/deployments/schemas.py:9:    workload_name: str
+backend/app/deployments/schemas.py:10:    namespace: str
+backend/app/deployments/schemas.py:12:    desired_replicas: int = 0
+backend/app/deployments/schemas.py:13:    available_replicas: int = 0
+backend/app/deployments/schemas.py:14:    pod_count: int = 0
+backend/app/deployments/schemas.py:15:    restart_count: int = 0
+backend/app/deployments/schemas.py:17:    failure_reason: Optional[str] = None
+backend/app/deployments/schemas.py:37:    argo_sync_status: Optional[str] = "UNKNOWN"
+backend/app/deployments/schemas.py:38:    kubernetes_rollout_status: Optional[str] = "UNKNOWN"
+backend/app/deployments/schemas.py:41:    namespace: Optional[str] = None
+backend/app/deployments/schemas.py:46:    pod_count: Optional[int] = 0
+backend/app/deployments/schemas.py:47:    restart_count: Optional[int] = 0
+backend/app/deployments/schemas.py:48:    failure_reason: Optional[str] = None
+backend/app/deployments/schemas.py:52:    workloads: Optional[List[KubernetesWorkloadCreate]] = None
+backend/app/deployments/schemas.py:66:    argo_sync_status: Optional[str]
+backend/app/deployments/schemas.py:67:    kubernetes_rollout_status: Optional[str]
+backend/app/deployments/schemas.py:70:    namespace: Optional[str]
+backend/app/deployments/schemas.py:75:    pod_count: Optional[int]
+backend/app/deployments/schemas.py:76:    restart_count: Optional[int]
+backend/app/deployments/schemas.py:77:    failure_reason: Optional[str]
+backend/app/deployments/router.py:24:    workload_name: str
+backend/app/deployments/router.py:25:    namespace: str
+backend/app/deployments/router.py:27:    desired_replicas: int = 0
+backend/app/deployments/router.py:28:    available_replicas: int = 0
+backend/app/deployments/router.py:29:    pod_count: int = 0
+backend/app/deployments/router.py:30:    restart_count: int = 0
+backend/app/deployments/router.py:32:    failure_reason: Optional[str] = None
+backend/app/deployments/router.py:52:    argo_sync_status: Optional[str] = "UNKNOWN"
+backend/app/deployments/router.py:53:    kubernetes_rollout_status: Optional[str] = "UNKNOWN"
+backend/app/deployments/router.py:56:    namespace: Optional[str] = None
+backend/app/deployments/router.py:61:    pod_count: Optional[int] = 0
+backend/app/deployments/router.py:62:    restart_count: Optional[int] = 0
+backend/app/deployments/router.py:63:    failure_reason: Optional[str] = None
+backend/app/deployments/router.py:67:    workloads: Optional[List[KubernetesWorkloadCreate]] = None
+backend/app/deployments/router.py:81:    argo_sync_status: Optional[str]
+backend/app/deployments/router.py:82:    kubernetes_rollout_status: Optional[str]
+backend/app/deployments/router.py:85:    namespace: Optional[str]
+backend/app/deployments/router.py:90:    pod_count: Optional[int]
+backend/app/deployments/router.py:91:    restart_count: Optional[int]
+backend/app/deployments/router.py:92:    failure_reason: Optional[str]
+backend/app/deployments/router.py:105:    deployment_data = request.model_dump(exclude={"workloads"})
+backend/app/deployments/router.py:115:    if request.workloads:
+backend/app/deployments/router.py:116:        for workload_request in request.workloads:
+backend/app/deployments/router.py:117:            workload = KubernetesWorkload(
+backend/app/deployments/router.py:119:                **workload_request.model_dump(),
+backend/app/deployments/router.py:121:            db.add(workload)
+backend/app/deployments/router.py:128:        status=request.kubernetes_rollout_status,
+backend/app/deployments/router.py:147:            "namespace": deployment.namespace,
+backend/app/deployments/router.py:205:    "/deployments/{deployment_id}/workloads",
+backend/app/deployments/router.py:208:def get_deployment_workloads(
+backend/app/deployments/router.py:221:    workloads = (
+backend/app/deployments/router.py:228:    return workloads
+backend/app/deployments/router.py:232:    "/deployments/{deployment_id}/workloads",
+backend/app/deployments/router.py:235:def create_deployment_workload(
+backend/app/deployments/router.py:249:    workload = KubernetesWorkload(
+backend/app/deployments/router.py:254:    previous_rollout_status = (
+backend/app/deployments/router.py:255:        deployment.kubernetes_rollout_status or "UNKNOWN"
+backend/app/deployments/router.py:260:    deployment.pod_count = request.pod_count
+backend/app/deployments/router.py:261:    deployment.restart_count = request.restart_count
+backend/app/deployments/router.py:282:    if request.failure_reason or requested_status in failed_statuses:
+backend/app/deployments/router.py:283:        deployment.kubernetes_rollout_status = "FAILED"
+backend/app/deployments/router.py:284:        deployment.failure_reason = (
+backend/app/deployments/router.py:285:            request.failure_reason
+backend/app/deployments/router.py:286:            or f"Workload {request.workload_name} reported status {request.status}"
+backend/app/deployments/router.py:289:        if previous_rollout_status != "FAILED":
+backend/app/deployments/router.py:302:                    "argo_sync_status": deployment.argo_sync_status,
+backend/app/deployments/router.py:303:                    "kubernetes_rollout_status": deployment.kubernetes_rollout_status,
+backend/app/deployments/router.py:304:                    "failure_reason": deployment.failure_reason,
+backend/app/deployments/router.py:309:        deployment.argo_sync_status = "SYNCED"
+backend/app/deployments/router.py:310:        deployment.kubernetes_rollout_status = "HEALTHY"
+backend/app/deployments/router.py:312:        if previous_rollout_status != "HEALTHY":
+backend/app/deployments/router.py:325:                    "argo_sync_status": deployment.argo_sync_status,
+backend/app/deployments/router.py:326:                    "kubernetes_rollout_status": deployment.kubernetes_rollout_status,
+backend/app/deployments/router.py:327:                    "pod_count": deployment.pod_count,
+backend/app/deployments/router.py:328:                    "restart_count": deployment.restart_count,
+backend/app/deployments/router.py:333:        deployment.kubernetes_rollout_status = request.status
+backend/app/deployments/router.py:335:    db.add(workload)
+backend/app/deployments/router.py:337:    db.refresh(workload)
+backend/app/deployments/router.py:339:    return workload

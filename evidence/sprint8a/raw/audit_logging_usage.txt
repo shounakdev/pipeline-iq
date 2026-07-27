@@ -1,0 +1,147 @@
+backend/app/models.py:417:class AuditEvent(Base):
+backend/app/models.py:418:    __tablename__ = "audit_events"
+backend/app/models.py:421:    actor_id = Column(String, ForeignKey("users.id"), nullable=True)
+backend/app/models.py:423:    entity_type = Column(String, nullable=True)
+backend/app/models.py:424:    entity_id = Column(String, nullable=True)
+backend/app/models.py:425:    details = Column(Text, nullable=True)
+backend/app/models.py.bak:351:class AuditEvent(Base):
+backend/app/models.py.bak:352:    __tablename__ = "audit_events"
+backend/app/models.py.bak:355:    actor_id = Column(String, ForeignKey("users.id"), nullable=True)
+backend/app/models.py.bak:357:    entity_type = Column(String, nullable=True)
+backend/app/models.py.bak:358:    entity_id = Column(String, nullable=True)
+backend/app/models.py.bak:359:    details = Column(Text, nullable=True)
+backend/app/main.py:88:    """Log unhandled failures without exposing internal details."""
+backend/app/events/handlers.py:130:        handle_audit_event(db, record)
+backend/app/events/handlers.py:244:def handle_audit_event(
+backend/app/schemas.py:94:class AuditEventResponse(ResponseSchema):
+backend/app/schemas.py:96:    actor_id: Optional[str] = None
+backend/app/schemas.py:98:    entity_type: str
+backend/app/schemas.py:99:    entity_id: Optional[str] = None
+backend/app/schemas.py:100:    details_json: Optional[str] = None
+backend/app/incidents/repository.py:15:    AuditEvent,
+backend/app/incidents/repository.py:933:def create_audit_event(
+backend/app/incidents/repository.py:937:    entity_type: str,
+backend/app/incidents/repository.py:938:    entity_id: str | None = None,
+backend/app/incidents/repository.py:939:    actor_id: str | None = None,
+backend/app/incidents/repository.py:940:    details: dict[str, Any] | str | None = None,
+backend/app/incidents/repository.py:941:) -> AuditEvent:
+backend/app/incidents/repository.py:942:    if isinstance(details, str):
+backend/app/incidents/repository.py:943:        serialized_details = details
+backend/app/incidents/repository.py:945:        serialized_details = json.dumps(
+backend/app/incidents/repository.py:946:            details or {},
+backend/app/incidents/repository.py:950:    audit_event = AuditEvent(
+backend/app/incidents/repository.py:952:        action=action,
+backend/app/incidents/repository.py:953:        entity_type=entity_type,
+backend/app/incidents/repository.py:954:        entity_id=entity_id,
+backend/app/incidents/repository.py:955:        actor_id=actor_id,
+backend/app/incidents/repository.py:956:        details=serialized_details,
+backend/app/incidents/repository.py:960:    db.add(audit_event)
+backend/app/incidents/repository.py:963:    return audit_event
+backend/app/incidents/incident_router.py:213:    """Return the complete details for one incident."""
+backend/app/incidents/service.py:263:def _json_details(**values: Any) -> str:
+backend/app/incidents/service.py:1278:                repository.create_audit_event(
+backend/app/incidents/service.py:1280:                    action="INCIDENT_DEPLOYMENT_CORRELATED",
+backend/app/incidents/service.py:1281:                    entity_type="INCIDENT",
+backend/app/incidents/service.py:1282:                    entity_id=str(incident.id),
+backend/app/incidents/service.py:1283:                    actor_id=None,
+backend/app/incidents/service.py:1284:                    details={
+backend/app/incidents/service.py:1316:            repository.create_audit_event(
+backend/app/incidents/service.py:1318:                action="INCIDENT_CREATED",
+backend/app/incidents/service.py:1319:                entity_type="INCIDENT",
+backend/app/incidents/service.py:1320:                entity_id=str(incident.id),
+backend/app/incidents/service.py:1321:                actor_id=None,
+backend/app/incidents/service.py:1322:                details={
+backend/app/incidents/service.py:1410:                repository.create_audit_event(
+backend/app/incidents/service.py:1412:                    action="INCIDENT_ALERT_ATTACHED",
+backend/app/incidents/service.py:1413:                    entity_type="INCIDENT",
+backend/app/incidents/service.py:1414:                    entity_id=str(incident.id),
+backend/app/incidents/service.py:1415:                    actor_id=None,
+backend/app/incidents/service.py:1416:                    details={
+backend/app/incidents/service.py:1465:                repository.create_audit_event(
+backend/app/incidents/service.py:1467:                    action="INCIDENT_SEVERITY_CHANGED",
+backend/app/incidents/service.py:1468:                    entity_type="INCIDENT",
+backend/app/incidents/service.py:1469:                    entity_id=str(incident.id),
+backend/app/incidents/service.py:1470:                    actor_id=None,
+backend/app/incidents/service.py:1471:                    details={
+backend/app/incidents/service.py:1737:    audit_details: dict[str, Any] = {
+backend/app/incidents/service.py:1751:    audit_details.update(audit_metadata or {})
+backend/app/incidents/service.py:1753:    repository.create_audit_event(
+backend/app/incidents/service.py:1755:        action=audit_action,
+backend/app/incidents/service.py:1756:        entity_type="Incident",
+backend/app/incidents/service.py:1757:        entity_id=str(incident.id),
+backend/app/incidents/service.py:1758:        actor_id=actor_user_id,
+backend/app/incidents/service.py:1759:        details=audit_details,
+backend/app/incidents/service.py:2029:        repository.create_audit_event(
+backend/app/incidents/service.py:2031:            action="INCIDENT_ASSIGNED",
+backend/app/incidents/service.py:2032:            entity_type="Incident",
+backend/app/incidents/service.py:2033:            entity_id=str(incident.id),
+backend/app/incidents/service.py:2034:            actor_id=assigned_by_user_id,
+backend/app/incidents/service.py:2035:            details={
+backend/app/incidents/service.py:2106:        repository.create_audit_event(
+backend/app/incidents/service.py:2108:            action="INCIDENT_COMMENT_CREATED",
+backend/app/incidents/service.py:2109:            entity_type="IncidentComment",
+backend/app/incidents/service.py:2110:            entity_id=str(comment.id),
+backend/app/incidents/service.py:2111:            actor_id=str(actor.id),
+backend/app/incidents/service.py:2112:            details=_json_details(
+backend/app/incidents/service.py:2197:        repository.create_audit_event(
+backend/app/incidents/service.py:2199:            action="INCIDENT_METRIC_CAPTURED",
+backend/app/incidents/service.py:2200:            entity_type="INCIDENT",
+backend/app/incidents/service.py:2201:            entity_id=str(incident.id),
+backend/app/incidents/service.py:2202:            actor_id=actor_user_id,
+backend/app/incidents/service.py:2203:            details=_json_details(
+backend/app/incidents/schemas.py.sprint5.bak:42:    details: dict[str, Any] = {}
+backend/app/control_plane/routes.py:11:from app.audit.service import create_audit_event
+backend/app/control_plane/routes.py:14:    AuditEvent,
+backend/app/control_plane/routes.py:23:    AuditEventResponse,
+backend/app/control_plane/routes.py:55:    create_audit_event(
+backend/app/control_plane/routes.py:57:        action="PROJECT_CREATED",
+backend/app/control_plane/routes.py:58:        entity_type="Project",
+backend/app/control_plane/routes.py:59:        entity_id=project.id,
+backend/app/control_plane/routes.py:60:        actor_id=request.created_by,
+backend/app/control_plane/routes.py:61:        details={
+backend/app/control_plane/routes.py:114:    create_audit_event(
+backend/app/control_plane/routes.py:116:        action="SERVICE_CREATED",
+backend/app/control_plane/routes.py:117:        entity_type="Service",
+backend/app/control_plane/routes.py:118:        entity_id=service.id,
+backend/app/control_plane/routes.py:119:        actor_id=None,
+backend/app/control_plane/routes.py:120:        details={
+backend/app/control_plane/routes.py:208:    create_audit_event(
+backend/app/control_plane/routes.py:210:        action="REPOSITORY_CONNECTED",
+backend/app/control_plane/routes.py:211:        entity_type="Repository",
+backend/app/control_plane/routes.py:212:        entity_id=repository.id,
+backend/app/control_plane/routes.py:213:        actor_id=service.owner,
+backend/app/control_plane/routes.py:214:        details={
+backend/app/control_plane/routes.py:261:    create_audit_event(
+backend/app/control_plane/routes.py:263:        action="ENVIRONMENT_CREATED",
+backend/app/control_plane/routes.py:264:        entity_type="Environment",
+backend/app/control_plane/routes.py:265:        entity_id=environment.id,
+backend/app/control_plane/routes.py:266:        actor_id=service.owner,
+backend/app/control_plane/routes.py:267:        details={
+backend/app/control_plane/routes.py:349:    create_audit_event(
+backend/app/control_plane/routes.py:351:        action="SERVICE_PIPELINE_TRIGGERED",
+backend/app/control_plane/routes.py:352:        entity_type="Pipeline",
+backend/app/control_plane/routes.py:353:        entity_id=pipeline_id,
+backend/app/control_plane/routes.py:354:        actor_id=service.owner,
+backend/app/control_plane/routes.py:355:        details={
+backend/app/control_plane/routes.py:386:    response_model=list[AuditEventResponse],
+backend/app/control_plane/routes.py:388:def list_audit_events(
+backend/app/control_plane/routes.py:395:        db.query(AuditEvent)
+backend/app/control_plane/routes.py:396:        .order_by(AuditEvent.created_at.desc())
+backend/app/audit/service.py:7:from app.models import AuditEvent
+backend/app/audit/service.py:10:def create_audit_event(
+backend/app/audit/service.py:13:    entity_type: str,
+backend/app/audit/service.py:14:    entity_id: Optional[str] = None,
+backend/app/audit/service.py:15:    actor_id: Optional[str] = None,
+backend/app/audit/service.py:16:    details: Optional[dict[str, Any]] = None,
+backend/app/audit/service.py:17:) -> AuditEvent:
+backend/app/audit/service.py:18:    audit_event = AuditEvent(
+backend/app/audit/service.py:20:    actor_id=actor_id,
+backend/app/audit/service.py:21:    action=action,
+backend/app/audit/service.py:22:    entity_type=entity_type,
+backend/app/audit/service.py:23:    entity_id=entity_id,
+backend/app/audit/service.py:24:    details=json.dumps(details),
+backend/app/audit/service.py:27:    db.add(audit_event)
+backend/app/audit/service.py:28:    return audit_event
+backend/app/reliability/query_service.py:588:    Return alert details with its SLO definition and correlated
+backend/alembic/versions/a4317896711c_add_platformiq_auth_and_control_plane_.py:27:    op.add_column('audit_events', sa.Column('details', sa.Text(), nullable=True))
+backend/alembic/versions/a4317896711c_add_platformiq_auth_and_control_plane_.py:32:    op.drop_column('audit_events', 'details')

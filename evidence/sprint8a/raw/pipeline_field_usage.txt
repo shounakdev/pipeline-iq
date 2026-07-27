@@ -1,0 +1,470 @@
+]633;E;for field in repository_url branch commit_sha status build_status test_status sonar_status trivy_status started_at completed_at duration logs coverage quality_gate bugs vulnerabilities code_smells security_hotspots final_status;90d3a1a2-76f0-4cf7-8629-0c5cf4db9cd7]633;C===== repository_url =====
+
+===== branch =====
+backend/app/models.py:36:    branch = Column(String, nullable=False, default="main")
+backend/app/models.py:266:    default_branch = Column(String, default="main")
+backend/app/models.py:282:    branch = Column(String, default="main")
+backend/app/executor.py:450:    branch: str,
+backend/app/executor.py:556:        log(f"Branch: {branch}")
+backend/app/executor.py:573:            ["git", "checkout", branch],
+backend/app/pipeline_runner.py:59:    branch: str = "main",
+backend/app/pipeline_runner.py:83:        _emit(logs, f"Branch: {branch}\n", on_log)
+backend/app/pipeline_runner.py:89:            ["git", "clone", "--depth", "1", "--branch", branch, repo_url, str(repo_folder)],
+
+===== commit_sha =====
+backend/app/models.py:45:    commit_sha = Column(String, nullable=True)
+backend/app/models.py:288:    commit_sha = Column(String, nullable=True)
+backend/app/models.py:341:    commit_sha = Column(String(100), nullable=True)
+backend/app/models.py:408:    commit_sha = Column(String(100), nullable=True)
+backend/app/executor.py:459:        "commit_sha": None,
+backend/app/executor.py:582:        commit_sha_result = run_command(
+backend/app/executor.py:589:        if commit_sha_result["success"]:
+backend/app/executor.py:590:            update_state(commit_sha=commit_sha_result.get("output", "").strip())
+backend/app/executor.py:604:            commit_sha=state["commit_sha"],
+
+===== status =====
+backend/app/models.py:37:    status = Column(String, nullable=False, default="PENDING")
+backend/app/models.py:48:    build_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:49:    test_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:50:    sonar_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:51:    trivy_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:121:    final_status = Column(String, nullable=True)
+backend/app/models.py:221:    status = Column(
+backend/app/models.py:284:    status = Column(String, default="PENDING")
+backend/app/models.py:291:    build_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:292:    test_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:293:    sonar_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:294:    trivy_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:345:    argo_sync_status = Column(String(50), nullable=True, default="UNKNOWN")
+backend/app/models.py:346:    kubernetes_rollout_status = Column(String(50), nullable=True, default="UNKNOWN")
+backend/app/models.py:391:    status = Column(String(50), nullable=True, default="UNKNOWN")
+backend/app/models.py:409:    status = Column(String(50), nullable=True)
+backend/app/models.py:448:    processing_status = Column(
+backend/app/models.py:488:    status = Column(String, index=True, nullable=False, default="PENDING")
+backend/app/models.py:552:    status = Column(String, nullable=False, default="OPEN", index=True)
+backend/app/models.py:599:incident_status_enum = SQLEnum(
+backend/app/models.py:601:    name="incidentstatus",
+backend/app/models.py:640:    status = Column(
+backend/app/models.py:641:        incident_status_enum,
+backend/app/models.py:874:            "ix_incidents_status",
+backend/app/models.py:875:            "status",
+backend/app/models.py:939:    from_status = Column(
+backend/app/models.py:940:        incident_status_enum,
+backend/app/models.py:944:    to_status = Column(
+backend/app/models.py:945:        incident_status_enum,
+backend/app/models.py:1407:    error_budget_statuses = relationship(
+backend/app/models.py:1482:    __tablename__ = "error_budget_statuses"
+backend/app/models.py:1528:    status = Column(
+backend/app/models.py:1552:        back_populates="error_budget_statuses",
+backend/app/models.py:1607:    status = Column(
+backend/app/models.py:1610:            name="reliability_alert_status",
+backend/app/executor.py:143:            ["quality_gate", "quality_gate_status", "qualityGate"],
+backend/app/executor.py:310:    build_status = payload.get("build_status")
+backend/app/executor.py:311:    test_status = payload.get("test_status")
+backend/app/executor.py:312:    sonar_status = payload.get("sonar_status")
+backend/app/executor.py:313:    trivy_status = payload.get("trivy_status")
+backend/app/executor.py:325:    if build_status == "FAILED":
+backend/app/executor.py:329:    if test_status == "FAILED":
+backend/app/executor.py:333:    if sonar_status == "FAILED":
+backend/app/executor.py:337:    if trivy_status == "FAILED":
+backend/app/executor.py:394:        f"Build={build_status or 'UNKNOWN'}, "
+backend/app/executor.py:395:        f"Tests={test_status or 'UNKNOWN'}, "
+backend/app/executor.py:396:        f"Sonar={sonar_status or 'UNKNOWN'}, "
+backend/app/executor.py:397:        f"Trivy={trivy_status or 'UNKNOWN'}, "
+backend/app/executor.py:462:        "build_status": None,
+backend/app/executor.py:463:        "test_status": None,
+backend/app/executor.py:464:        "sonar_status": None,
+backend/app/executor.py:465:        "trivy_status": None,
+backend/app/executor.py:632:        update_state(test_status="RUNNING")
+backend/app/executor.py:633:        stage("TESTING", test_status="RUNNING")
+backend/app/executor.py:643:            return fail("npm test failed", test_status="FAILED")
+backend/app/executor.py:645:        update_state(test_status="SUCCESS")
+backend/app/executor.py:646:        stage("TESTING", test_status="SUCCESS")
+backend/app/executor.py:648:        update_state(build_status="RUNNING")
+backend/app/executor.py:649:        stage("BUILDING", build_status="RUNNING")
+backend/app/executor.py:659:            return fail("npm run build failed", build_status="FAILED")
+backend/app/executor.py:661:        update_state(build_status="SUCCESS")
+backend/app/executor.py:662:        stage("BUILDING", build_status="SUCCESS")
+backend/app/executor.py:666:        update_state(sonar_status="RUNNING")
+backend/app/executor.py:667:        stage("SONAR", sonar_status="RUNNING")
+backend/app/executor.py:679:            update_state(sonar_status="SKIPPED")
+backend/app/executor.py:680:            stage("SONAR", sonar_status="SKIPPED", **sonar_fields)
+backend/app/executor.py:687:            update_state(sonar_status="FAILED")
+backend/app/executor.py:688:            stage("SONAR", sonar_status="FAILED", **sonar_fields)
+backend/app/executor.py:703:            update_state(sonar_status="SUCCESS")
+backend/app/executor.py:704:            stage("SONAR", sonar_status="SUCCESS", **sonar_fields)
+backend/app/executor.py:707:        update_state(trivy_status="RUNNING")
+backend/app/executor.py:708:        stage("TRIVY", trivy_status="RUNNING")
+backend/app/executor.py:715:            update_state(trivy_status="SKIPPED")
+backend/app/executor.py:716:            stage("TRIVY", trivy_status="SKIPPED", **trivy_fields)
+backend/app/executor.py:727:            update_state(trivy_status="FAILED")
+backend/app/executor.py:728:            stage("TRIVY", trivy_status="FAILED", **trivy_fields)
+backend/app/executor.py:743:            update_state(trivy_status="SUCCESS")
+backend/app/executor.py:744:            stage("TRIVY", trivy_status="SUCCESS", **trivy_fields)
+backend/app/pipelineiq/security/trivy_scan.py:14:            "status": "FAILED",
+backend/app/pipelineiq/security/trivy_scan.py:42:                "status": "FAILED",
+backend/app/pipelineiq/security/trivy_scan.py:74:            "status": "SUCCESS",
+backend/app/pipelineiq/security/trivy_scan.py:87:            "status": "FAILED",
+backend/app/pipelineiq/security/trivy_scan.py:100:            "status": "FAILED",
+backend/app/pipelineiq/risk/release_risk.py:5:    calculate_release_risk(build_status=..., trivy_status=...)
+backend/app/pipelineiq/risk/release_risk.py:13:    build_status = payload.get("build_status")
+backend/app/pipelineiq/risk/release_risk.py:14:    test_status = payload.get("test_status")
+backend/app/pipelineiq/risk/release_risk.py:15:    sonar_status = payload.get("sonar_status")
+backend/app/pipelineiq/risk/release_risk.py:16:    trivy_status = payload.get("trivy_status")
+backend/app/pipelineiq/risk/release_risk.py:34:    if build_status == "FAILED":
+backend/app/pipelineiq/risk/release_risk.py:38:    if test_status == "FAILED":
+backend/app/pipelineiq/risk/release_risk.py:42:    if sonar_status == "FAILED":
+backend/app/pipelineiq/risk/release_risk.py:46:    if trivy_status in {"FAILED", "SKIPPED"}:
+backend/app/pipelineiq/risk/release_risk.py:87:        f"Build={build_status}, Tests={test_status}, Sonar={sonar_status}, "
+backend/app/pipelineiq/risk/release_risk.py:88:        f"Trivy={trivy_status}, Trivy critical/high={trivy_critical}/{trivy_high}."
+backend/app/pipelineiq/risk/release_risk.py:118:    build_status = _get_run_value(run, "build_status", "UNKNOWN")
+backend/app/pipelineiq/risk/release_risk.py:119:    test_status = _get_run_value(run, "test_status", "UNKNOWN")
+backend/app/pipelineiq/risk/release_risk.py:131:    if build_status == "FAILED":
+backend/app/pipelineiq/risk/release_risk.py:135:    if test_status == "FAILED":
+backend/app/pipelineiq/intelligence/risk_engine.py:6:        build_status=getattr(pipeline, "build_status", None),
+backend/app/pipelineiq/intelligence/risk_engine.py:7:        test_status=getattr(pipeline, "test_status", None),
+backend/app/pipelineiq/intelligence/risk_engine.py:8:        sonar_status=getattr(pipeline, "sonar_status", None),
+backend/app/pipelineiq/intelligence/risk_engine.py:9:        trivy_status=getattr(pipeline, "trivy_status", None),
+backend/app/pipelineiq/reliability/stale_runs.py:11:        .filter(Pipeline.status == "RUNNING")
+backend/app/pipelineiq/reliability/stale_runs.py:17:        pipeline.status = "FAILED"
+backend/app/ai_analyzer.py:10:    pipeline_status: str,
+backend/app/ai_analyzer.py:21:            pipeline_status=pipeline_status,
+backend/app/ai_analyzer.py:31:            "final_status": {
+backend/app/ai_analyzer.py:71:            "final_status",
+backend/app/ai_analyzer.py:87:Pipeline status:
+backend/app/ai_analyzer.py:88:{pipeline_status}
+backend/app/ai_analyzer.py:97:- If build/test failed, final_status must be FAILED.
+backend/app/ai_analyzer.py:98:- If build/test passed but npm audit, lint warnings, SonarQube issues, low coverage, bugs, vulnerabilities, or code smells exist, final_status should be PASS_WITH_WARNINGS.
+backend/app/ai_analyzer.py:99:- If everything is clean and quality gate passed, final_status should be PASS.
+backend/app/ai_analyzer.py:123:            pipeline_status=pipeline_status,
+backend/app/ai_analyzer.py:137:    pipeline_status: str,
+backend/app/ai_analyzer.py:161:    if pipeline_status == "FAILED":
+backend/app/ai_analyzer.py:188:    if pipeline_status == "SUCCESS" and quality_gate in ["OK", "PASSED"] and not priority_items:
+backend/app/ai_analyzer.py:189:        final_status = "PASS"
+backend/app/ai_analyzer.py:190:    elif pipeline_status == "SUCCESS":
+backend/app/ai_analyzer.py:191:        final_status = "PASS_WITH_WARNINGS"
+backend/app/ai_analyzer.py:193:        final_status = "FAILED"
+backend/app/ai_analyzer.py:196:        "final_status": final_status,
+backend/app/ai_analyzer.py:197:        "overall_summary": f"Pipeline finished with status {pipeline_status}. Quality gate: {quality_gate}.",
+backend/app/sonar_service.py:27:def normalize_quality_gate_status(status: str):
+backend/app/sonar_service.py:28:    if status == "OK":
+backend/app/sonar_service.py:30:    if status == "ERROR":
+backend/app/sonar_service.py:32:    if status == "WARN":
+backend/app/sonar_service.py:34:    return status or "UNKNOWN"
+backend/app/sonar_service.py:181:        measures_response.raise_for_status()
+backend/app/sonar_service.py:193:            f"{sonar_url}/api/qualitygates/project_status",
+backend/app/sonar_service.py:199:        gate_response.raise_for_status()
+backend/app/sonar_service.py:204:            .get("status", "UNKNOWN")
+backend/app/sonar_service.py:208:        report["quality_gate"] = normalize_quality_gate_status(raw_quality_gate)
+backend/app/sonar_service.py:221:        issues_response.raise_for_status()
+
+===== build_status =====
+backend/app/models.py:48:    build_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:291:    build_status = Column(String, default="NOT_STARTED")
+backend/app/executor.py:310:    build_status = payload.get("build_status")
+backend/app/executor.py:325:    if build_status == "FAILED":
+backend/app/executor.py:394:        f"Build={build_status or 'UNKNOWN'}, "
+backend/app/executor.py:462:        "build_status": None,
+backend/app/executor.py:648:        update_state(build_status="RUNNING")
+backend/app/executor.py:649:        stage("BUILDING", build_status="RUNNING")
+backend/app/executor.py:659:            return fail("npm run build failed", build_status="FAILED")
+backend/app/executor.py:661:        update_state(build_status="SUCCESS")
+backend/app/executor.py:662:        stage("BUILDING", build_status="SUCCESS")
+backend/app/pipelineiq/risk/release_risk.py:5:    calculate_release_risk(build_status=..., trivy_status=...)
+backend/app/pipelineiq/risk/release_risk.py:13:    build_status = payload.get("build_status")
+backend/app/pipelineiq/risk/release_risk.py:34:    if build_status == "FAILED":
+backend/app/pipelineiq/risk/release_risk.py:87:        f"Build={build_status}, Tests={test_status}, Sonar={sonar_status}, "
+backend/app/pipelineiq/risk/release_risk.py:118:    build_status = _get_run_value(run, "build_status", "UNKNOWN")
+backend/app/pipelineiq/risk/release_risk.py:131:    if build_status == "FAILED":
+backend/app/pipelineiq/intelligence/risk_engine.py:6:        build_status=getattr(pipeline, "build_status", None),
+
+===== test_status =====
+backend/app/models.py:49:    test_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:292:    test_status = Column(String, default="NOT_STARTED")
+backend/app/executor.py:311:    test_status = payload.get("test_status")
+backend/app/executor.py:329:    if test_status == "FAILED":
+backend/app/executor.py:395:        f"Tests={test_status or 'UNKNOWN'}, "
+backend/app/executor.py:463:        "test_status": None,
+backend/app/executor.py:632:        update_state(test_status="RUNNING")
+backend/app/executor.py:633:        stage("TESTING", test_status="RUNNING")
+backend/app/executor.py:643:            return fail("npm test failed", test_status="FAILED")
+backend/app/executor.py:645:        update_state(test_status="SUCCESS")
+backend/app/executor.py:646:        stage("TESTING", test_status="SUCCESS")
+backend/app/pipelineiq/risk/release_risk.py:14:    test_status = payload.get("test_status")
+backend/app/pipelineiq/risk/release_risk.py:38:    if test_status == "FAILED":
+backend/app/pipelineiq/risk/release_risk.py:87:        f"Build={build_status}, Tests={test_status}, Sonar={sonar_status}, "
+backend/app/pipelineiq/risk/release_risk.py:119:    test_status = _get_run_value(run, "test_status", "UNKNOWN")
+backend/app/pipelineiq/risk/release_risk.py:135:    if test_status == "FAILED":
+backend/app/pipelineiq/intelligence/risk_engine.py:7:        test_status=getattr(pipeline, "test_status", None),
+
+===== sonar_status =====
+backend/app/models.py:50:    sonar_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:293:    sonar_status = Column(String, default="NOT_STARTED")
+backend/app/executor.py:312:    sonar_status = payload.get("sonar_status")
+backend/app/executor.py:333:    if sonar_status == "FAILED":
+backend/app/executor.py:396:        f"Sonar={sonar_status or 'UNKNOWN'}, "
+backend/app/executor.py:464:        "sonar_status": None,
+backend/app/executor.py:666:        update_state(sonar_status="RUNNING")
+backend/app/executor.py:667:        stage("SONAR", sonar_status="RUNNING")
+backend/app/executor.py:679:            update_state(sonar_status="SKIPPED")
+backend/app/executor.py:680:            stage("SONAR", sonar_status="SKIPPED", **sonar_fields)
+backend/app/executor.py:687:            update_state(sonar_status="FAILED")
+backend/app/executor.py:688:            stage("SONAR", sonar_status="FAILED", **sonar_fields)
+backend/app/executor.py:703:            update_state(sonar_status="SUCCESS")
+backend/app/executor.py:704:            stage("SONAR", sonar_status="SUCCESS", **sonar_fields)
+backend/app/pipelineiq/risk/release_risk.py:15:    sonar_status = payload.get("sonar_status")
+backend/app/pipelineiq/risk/release_risk.py:42:    if sonar_status == "FAILED":
+backend/app/pipelineiq/risk/release_risk.py:87:        f"Build={build_status}, Tests={test_status}, Sonar={sonar_status}, "
+backend/app/pipelineiq/intelligence/risk_engine.py:8:        sonar_status=getattr(pipeline, "sonar_status", None),
+
+===== trivy_status =====
+backend/app/models.py:51:    trivy_status = Column(String, default="NOT_STARTED")
+backend/app/models.py:294:    trivy_status = Column(String, default="NOT_STARTED")
+backend/app/executor.py:313:    trivy_status = payload.get("trivy_status")
+backend/app/executor.py:337:    if trivy_status == "FAILED":
+backend/app/executor.py:397:        f"Trivy={trivy_status or 'UNKNOWN'}, "
+backend/app/executor.py:465:        "trivy_status": None,
+backend/app/executor.py:707:        update_state(trivy_status="RUNNING")
+backend/app/executor.py:708:        stage("TRIVY", trivy_status="RUNNING")
+backend/app/executor.py:715:            update_state(trivy_status="SKIPPED")
+backend/app/executor.py:716:            stage("TRIVY", trivy_status="SKIPPED", **trivy_fields)
+backend/app/executor.py:727:            update_state(trivy_status="FAILED")
+backend/app/executor.py:728:            stage("TRIVY", trivy_status="FAILED", **trivy_fields)
+backend/app/executor.py:743:            update_state(trivy_status="SUCCESS")
+backend/app/executor.py:744:            stage("TRIVY", trivy_status="SUCCESS", **trivy_fields)
+backend/app/pipelineiq/risk/release_risk.py:5:    calculate_release_risk(build_status=..., trivy_status=...)
+backend/app/pipelineiq/risk/release_risk.py:16:    trivy_status = payload.get("trivy_status")
+backend/app/pipelineiq/risk/release_risk.py:46:    if trivy_status in {"FAILED", "SKIPPED"}:
+backend/app/pipelineiq/risk/release_risk.py:88:        f"Trivy={trivy_status}, Trivy critical/high={trivy_critical}/{trivy_high}."
+backend/app/pipelineiq/intelligence/risk_engine.py:9:        trivy_status=getattr(pipeline, "trivy_status", None),
+
+===== started_at =====
+backend/app/models.py:56:    started_at = Column(DateTime, nullable=True)
+backend/app/models.py:324:    started_at = Column(DateTime(timezone=True), nullable=True)
+backend/app/models.py:681:    failure_started_at = Column(
+backend/app/models.py:697:    investigation_started_at = Column(
+backend/app/models.py:702:    remediation_started_at = Column(
+backend/app/models.py:780:    started_at = Column(
+backend/app/models.py:865:    @validates("started_at")
+backend/app/models.py:866:    def sync_legacy_started_at(self, key, value):
+backend/app/models.py:868:            self.failure_started_at = value
+
+===== completed_at =====
+
+===== duration =====
+backend/app/models.py:58:    duration_seconds = Column(Float, nullable=True)
+backend/app/models.py:326:    duration_seconds = Column(Float, nullable=True)
+
+===== logs =====
+backend/app/models.py:86:    logs = relationship(
+backend/app/models.py:101:    __tablename__ = "logs"
+backend/app/models.py:108:    pipeline = relationship("Pipeline", back_populates="logs")
+backend/app/models.py:321:    logs = Column(MutableList.as_mutable(JSON), default=list, nullable=False)
+backend/app/executor.py:454:    logs: list[str] = []
+backend/app/executor.py:500:        if logs and logs[-1] == clean_message:
+backend/app/executor.py:503:        logs.append(clean_message)
+backend/app/executor.py:535:            "logs": sanitize_log_lines(logs),
+backend/app/pipeline_runner.py:14:def _emit(logs, text, on_log=None):
+backend/app/pipeline_runner.py:17:    logs.append(safe_text)
+backend/app/pipeline_runner.py:20:        on_log("".join(logs))
+backend/app/pipeline_runner.py:23:def _run_command(command, cwd, logs, timeout_seconds=900, env=None, on_log=None):
+backend/app/pipeline_runner.py:25:    _emit(logs, f"\n$ {command_text}\n", on_log)
+backend/app/pipeline_runner.py:40:        _emit(logs, output, on_log)
+backend/app/pipeline_runner.py:46:    _emit(logs, output, on_log)
+backend/app/pipeline_runner.py:64:    logs = []
+backend/app/pipeline_runner.py:81:        _emit(logs, "Starting real Node.js pipeline execution...\n", on_log)
+backend/app/pipeline_runner.py:82:        _emit(logs, f"Repo: {repo_url}\n", on_log)
+backend/app/pipeline_runner.py:83:        _emit(logs, f"Branch: {branch}\n", on_log)
+backend/app/pipeline_runner.py:91:            logs=logs,
+backend/app/pipeline_runner.py:109:        _emit(logs, "\npackage.json found. Node.js project detected.\n", on_log)
+backend/app/pipeline_runner.py:126:        _emit(logs, "Required npm scripts found: test and build.\n", on_log)
+backend/app/pipeline_runner.py:134:            logs=logs,
+backend/app/pipeline_runner.py:146:            logs=logs,
+backend/app/pipeline_runner.py:159:            logs=logs,
+backend/app/pipeline_runner.py:168:        _emit(logs, "\nPipeline completed successfully.\n", on_log)
+backend/app/pipeline_runner.py:172:            "logs": "".join(logs),
+backend/app/pipeline_runner.py:178:        _emit(logs, f"\nPipeline failed: {str(error)}\n", on_log)
+backend/app/pipeline_runner.py:182:            "logs": "".join(logs),
+backend/app/ai_analyzer.py:11:    execution_logs: list[str],
+backend/app/ai_analyzer.py:17:    combined_logs = "\n".join(execution_logs[-120:])
+backend/app/ai_analyzer.py:22:            execution_logs=combined_logs,
+backend/app/ai_analyzer.py:90:Execution logs:
+backend/app/ai_analyzer.py:91:{combined_logs}
+backend/app/ai_analyzer.py:124:            execution_logs=combined_logs,
+backend/app/ai_analyzer.py:138:    execution_logs: str,
+backend/app/ai_analyzer.py:141:    lower_logs = execution_logs.lower()
+backend/app/ai_analyzer.py:152:    if "critical" in lower_logs or vulnerabilities > 0:
+backend/app/ai_analyzer.py:166:            "suggested_fix": "Start with the first failing command in logs, fix it, then rerun the pipeline.",
+backend/app/ai_analyzer.py:179:    if "warning" in lower_logs or bugs > 0 or code_smells > 0:
+backend/app/ai_analyzer.py:198:        "log_summary": "The logs were analyzed using fallback logic. Check npm, build, test, and scanner warnings.",
+
+===== coverage =====
+backend/app/models.py:61:    coverage = Column(Float, nullable=True)
+backend/app/models.py:296:    coverage = Column(Float, nullable=True)
+backend/app/executor.py:113:        "coverage": _safe_float(
+backend/app/executor.py:114:            _first_present(sonar_result, ["coverage"], metrics.get("coverage"))
+backend/app/executor.py:317:    coverage = _safe_float(payload.get("coverage"))
+backend/app/executor.py:349:    if coverage is not None:
+backend/app/executor.py:350:        if coverage < 50:
+backend/app/executor.py:352:            recommendations.append("Increase test coverage; it is below 50%.")
+backend/app/executor.py:353:        elif coverage < 80:
+backend/app/executor.py:355:            recommendations.append("Consider improving test coverage.")
+backend/app/executor.py:467:        "coverage": None,
+backend/app/pipelineiq/risk/release_risk.py:25:    coverage = payload.get("coverage")
+backend/app/pipelineiq/risk/release_risk.py:27:        coverage = float(coverage) if coverage is not None else None
+backend/app/pipelineiq/risk/release_risk.py:29:        coverage = None
+backend/app/pipelineiq/risk/release_risk.py:70:    if coverage is not None and coverage < 50:
+backend/app/pipelineiq/risk/release_risk.py:72:        recommendations.append("Improve test coverage for critical paths.")
+backend/app/pipelineiq/risk/release_risk.py:122:    coverage = _get_run_value(run, "coverage", 0) or 0
+backend/app/pipelineiq/risk/release_risk.py:143:    if coverage < 60:
+backend/app/pipelineiq/risk/release_risk.py:145:        recommendations.append("Increase test coverage above 60%.")
+backend/app/pipelineiq/risk/release_risk.py:146:    elif coverage < 75:
+backend/app/pipelineiq/risk/release_risk.py:148:        recommendations.append("Improve test coverage before release.")
+backend/app/pipelineiq/intelligence/risk_engine.py:15:        coverage=getattr(pipeline, "coverage", None),
+backend/app/ai_analyzer.py:98:- If build/test passed but npm audit, lint warnings, SonarQube issues, low coverage, bugs, vulnerabilities, or code smells exist, final_status should be PASS_WITH_WARNINGS.
+backend/app/ai_analyzer.py:143:    coverage = sonar_report.get("coverage") or 0
+backend/app/ai_analyzer.py:170:    if coverage < 70:
+backend/app/ai_analyzer.py:173:            "issue": f"Coverage is below recommended threshold: {coverage}%.",
+backend/app/ai_analyzer.py:174:            "why_it_matters": "Low coverage increases risk of undetected bugs.",
+backend/app/ai_analyzer.py:175:            "suggested_fix": "Add tests for critical business logic and generate LCOV coverage before SonarQube scan.",
+backend/app/ai_analyzer.py:200:            f"Coverage: {coverage}%, Bugs: {bugs}, "
+backend/app/ai_analyzer.py:209:            "Improve test coverage if it is below threshold.",
+backend/app/sonar_service.py:68:        "-Dsonar.exclusions=node_modules/**,.next/**,dist/**,build/**,coverage/**",
+backend/app/sonar_service.py:138:            "coverage": None,
+backend/app/sonar_service.py:153:        "coverage": 0,
+backend/app/sonar_service.py:173:                    "coverage,bugs,vulnerabilities,"
+backend/app/sonar_service.py:244:            "coverage": None,
+
+===== quality_gate =====
+backend/app/models.py:67:    quality_gate = Column(String, nullable=True)
+backend/app/models.py:302:    quality_gate = Column(String, nullable=True)
+backend/app/executor.py:141:        "quality_gate": _first_present(
+backend/app/executor.py:143:            ["quality_gate", "quality_gate_status", "qualityGate"],
+backend/app/executor.py:144:            metrics.get("quality_gate") or metrics.get("qualityGate"),
+backend/app/executor.py:315:    quality_gate = str(payload.get("quality_gate") or "").upper()
+backend/app/executor.py:341:    if quality_gate in {"ERROR", "FAILED", "FAIL"}:
+backend/app/executor.py:345:    elif quality_gate in {"WARN", "WARNING"}:
+backend/app/executor.py:472:        "quality_gate": None,
+backend/app/pipelineiq/risk/release_risk.py:120:    quality_gate = _get_run_value(run, "quality_gate", "UNKNOWN")
+backend/app/pipelineiq/risk/release_risk.py:139:    if quality_gate in ["ERROR", "FAILED"]:
+backend/app/ai_analyzer.py:147:    quality_gate = sonar_report.get("quality_gate", "UNKNOWN")
+backend/app/ai_analyzer.py:188:    if pipeline_status == "SUCCESS" and quality_gate in ["OK", "PASSED"] and not priority_items:
+backend/app/ai_analyzer.py:197:        "overall_summary": f"Pipeline finished with status {pipeline_status}. Quality gate: {quality_gate}.",
+backend/app/ai_analyzer.py:202:            f"Quality gate: {quality_gate}."
+backend/app/sonar_service.py:27:def normalize_quality_gate_status(status: str):
+backend/app/sonar_service.py:143:            "quality_gate": "UNKNOWN",
+backend/app/sonar_service.py:144:            "raw_quality_gate": "UNKNOWN",
+backend/app/sonar_service.py:158:        "quality_gate": "UNKNOWN",
+backend/app/sonar_service.py:159:        "raw_quality_gate": "UNKNOWN",
+backend/app/sonar_service.py:201:        raw_quality_gate = (
+backend/app/sonar_service.py:207:        report["raw_quality_gate"] = raw_quality_gate
+backend/app/sonar_service.py:208:        report["quality_gate"] = normalize_quality_gate_status(raw_quality_gate)
+backend/app/sonar_service.py:249:            "quality_gate": "UNKNOWN",
+backend/app/sonar_service.py:250:            "raw_quality_gate": "UNKNOWN",
+
+===== bugs =====
+backend/app/models.py:63:    bugs = Column(Integer, default=0)
+backend/app/models.py:297:    bugs = Column(Integer, default=0)
+backend/app/executor.py:116:        "bugs": _safe_int(
+backend/app/executor.py:117:            _first_present(sonar_result, ["bugs"], metrics.get("bugs"))
+backend/app/executor.py:318:    bugs = _safe_int(payload.get("bugs"))
+backend/app/executor.py:357:    if bugs > 0:
+backend/app/executor.py:358:        score += min(20, bugs * 2)
+backend/app/executor.py:359:        recommendations.append("Fix SonarQube bugs before release.")
+backend/app/executor.py:468:        "bugs": None,
+backend/app/pipelineiq/risk/release_risk.py:23:    bugs = int(payload.get("bugs") or 0)
+backend/app/pipelineiq/risk/release_risk.py:66:    if bugs > 0:
+backend/app/pipelineiq/risk/release_risk.py:67:        score += min(15, bugs * 3)
+backend/app/pipelineiq/risk/release_risk.py:68:        recommendations.append("Fix reported bugs from static analysis.")
+backend/app/pipelineiq/risk/release_risk.py:123:    bugs = _get_run_value(run, "bugs", 0) or 0
+backend/app/pipelineiq/risk/release_risk.py:150:    if bugs:
+backend/app/pipelineiq/risk/release_risk.py:151:        score += min(15, bugs * 3)
+backend/app/pipelineiq/risk/release_risk.py:152:        recommendations.append("Review and fix Sonar bugs.")
+backend/app/pipelineiq/intelligence/risk_engine.py:14:        bugs=getattr(pipeline, "bugs", None),
+backend/app/ai_analyzer.py:98:- If build/test passed but npm audit, lint warnings, SonarQube issues, low coverage, bugs, vulnerabilities, or code smells exist, final_status should be PASS_WITH_WARNINGS.
+backend/app/ai_analyzer.py:144:    bugs = sonar_report.get("bugs") or 0
+backend/app/ai_analyzer.py:174:            "why_it_matters": "Low coverage increases risk of undetected bugs.",
+backend/app/ai_analyzer.py:179:    if "warning" in lower_logs or bugs > 0 or code_smells > 0:
+backend/app/ai_analyzer.py:182:            "issue": f"Warnings or maintainability issues found. Bugs: {bugs}, Code smells: {code_smells}.",
+backend/app/ai_analyzer.py:200:            f"Coverage: {coverage}%, Bugs: {bugs}, "
+backend/app/sonar_service.py:139:            "bugs": None,
+backend/app/sonar_service.py:154:        "bugs": 0,
+backend/app/sonar_service.py:173:                    "coverage,bugs,vulnerabilities,"
+backend/app/sonar_service.py:245:            "bugs": None,
+
+===== vulnerabilities =====
+backend/app/models.py:64:    vulnerabilities = Column(Integer, default=0)
+backend/app/models.py:298:    vulnerabilities = Column(Integer, default=0)
+backend/app/executor.py:119:        "vulnerabilities": _safe_int(
+backend/app/executor.py:122:                ["vulnerabilities"],
+backend/app/executor.py:123:                metrics.get("vulnerabilities"),
+backend/app/executor.py:173:        vulnerabilities = result.get("Vulnerabilities", []) or []
+backend/app/executor.py:175:        for vulnerability in vulnerabilities:
+backend/app/executor.py:319:    vulnerabilities = _safe_int(payload.get("vulnerabilities"))
+backend/app/executor.py:361:    if vulnerabilities > 0:
+backend/app/executor.py:362:        score += min(20, vulnerabilities * 3)
+backend/app/executor.py:363:        recommendations.append("Fix SonarQube-reported vulnerabilities.")
+backend/app/executor.py:367:        recommendations.append("Resolve critical Trivy vulnerabilities immediately.")
+backend/app/executor.py:371:        recommendations.append("Resolve high Trivy vulnerabilities before production release.")
+backend/app/executor.py:469:        "vulnerabilities": None,
+backend/app/executor.py:747:                f"Total vulnerabilities: {state['trivy_total']} "
+backend/app/pipelineiq/risk/release_risk.py:22:    vulnerabilities = int(payload.get("vulnerabilities") or 0)
+backend/app/pipelineiq/risk/release_risk.py:52:        recommendations.append("Fix critical Trivy vulnerabilities immediately.")
+backend/app/pipelineiq/risk/release_risk.py:56:        recommendations.append("Fix high severity Trivy vulnerabilities before release.")
+backend/app/pipelineiq/risk/release_risk.py:60:        recommendations.append("Review medium severity Trivy vulnerabilities.")
+backend/app/pipelineiq/risk/release_risk.py:62:    if vulnerabilities > 0:
+backend/app/pipelineiq/risk/release_risk.py:63:        score += min(20, vulnerabilities * 5)
+backend/app/pipelineiq/risk/release_risk.py:64:        recommendations.append("Resolve reported dependency or code vulnerabilities.")
+backend/app/pipelineiq/risk/release_risk.py:124:    vulnerabilities = _get_run_value(run, "vulnerabilities", 0) or 0
+backend/app/pipelineiq/risk/release_risk.py:154:    if vulnerabilities:
+backend/app/pipelineiq/risk/release_risk.py:155:        score += min(20, vulnerabilities * 5)
+backend/app/pipelineiq/risk/release_risk.py:156:        recommendations.append("Resolve Sonar vulnerabilities.")
+backend/app/pipelineiq/risk/release_risk.py:164:        recommendations.append("Fix critical Trivy vulnerabilities immediately.")
+backend/app/pipelineiq/risk/release_risk.py:168:        recommendations.append("Fix high severity Trivy vulnerabilities.")
+backend/app/pipelineiq/risk/release_risk.py:172:        recommendations.append("Review medium severity Trivy vulnerabilities.")
+backend/app/pipelineiq/intelligence/risk_engine.py:13:        vulnerabilities=getattr(pipeline, "vulnerabilities", None),
+backend/app/ai_analyzer.py:98:- If build/test passed but npm audit, lint warnings, SonarQube issues, low coverage, bugs, vulnerabilities, or code smells exist, final_status should be PASS_WITH_WARNINGS.
+backend/app/ai_analyzer.py:100:- Prioritize security vulnerabilities first.
+backend/app/ai_analyzer.py:145:    vulnerabilities = sonar_report.get("vulnerabilities") or 0
+backend/app/ai_analyzer.py:152:    if "critical" in lower_logs or vulnerabilities > 0:
+backend/app/ai_analyzer.py:155:            "issue": "Security vulnerabilities were detected.",
+backend/app/ai_analyzer.py:156:            "why_it_matters": "Critical or high vulnerabilities can expose the application to attacks.",
+backend/app/ai_analyzer.py:201:            f"Vulnerabilities: {vulnerabilities}, Code smells: {code_smells}, "
+backend/app/ai_analyzer.py:207:            "Resolve critical/high security vulnerabilities.",
+backend/app/sonar_service.py:140:            "vulnerabilities": None,
+backend/app/sonar_service.py:155:        "vulnerabilities": 0,
+backend/app/sonar_service.py:173:                    "coverage,bugs,vulnerabilities,"
+backend/app/sonar_service.py:246:            "vulnerabilities": None,
+
+===== code_smells =====
+backend/app/models.py:65:    code_smells = Column(Integer, default=0)
+backend/app/models.py:299:    code_smells = Column(Integer, default=0)
+backend/app/executor.py:126:        "code_smells": _safe_int(
+backend/app/executor.py:129:                ["code_smells", "codeSmells"],
+backend/app/executor.py:130:                metrics.get("code_smells") or metrics.get("codeSmells"),
+backend/app/executor.py:470:        "code_smells": None,
+backend/app/pipelineiq/risk/release_risk.py:125:    code_smells = _get_run_value(run, "code_smells", 0) or 0
+backend/app/pipelineiq/risk/release_risk.py:158:    if code_smells and code_smells > 50:
+backend/app/ai_analyzer.py:146:    code_smells = sonar_report.get("code_smells") or 0
+backend/app/ai_analyzer.py:179:    if "warning" in lower_logs or bugs > 0 or code_smells > 0:
+backend/app/ai_analyzer.py:182:            "issue": f"Warnings or maintainability issues found. Bugs: {bugs}, Code smells: {code_smells}.",
+backend/app/ai_analyzer.py:201:            f"Vulnerabilities: {vulnerabilities}, Code smells: {code_smells}, "
+backend/app/sonar_service.py:141:            "code_smells": None,
+backend/app/sonar_service.py:156:        "code_smells": 0,
+backend/app/sonar_service.py:174:                    "code_smells,duplicated_lines_density"
+backend/app/sonar_service.py:247:            "code_smells": None,
+
+===== security_hotspots =====
+
+===== final_status =====
+backend/app/models.py:121:    final_status = Column(String, nullable=True)
+backend/app/ai_analyzer.py:31:            "final_status": {
+backend/app/ai_analyzer.py:71:            "final_status",
+backend/app/ai_analyzer.py:97:- If build/test failed, final_status must be FAILED.
+backend/app/ai_analyzer.py:98:- If build/test passed but npm audit, lint warnings, SonarQube issues, low coverage, bugs, vulnerabilities, or code smells exist, final_status should be PASS_WITH_WARNINGS.
+backend/app/ai_analyzer.py:99:- If everything is clean and quality gate passed, final_status should be PASS.
+backend/app/ai_analyzer.py:189:        final_status = "PASS"
+backend/app/ai_analyzer.py:191:        final_status = "PASS_WITH_WARNINGS"
+backend/app/ai_analyzer.py:193:        final_status = "FAILED"
+backend/app/ai_analyzer.py:196:        "final_status": final_status,
+

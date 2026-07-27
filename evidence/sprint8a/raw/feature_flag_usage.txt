@@ -1,0 +1,2 @@
+docker-compose.yml:88:      DYNAMIC_CONFIG_ENABLED: "true"
+frontend/netlify.toml:6:  NEXT_TELEMETRY_DISABLED = "1"

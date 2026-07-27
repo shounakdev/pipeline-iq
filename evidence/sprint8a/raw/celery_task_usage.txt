@@ -1,0 +1,18 @@
+backend/app/celery_app.py:36:celery_app = Celery(
+backend/app/celery_app.py:51:task_routes = {
+backend/app/celery_app.py:71:beat_schedule = {
+backend/app/celery_app.py:106:    task_routes=task_routes,
+backend/app/celery_app.py:107:    beat_schedule=beat_schedule,
+backend/app/celery_app.py:125:@celery_app.task(name="events.publish_outbox_events")
+backend/app/celery_app.py:130:@celery_app.task(name="events.consume_kafka_events")
+backend/app/main.py:217:    execute_pipeline_task.apply_async(
+backend/app/control_plane/routes.py:367:    execute_pipeline_task.apply_async(
+backend/app/tasks.py:653:@celery_app.task(
+backend/app/tasks.py:656:    max_retries=2,
+backend/app/tasks.py:902:        max_retries = self.max_retries or 2
+backend/app/tasks.py:904:        if current_retry < max_retries:
+backend/app/tasks.py:916:                        f"{retry_number}/{max_retries}: {str(e)}"
+backend/app/tasks.py:925:                        f"({retry_number}/{max_retries}): {str(e)}"
+backend/app/tasks.py:932:            raise self.retry(exc=e, countdown=30)
+backend/app/reliability/tasks.py:6:from celery import shared_task
+backend/app/reliability/tasks.py:29:@shared_task(

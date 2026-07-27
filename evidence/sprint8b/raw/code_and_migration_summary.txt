@@ -1,0 +1,56 @@
+]633;E;echo "# Sprint 8B changed files";90d3a1a2-76f0-4cf7-8629-0c5cf4db9cd7]633;C# Sprint 8B changed files
+ M backend/app/models.py
+?? backend/alembic/versions/588e4ea72ee4_add_sprint_8b_rca_evidence_report_.py
+?? backend/app/rca/
+?? evidence/
+
+# RCA model classes
+1320:class EvidenceCollectionStatus(str, enum.Enum):
+1328:class RCAReportStatus(str, enum.Enum):
+1335:class RCAConfidence(str, enum.Enum):
+1341:class RCAFeedbackRating(str, enum.Enum):
+1347:class IncidentEvidence(Base):
+1426:class RCAReport(Base):
+1516:class RCAFeedback(Base):
+
+# Migration RCA operations
+24:    op.create_table('incident_evidence',
+25:    sa.Column('id', sa.UUID(), nullable=False),
+26:    sa.Column('incident_id', sa.UUID(), nullable=False),
+39:    sa.ForeignKeyConstraint(['created_by'], ['users.id'], ondelete='SET NULL'),
+40:    sa.ForeignKeyConstraint(['incident_id'], ['incidents.id'], ondelete='CASCADE'),
+42:    sa.UniqueConstraint('incident_id', 'version', name='uq_incident_evidence_incident_version')
+44:    op.create_index('ix_incident_evidence_incident_created', 'incident_evidence', ['incident_id', 'created_at'], unique=False)
+45:    op.create_index(op.f('ix_incident_evidence_incident_id'), 'incident_evidence', ['incident_id'], unique=False)
+46:    op.create_table('rca_reports',
+47:    sa.Column('id', sa.UUID(), nullable=False),
+48:    sa.Column('incident_id', sa.UUID(), nullable=False),
+49:    sa.Column('evidence_id', sa.UUID(), nullable=False),
+66:    sa.ForeignKeyConstraint(['evidence_id'], ['incident_evidence.id'], ondelete='RESTRICT'),
+67:    sa.ForeignKeyConstraint(['incident_id'], ['incidents.id'], ondelete='CASCADE'),
+69:    sa.UniqueConstraint('incident_id', 'version', name='uq_rca_reports_incident_version')
+71:    op.create_index(op.f('ix_rca_reports_evidence_id'), 'rca_reports', ['evidence_id'], unique=False)
+72:    op.create_index('ix_rca_reports_incident_created', 'rca_reports', ['incident_id', 'created_at'], unique=False)
+73:    op.create_index(op.f('ix_rca_reports_incident_id'), 'rca_reports', ['incident_id'], unique=False)
+74:    op.create_table('rca_feedback',
+75:    sa.Column('id', sa.UUID(), nullable=False),
+76:    sa.Column('incident_id', sa.UUID(), nullable=False),
+77:    sa.Column('report_id', sa.UUID(), nullable=False),
+78:    sa.Column('rating', sa.Enum('CORRECT', 'PARTIALLY_CORRECT', 'INCORRECT', name='rca_feedback_rating'), nullable=False),
+84:    sa.ForeignKeyConstraint(['incident_id'], ['incidents.id'], ondelete='CASCADE'),
+85:    sa.ForeignKeyConstraint(['report_id'], ['rca_reports.id'], ondelete='CASCADE'),
+86:    sa.ForeignKeyConstraint(['reviewer_id'], ['users.id'], ondelete='SET NULL'),
+89:    op.create_index(op.f('ix_rca_feedback_incident_id'), 'rca_feedback', ['incident_id'], unique=False)
+90:    op.create_index('ix_rca_feedback_report_created', 'rca_feedback', ['report_id', 'created_at'], unique=False)
+91:    op.create_index(op.f('ix_rca_feedback_report_id'), 'rca_feedback', ['report_id'], unique=False)
+98:    op.drop_index(op.f('ix_rca_feedback_report_id'), table_name='rca_feedback')
+99:    op.drop_index('ix_rca_feedback_report_created', table_name='rca_feedback')
+100:    op.drop_index(op.f('ix_rca_feedback_incident_id'), table_name='rca_feedback')
+101:    op.drop_table('rca_feedback')
+102:    op.drop_index(op.f('ix_rca_reports_incident_id'), table_name='rca_reports')
+103:    op.drop_index('ix_rca_reports_incident_created', table_name='rca_reports')
+104:    op.drop_index(op.f('ix_rca_reports_evidence_id'), table_name='rca_reports')
+105:    op.drop_table('rca_reports')
+106:    op.drop_index(op.f('ix_incident_evidence_incident_id'), table_name='incident_evidence')
+107:    op.drop_index('ix_incident_evidence_incident_created', table_name='incident_evidence')
+108:    op.drop_table('incident_evidence')

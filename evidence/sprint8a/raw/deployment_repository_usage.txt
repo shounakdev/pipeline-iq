@@ -1,0 +1,186 @@
+backend/app/deployments/kubernetes_capture.py:356:            db.rollback()
+backend/app/deployments/schemas.py:17:    failure_reason: Optional[str] = None
+backend/app/deployments/schemas.py:22:    deployment_id: UUID
+backend/app/deployments/schemas.py:23:    created_at: datetime
+backend/app/deployments/schemas.py:30:    pipeline_run_id: Optional[UUID] = None
+backend/app/deployments/schemas.py:33:    commit_sha: Optional[str] = None
+backend/app/deployments/schemas.py:34:    image_tag: str
+backend/app/deployments/schemas.py:48:    failure_reason: Optional[str] = None
+backend/app/deployments/schemas.py:50:    deployed_at: Optional[datetime] = None
+backend/app/deployments/schemas.py:59:    pipeline_run_id: Optional[UUID]
+backend/app/deployments/schemas.py:62:    commit_sha: Optional[str]
+backend/app/deployments/schemas.py:63:    image_tag: str
+backend/app/deployments/schemas.py:77:    failure_reason: Optional[str]
+backend/app/deployments/schemas.py:79:    created_at: datetime
+backend/app/deployments/schemas.py:80:    deployed_at: Optional[datetime]
+backend/app/deployments/router.py:32:    failure_reason: Optional[str] = None
+backend/app/deployments/router.py:37:    deployment_id: UUID
+backend/app/deployments/router.py:38:    created_at: datetime
+backend/app/deployments/router.py:45:    pipeline_run_id: Optional[str] = None
+backend/app/deployments/router.py:48:    commit_sha: Optional[str] = None
+backend/app/deployments/router.py:49:    image_tag: str
+backend/app/deployments/router.py:63:    failure_reason: Optional[str] = None
+backend/app/deployments/router.py:65:    deployed_at: Optional[datetime] = None
+backend/app/deployments/router.py:74:    pipeline_run_id: Optional[str]
+backend/app/deployments/router.py:77:    commit_sha: Optional[str]
+backend/app/deployments/router.py:78:    image_tag: str
+backend/app/deployments/router.py:92:    failure_reason: Optional[str]
+backend/app/deployments/router.py:94:    created_at: datetime
+backend/app/deployments/router.py:95:    deployed_at: Optional[datetime]
+backend/app/deployments/router.py:107:    if deployment_data.get("deployed_at") is None:
+backend/app/deployments/router.py:108:        deployment_data["deployed_at"] = datetime.now(timezone.utc)
+backend/app/deployments/router.py:118:                deployment_id=deployment.id,
+backend/app/deployments/router.py:124:        deployment_id=deployment.id,
+backend/app/deployments/router.py:126:        image_tag=request.image_tag,
+backend/app/deployments/router.py:127:        commit_sha=request.commit_sha,
+backend/app/deployments/router.py:129:        deployed_at=deployment.deployed_at,
+backend/app/deployments/router.py:137:        correlation_id=str(deployment.pipeline_run_id or deployment.id),
+backend/app/deployments/router.py:141:            "deployment_id": str(deployment.id),
+backend/app/deployments/router.py:142:            "pipeline_run_id": str(deployment.pipeline_run_id)
+backend/app/deployments/router.py:143:            if deployment.pipeline_run_id
+backend/app/deployments/router.py:145:            "image_tag": deployment.image_tag,
+backend/app/deployments/router.py:160:def list_deployments(
+backend/app/deployments/router.py:169:    return query.order_by(Deployment.created_at.desc()).all()
+backend/app/deployments/router.py:180:        .order_by(Deployment.created_at.desc())
+backend/app/deployments/router.py:187:@router.get("/deployments/{deployment_id}", response_model=DeploymentOut)
+backend/app/deployments/router.py:188:def get_deployment(
+backend/app/deployments/router.py:189:    deployment_id: UUID,
+backend/app/deployments/router.py:194:        .filter(Deployment.id == deployment_id)
+backend/app/deployments/router.py:205:    "/deployments/{deployment_id}/workloads",
+backend/app/deployments/router.py:208:def get_deployment_workloads(
+backend/app/deployments/router.py:209:    deployment_id: UUID,
+backend/app/deployments/router.py:214:        .filter(Deployment.id == deployment_id)
+backend/app/deployments/router.py:223:        .filter(KubernetesWorkload.deployment_id == deployment_id)
+backend/app/deployments/router.py:224:        .order_by(KubernetesWorkload.created_at.desc())
+backend/app/deployments/router.py:232:    "/deployments/{deployment_id}/workloads",
+backend/app/deployments/router.py:236:    deployment_id: UUID,
+backend/app/deployments/router.py:242:        .filter(Deployment.id == deployment_id)
+backend/app/deployments/router.py:250:        deployment_id=deployment_id,
+backend/app/deployments/router.py:282:    if request.failure_reason or requested_status in failed_statuses:
+backend/app/deployments/router.py:284:        deployment.failure_reason = (
+backend/app/deployments/router.py:285:            request.failure_reason
+backend/app/deployments/router.py:293:                correlation_id=str(deployment.pipeline_run_id or deployment.id),
+backend/app/deployments/router.py:297:                    "deployment_id": str(deployment.id),
+backend/app/deployments/router.py:298:                    "pipeline_run_id": str(deployment.pipeline_run_id)
+backend/app/deployments/router.py:299:                    if deployment.pipeline_run_id
+backend/app/deployments/router.py:301:                    "image_tag": deployment.image_tag,
+backend/app/deployments/router.py:304:                    "failure_reason": deployment.failure_reason,
+backend/app/deployments/router.py:316:                correlation_id=str(deployment.pipeline_run_id or deployment.id),
+backend/app/deployments/router.py:320:                    "deployment_id": str(deployment.id),
+backend/app/deployments/router.py:321:                    "pipeline_run_id": str(deployment.pipeline_run_id)
+backend/app/deployments/router.py:322:                    if deployment.pipeline_run_id
+backend/app/deployments/router.py:324:                    "image_tag": deployment.image_tag,
+backend/app/incidents/repository.py:254:def find_suspected_deployment(
+backend/app/incidents/repository.py:297:            Deployment.created_at <= detected_at,
+backend/app/incidents/repository.py:298:            Deployment.created_at >= correlation_start,
+backend/app/incidents/repository.py:301:            Deployment.created_at.desc(),
+backend/app/incidents/repository.py:332:            SLOMeasurement.created_at.desc(),
+backend/app/incidents/repository.py:376:            ErrorBudgetStatus.created_at.desc(),
+backend/app/incidents/repository.py:404:        select(func.max(ReliabilityAlert.created_at))
+backend/app/incidents/repository.py:435:            Incident.created_at.desc(),
+backend/app/incidents/repository.py:538:            IncidentComment.created_at.asc(),
+backend/app/incidents/repository.py:611:    surrounding commit or rollback. ``failure_started_at`` must contain only
+backend/app/incidents/repository.py:663:        "created_at",
+backend/app/incidents/repository.py:834:    created_at: datetime | None = None,
+backend/app/incidents/repository.py:845:        created_at=created_at or utc_now(),
+backend/app/incidents/repository.py:865:    deployment_id: UUID | None = None,
+backend/app/incidents/repository.py:872:    Transaction commit or rollback is handled by the service layer.
+backend/app/incidents/repository.py:885:        deployment_id=deployment_id,
+backend/app/incidents/repository.py:957:        created_at=utc_now(),
+backend/app/incidents/schemas.py:43:    deployment_id: UUID | None = None
+backend/app/incidents/schemas.py:45:    created_at: datetime
+backend/app/incidents/schemas.py:54:    image_tag: str
+backend/app/incidents/schemas.py:56:    commit_sha: str | None = None
+backend/app/incidents/schemas.py:59:    deployed_at: datetime | None = None
+backend/app/incidents/schemas.py:60:    created_at: datetime
+backend/app/incidents/schemas.py:85:    deployment_id: UUID | None = None
+backend/app/incidents/schemas.py:91:    created_at: datetime
+backend/app/incidents/schemas.py:298:    created_at: datetime
+backend/app/incidents/schemas.py:319:    created_at: datetime
+backend/app/incidents/schemas.py:407:    suspected_deployment_id: UUID | None = None
+backend/app/incidents/schemas.py:422:    created_at: datetime
+backend/app/incidents/router.py:43:    incidents = query.order_by(Incident.created_at.desc()).all()
+backend/app/incidents/router.py:109:    incidents = query.order_by(Incident.created_at.desc()).all()
+backend/app/incidents/router.py:125:    incidents = query.order_by(Incident.created_at.desc()).limit(10).all()
+backend/app/incidents/service.py:316:        deployment_id=alert.deployment_id,
+backend/app/incidents/service.py:318:        created_at=alert.created_at,
+backend/app/incidents/service.py:334:        image_tag=deployment.image_tag,
+backend/app/incidents/service.py:336:        commit_sha=deployment.commit_sha,
+backend/app/incidents/service.py:339:        deployed_at=deployment.deployed_at,
+backend/app/incidents/service.py:340:        created_at=deployment.created_at,
+backend/app/incidents/service.py:373:        created_at=comment.created_at,
+backend/app/incidents/service.py:391:        created_at=metric.created_at,
+backend/app/incidents/service.py:410:        deployment_id=event.deployment_id,
+backend/app/incidents/service.py:414:        created_at=event.created_at,
+backend/app/incidents/service.py:475:        suspected_deployment_id=(
+backend/app/incidents/service.py:476:            incident.suspected_deployment_id
+backend/app/incidents/service.py:482:        created_at=incident.created_at,
+backend/app/incidents/service.py:1018:        alert_created_at = alert.created_at or _utcnow()
+backend/app/incidents/service.py:1020:        if alert_created_at.tzinfo is None:
+backend/app/incidents/service.py:1021:            alert_created_at = alert_created_at.replace(
+backend/app/incidents/service.py:1025:        suspected_deployment = repository.find_suspected_deployment(
+backend/app/incidents/service.py:1029:            detected_at=alert_created_at,
+backend/app/incidents/service.py:1058:        correlation_cutoff = alert_created_at - timedelta(
+backend/app/incidents/service.py:1081:            detected_at = alert_created_at
+backend/app/incidents/service.py:1096:                suspected_deployment_id=(
+backend/app/incidents/service.py:1118:                or getattr(alert_link, "created_at", None)
+backend/app/incidents/service.py:1121:            incident_created_at = (
+backend/app/incidents/service.py:1123:                or incident.created_at
+backend/app/incidents/service.py:1142:                occurred_at=alert_created_at,
+backend/app/incidents/service.py:1168:                occurred_at=incident_created_at,
+backend/app/incidents/service.py:1185:                deployment_id=alert.deployment_id,
+backend/app/incidents/service.py:1202:                    or suspected_deployment.image_tag
+backend/app/incidents/service.py:1206:                    suspected_deployment.deployed_at
+backend/app/incidents/service.py:1207:                    or suspected_deployment.created_at
+backend/app/incidents/service.py:1222:                    deployment_id=suspected_deployment.id,
+backend/app/incidents/service.py:1226:                        "deployment_id": str(
+backend/app/incidents/service.py:1232:                        "image_tag": suspected_deployment.image_tag,
+backend/app/incidents/service.py:1250:                    deployment_id=suspected_deployment.id,
+backend/app/incidents/service.py:1255:                        "deployment_id": str(
+backend/app/incidents/service.py:1258:                        "deployment_created_at": (
+backend/app/incidents/service.py:1260:                                suspected_deployment.created_at
+backend/app/incidents/service.py:1265:                                suspected_deployment.deployed_at
+backend/app/incidents/service.py:1289:                        "deployment_id": str(
+backend/app/incidents/service.py:1294:                        "deployment_created_at": (
+backend/app/incidents/service.py:1296:                                suspected_deployment.created_at
+backend/app/incidents/service.py:1301:                                suspected_deployment.deployed_at
+backend/app/incidents/service.py:1361:                    or getattr(alert_link, "created_at", None)
+backend/app/incidents/service.py:1380:                    occurred_at=alert_created_at,
+backend/app/incidents/service.py:1396:                    deployment_id=alert.deployment_id,
+backend/app/incidents/service.py:1452:                    deployment_id=alert.deployment_id,
+backend/app/incidents/service.py:1496:                captured_at=alert_created_at,
+backend/app/incidents/service.py:1507:                        _isoformat_or_none(alert_created_at)
+backend/app/incidents/service.py:1519:                captured_at=alert_created_at,
+backend/app/incidents/service.py:1530:                        _isoformat_or_none(alert_created_at)
+backend/app/incidents/service.py:1559:        db.rollback()
+backend/app/incidents/service.py:1616:    audit event. The caller owns the transaction commit or rollback.
+backend/app/incidents/service.py:1794:        db.rollback()
+backend/app/incidents/service.py:1893:        db.rollback()
+backend/app/incidents/service.py:2064:        db.rollback()
+backend/app/incidents/service.py:2103:            occurred_at=comment.created_at,
+backend/app/incidents/service.py:2139:        db.rollback()
+backend/app/incidents/service.py:2219:        db.rollback()
+backend/app/incidents/service.py:2264:                        "deployment_id": (
+backend/app/incidents/service.py:2265:                            str(event.deployment_id) if event.deployment_id else None
+backend/app/incidents/service.py:2306:                "timestamp": snapshot.created_at,
+backend/app/incidents/schemas.py.sprint5.bak:14:    created_at: datetime
+backend/app/incidents/schemas.py.sprint5.bak:29:    created_at: datetime
+backend/app/events/consumer.py:143:        db.rollback()
+backend/app/events/consumer.py:202:            db.rollback()
+backend/app/events/service.py:58:        "created_at": event.created_at.isoformat() if event.created_at else None,
+backend/app/events/service.py:77:        "created_at": event.created_at.isoformat() if event.created_at else None,
+backend/app/events/service.py:126:            EventRecord.created_at.desc(),
+backend/app/events/service.py:151:            EventRecord.created_at.asc(),
+backend/app/events/service.py:172:        query.order_by(DeadLetterEvent.created_at.desc())
+backend/app/events/service.py:214:        db.rollback()
+backend/app/events/outbox_publisher.py:27:        "timestamp": event.created_at.isoformat()
+backend/app/events/outbox_publisher.py:28:        if event.created_at
+backend/app/events/outbox_publisher.py:38:        .order_by(OutboxEvent.created_at.asc())
+backend/app/events/outbox_publisher.py:69:            db.rollback()
+backend/app/events/handlers.py:118:    Transaction commit and rollback are managed by the event consumer.
+backend/app/events/handlers.py:157:    deployment_id = payload.get("deployment_id")
+backend/app/events/handlers.py:159:    if not deployment_id:
+backend/app/events/handlers.py:178:                == deployment_id
+backend/app/events/handlers.py:186:                f"deployment_id={deployment_id}"
+backend/app/events/handlers.py:324:        or getattr(record, "created_at", None)
+backend/app/events/idempotency.py:60:        db.rollback()

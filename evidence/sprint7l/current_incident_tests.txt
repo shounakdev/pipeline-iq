@@ -1,0 +1,290 @@
+
+==================================================
+tests/incidents/__init__.py
+==================================================
+
+==================================================
+tests/incidents/enums.py
+==================================================
+"""Enums used by the incident response module."""
+
+from enum import Enum
+
+
+class IncidentStatus(str, Enum):
+    DETECTED = "DETECTED"
+    ACKNOWLEDGED = "ACKNOWLEDGED"
+    INVESTIGATING = "INVESTIGATING"
+    ACTION_RECOMMENDED = "ACTION_RECOMMENDED"
+    REMEDIATING = "REMEDIATING"
+    RESOLVED = "RESOLVED"
+    FAILED_RECOVERY = "FAILED_RECOVERY"
+
+
+class IncidentSeverity(str, Enum):
+    SEV_1 = "SEV-1"
+    SEV_2 = "SEV-2"
+    SEV_3 = "SEV-3"
+==================================================
+tests/incidents/test_incident_api.py
+==================================================
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+from uuid import UUID, uuid4
+
+import pytest
+from fastapi.testclient import TestClient
+
+from app.incidents import incident_router
+from app.incidents.enums import IncidentSeverity, IncidentStatus
+from app.incidents.schemas import (
+    IncidentAssignmentResponse,
+    IncidentCommentResponse,
+    IncidentDetailResponse,
+    IncidentListItemResponse,
+    IncidentListResponse,
+    IncidentMetricResponse,
+    IncidentMetricsResponse,
+    IncidentTimelineEventResponse,
+    IncidentTimelineResponse,
+    OperatorSummaryResponse,
+    ServiceSummaryResponse,
+)
+from app.incidents.service import (
+    IncidentConflictError,
+    IncidentNotFoundError,
+)
+
+
+BASE_TIME = datetime(
+    2026,
+    7,
+    19,
+    10,
+    0,
+    tzinfo=timezone.utc,
+)
+
+
+def _auth_context(
+    client: TestClient,
+    *,
+    role: str = "developer",
+) -> tuple[dict[str, str], dict]:
+    email = f"{role}-{uuid4()}@example.com"
+    password = "IncidentTest123!"
+
+    register_response = client.post(
+        "/auth/register",
+        json={
+            "email": email,
+            "password": password,
+            "role": role,
+        },
+    )
+    assert register_response.status_code in {
+        200,
+        201,
+    }, register_response.text
+
+    token_payload = register_response.json()
+    token = token_payload.get("access_token")
+
+    if token is None:
+        login_response = client.post(
+            "/auth/login",
+            json={
+                "email": email,
+                "password": password,
+            },
+        )
+        assert login_response.status_code == 200, (
+            login_response.text
+        )
+        token_payload = login_response.json()
+        token = token_payload["access_token"]
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+    }
+
+    return headers, token_payload["user"]
+
+
+def _operator(
+    user_id: str = "operator-1",
+) -> OperatorSummaryResponse:
+    return OperatorSummaryResponse(
+        id=user_id,
+        email=f"{user_id}@example.com",
+        full_name="Incident Operator",
+    )
+
+
+def _incident_item(
+    *,
+    incident_id: UUID | None = None,
+    status: IncidentStatus = IncidentStatus.DETECTED,
+    severity: IncidentSeverity = IncidentSeverity.SEV_2,
+    service_id: str = "service-api",
+    environment: str = "production",
+    assigned_operator: OperatorSummaryResponse | None = None,
+    detected_at: datetime = BASE_TIME,
+    acknowledged_at: datetime | None = None,
+    resolved_at: datetime | None = None,
+) -> IncidentListItemResponse:
+    incident_id = incident_id or uuid4()
+
+    return IncidentListItemResponse(
+        incident_id=incident_id,
+        id=incident_id,
+        incident_number="INC-001",
+        title="Payment API latency incident",
+        severity=severity,
+        status=status,
+        service_id=service_id,
+        service_name="payment-service",
+        environment=environment,
+        assigned_operator=assigned_operator,
+        failure_started_at=(
+            detected_at - timedelta(minutes=5)
+        ),
+        detected_at=detected_at,
+        acknowledged_at=acknowledged_at,
+        resolved_at=resolved_at,
+        created_at=detected_at,
+        updated_at=resolved_at or acknowledged_at or detected_at,
+    )
+
+
+def _assignment(
+    *,
+    incident_id: UUID,
+    assigned_to_user_id: str,
+    assigned_by_user_id: str | None = None,
+) -> IncidentAssignmentResponse:
+    return IncidentAssignmentResponse(
+        id=uuid4(),
+        incident_id=incident_id,
+        assigned_to_user_id=assigned_to_user_id,
+        assigned_to_user=_operator(
+            assigned_to_user_id,
+        ),
+        assigned_by_user_id=assigned_by_user_id,
+        assigned_by_user=(
+            _operator(assigned_by_user_id)
+            if assigned_by_user_id
+            else None
+        ),
+        assignment_note="Assigned through API test",
+        assigned_at=BASE_TIME,
+        unassigned_at=None,
+        is_active=True,
+    )
+
+
+def _detail(
+    *,
+    item: IncidentListItemResponse | None = None,
+    current_assignment: IncidentAssignmentResponse | None = None,
+    comments: list[IncidentCommentResponse] | None = None,
+    timeline_events: list[
+        IncidentTimelineEventResponse
+    ] | None = None,
+) -> IncidentDetailResponse:
+    item = item or _incident_item()
+
+    return IncidentDetailResponse(
+        incident=item,
+        description="Latency exceeded the configured SLO.",
+        deduplication_key=(
+            f"{item.service_id}:{item.environment}:p95-latency"
+        ),
+        primary_service=ServiceSummaryResponse(
+            id=item.service_id,
+            name=item.service_name or "payment-service",
+            service_type="backend",
+            owner="platform-team",
+        ),
+        affected_services=[
+            ServiceSummaryResponse(
+                id=item.service_id,
+                name=item.service_name or "payment-service",
+                service_type="backend",
+                owner="platform-team",
+            )
+        ],
+        current_assignment=current_assignment,
+        assignment_history=(
+            [current_assignment]
+            if current_assignment is not None
+            else []
+        ),
+        comments=comments or [],
+        timeline_summary=timeline_events or [],
+    )
+
+
+def _timeline_event(
+    *,
+    incident_id: UUID,
+    event_id: UUID,
+    occurred_at: datetime,
+    event_type: str,
+) -> IncidentTimelineEventResponse:
+    return IncidentTimelineEventResponse(
+        id=event_id,
+        incident_id=incident_id,
+        event_type=event_type,
+        source="SYSTEM",
+        message=event_type.replace("_", " ").title(),
+        metadata_json={},
+        occurred_at=occurred_at,
+        created_at=occurred_at,
+    )
+
+
+def _paginated_response(
+    *items: IncidentListItemResponse,
+    page: int = 1,
+    page_size: int = 25,
+    total: int | None = None,
+) -> IncidentListResponse:
+    return IncidentListResponse.create(
+        items=list(items),
+        total=len(items) if total is None else total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+def test_list_incidents_returns_paginated_response(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    headers, _ = _auth_context(client)
+
+    first = _incident_item()
+    second = _incident_item(
+        incident_id=uuid4(),
+        severity=IncidentSeverity.SEV_3,
+    )
+
+    def fake_list_incidents(
+        _db,
+        **kwargs,
+    ) -> IncidentListResponse:
+        assert kwargs["page"] == 2
+        assert kwargs["page_size"] == 2
+
+        return _paginated_response(
+            first,
+            second,
+            page=2,
+            page_size=2,
+            total=5,
+        )
+
+    monkeypatch.setattr(
+        incident_router.incident_service,

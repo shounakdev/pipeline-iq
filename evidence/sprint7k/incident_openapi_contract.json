@@ -1,0 +1,1941 @@
+{
+  "paths": {
+    "/api/incidents": {
+      "get": {
+        "tags": [
+          "Incidents"
+        ],
+        "summary": "List Incidents Endpoint",
+        "description": "Return a filtered and paginated incident list.",
+        "operationId": "list_incidents_endpoint_api_incidents_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/IncidentStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/IncidentSeverity"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Severity"
+            }
+          },
+          {
+            "name": "service_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Service Id"
+            }
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment"
+            }
+          },
+          {
+            "name": "assignee_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Assignee Id"
+            }
+          },
+          {
+            "name": "from_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From Date"
+            }
+          },
+          {
+            "name": "to_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To Date"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/incidents/metrics/summary": {
+      "get": {
+        "tags": [
+          "Incidents"
+        ],
+        "summary": "Get Incident Metrics Summary Endpoint",
+        "description": "Return aggregate metrics across incidents.",
+        "operationId": "get_incident_metrics_summary_endpoint_api_incidents_metrics_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentMetricsSummaryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/incidents/{incident_id}": {
+      "get": {
+        "tags": [
+          "Incidents"
+        ],
+        "summary": "Get Incident Detail Endpoint",
+        "description": "Return the complete details for one incident.",
+        "operationId": "get_incident_detail_endpoint_api_incidents__incident_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Incident Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/incidents/{incident_id}/acknowledge": {
+      "post": {
+        "tags": [
+          "Incidents"
+        ],
+        "summary": "Acknowledge Incident Endpoint",
+        "description": "Acknowledge an incident.",
+        "operationId": "acknowledge_incident_endpoint_api_incidents__incident_id__acknowledge_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Incident Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentAcknowledgeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/incidents/{incident_id}/assign": {
+      "post": {
+        "tags": [
+          "Incidents"
+        ],
+        "summary": "Assign Incident Endpoint",
+        "description": "Create or replace the current incident assignment.",
+        "operationId": "assign_incident_endpoint_api_incidents__incident_id__assign_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Incident Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentAssignRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/incidents/{incident_id}/status": {
+      "post": {
+        "tags": [
+          "Incidents"
+        ],
+        "summary": "Update Incident Status Endpoint",
+        "description": "Apply a validated status transition to an incident.",
+        "operationId": "update_incident_status_endpoint_api_incidents__incident_id__status_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Incident Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentStatusUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/incidents/{incident_id}/comments": {
+      "post": {
+        "tags": [
+          "Incidents"
+        ],
+        "summary": "Add Incident Comment Endpoint",
+        "description": "Add a comment to an incident.",
+        "operationId": "add_incident_comment_endpoint_api_incidents__incident_id__comments_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Incident Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentCommentCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentCommentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/incidents/{incident_id}/timeline": {
+      "get": {
+        "tags": [
+          "Incidents"
+        ],
+        "summary": "Get Incident Timeline Endpoint",
+        "description": "Return the chronological timeline for an incident.",
+        "operationId": "get_incident_timeline_endpoint_api_incidents__incident_id__timeline_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Incident Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentTimelineResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/incidents/{incident_id}/metrics": {
+      "get": {
+        "tags": [
+          "Incidents"
+        ],
+        "summary": "Get Incident Metrics Endpoint",
+        "description": "Return MTTD, MTTA, MTTR, and metric snapshots for an incident.",
+        "operationId": "get_incident_metrics_endpoint_api_incidents__incident_id__metrics_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Incident Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentMetricsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "schemas": {
+    "IncidentAcknowledgeRequest": {
+      "properties": {
+        "note": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 5000
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Note"
+        },
+        "assign_to_self": {
+          "type": "boolean",
+          "title": "Assign To Self",
+          "default": false
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "title": "IncidentAcknowledgeRequest"
+    },
+    "IncidentAssignRequest": {
+      "properties": {
+        "assigned_to_user_id": {
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Assigned To User Id"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 5000
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Note"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "assigned_to_user_id"
+      ],
+      "title": "IncidentAssignRequest"
+    },
+    "IncidentAssignmentResponse": {
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Id"
+        },
+        "incident_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Incident Id"
+        },
+        "assigned_to_user_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Assigned To User Id"
+        },
+        "assigned_to_user": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/OperatorSummaryResponse"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "assigned_by_user_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Assigned By User Id"
+        },
+        "assigned_by_user": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/OperatorSummaryResponse"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "assignment_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Assignment Note"
+        },
+        "assigned_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Assigned At"
+        },
+        "unassigned_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unassigned At"
+        },
+        "is_active": {
+          "type": "boolean",
+          "title": "Is Active"
+        }
+      },
+      "type": "object",
+      "required": [
+        "id",
+        "incident_id",
+        "assigned_at",
+        "is_active"
+      ],
+      "title": "IncidentAssignmentResponse"
+    },
+    "IncidentCalculatedMetricsResponse": {
+      "properties": {
+        "incident_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Incident Id"
+        },
+        "failure_started_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Failure Started At"
+        },
+        "detected_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Detected At"
+        },
+        "acknowledged_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Acknowledged At"
+        },
+        "resolved_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Resolved At"
+        },
+        "mttd_seconds": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mttd Seconds"
+        },
+        "mtta_seconds": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mtta Seconds"
+        },
+        "mttr_seconds": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.0
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mttr Seconds"
+        }
+      },
+      "type": "object",
+      "required": [
+        "incident_id",
+        "detected_at"
+      ],
+      "title": "IncidentCalculatedMetricsResponse"
+    },
+    "IncidentCommentCreateRequest": {
+      "properties": {
+        "comment": {
+          "type": "string",
+          "maxLength": 10000,
+          "minLength": 1,
+          "title": "Comment"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "comment"
+      ],
+      "title": "IncidentCommentCreateRequest"
+    },
+    "IncidentCommentResponse": {
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Id"
+        },
+        "incident_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Incident Id"
+        },
+        "author_user_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Author User Id"
+        },
+        "author": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/OperatorSummaryResponse"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "comment": {
+          "type": "string",
+          "title": "Comment"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Created At"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Updated At"
+        }
+      },
+      "type": "object",
+      "required": [
+        "id",
+        "incident_id",
+        "comment",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "IncidentCommentResponse"
+    },
+    "IncidentDetailResponse": {
+      "properties": {
+        "incident": {
+          "$ref": "#/components/schemas/IncidentListItemResponse"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Description"
+        },
+        "deduplication_key": {
+          "type": "string",
+          "title": "Deduplication Key"
+        },
+        "primary_service": {
+          "$ref": "#/components/schemas/ServiceSummaryResponse"
+        },
+        "affected_services": {
+          "items": {
+            "$ref": "#/components/schemas/ServiceSummaryResponse"
+          },
+          "type": "array",
+          "title": "Affected Services"
+        },
+        "triggering_alert_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Triggering Alert Id"
+        },
+        "triggering_alert": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/ReliabilityAlertSummaryResponse"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "related_alerts": {
+          "items": {
+            "$ref": "#/components/schemas/ReliabilityAlertSummaryResponse"
+          },
+          "type": "array",
+          "title": "Related Alerts"
+        },
+        "suspected_deployment": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/DeploymentSummaryResponse"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "failure_started_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Failure Started At"
+        },
+        "investigation_started_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Investigation Started At"
+        },
+        "remediation_started_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Remediation Started At"
+        },
+        "mttd_seconds": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mttd Seconds"
+        },
+        "mtta_seconds": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mtta Seconds"
+        },
+        "mttr_seconds": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mttr Seconds"
+        },
+        "mttd_display": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mttd Display"
+        },
+        "mtta_display": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mtta Display"
+        },
+        "mttr_display": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mttr Display"
+        },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Created By"
+        },
+        "creator": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/OperatorSummaryResponse"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "current_assignment": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/IncidentAssignmentResponse"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "assignment_history": {
+          "items": {
+            "$ref": "#/components/schemas/IncidentAssignmentResponse"
+          },
+          "type": "array",
+          "title": "Assignment History"
+        },
+        "comments": {
+          "items": {
+            "$ref": "#/components/schemas/IncidentCommentResponse"
+          },
+          "type": "array",
+          "title": "Comments"
+        },
+        "metric_snapshot": {
+          "items": {
+            "$ref": "#/components/schemas/IncidentMetricResponse"
+          },
+          "type": "array",
+          "title": "Metric Snapshot"
+        },
+        "timeline_summary": {
+          "items": {
+            "$ref": "#/components/schemas/IncidentTimelineEventResponse"
+          },
+          "type": "array",
+          "title": "Timeline Summary"
+        },
+        "resolution_summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Resolution Summary"
+        },
+        "rca_summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rca Summary"
+        },
+        "remediation_summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Remediation Summary"
+        },
+        "calculated_incident_metrics": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/IncidentCalculatedMetricsResponse"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "type": "object",
+      "required": [
+        "incident",
+        "deduplication_key",
+        "primary_service"
+      ],
+      "title": "IncidentDetailResponse"
+    },
+    "IncidentListItemResponse": {
+      "properties": {
+        "incident_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Incident Id"
+        },
+        "id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Id"
+        },
+        "incident_number": {
+          "type": "string",
+          "title": "Incident Number"
+        },
+        "title": {
+          "type": "string",
+          "title": "Title"
+        },
+        "severity": {
+          "$ref": "#/components/schemas/IncidentSeverity"
+        },
+        "status": {
+          "$ref": "#/components/schemas/IncidentStatus"
+        },
+        "service_id": {
+          "type": "string",
+          "title": "Service Id"
+        },
+        "service_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Service Name"
+        },
+        "environment": {
+          "type": "string",
+          "title": "Environment"
+        },
+        "assigned_operator": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/OperatorSummaryResponse"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "suspected_deployment_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Suspected Deployment Id"
+        },
+        "failure_started_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Failure Started At"
+        },
+        "detected_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Detected At"
+        },
+        "acknowledged_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Acknowledged At"
+        },
+        "resolved_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Resolved At"
+        },
+        "mttd_seconds": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mttd Seconds"
+        },
+        "mtta_seconds": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mtta Seconds"
+        },
+        "mttr_seconds": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mttr Seconds"
+        },
+        "mttd_display": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mttd Display"
+        },
+        "mtta_display": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mtta Display"
+        },
+        "mttr_display": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mttr Display"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Created At"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Updated At"
+        }
+      },
+      "type": "object",
+      "required": [
+        "incident_id",
+        "incident_number",
+        "title",
+        "severity",
+        "status",
+        "service_id",
+        "environment",
+        "detected_at",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "IncidentListItemResponse"
+    },
+    "IncidentListResponse": {
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/components/schemas/IncidentListItemResponse"
+          },
+          "type": "array",
+          "title": "Items"
+        },
+        "total": {
+          "type": "integer",
+          "title": "Total"
+        },
+        "page": {
+          "type": "integer",
+          "title": "Page"
+        },
+        "page_size": {
+          "type": "integer",
+          "title": "Page Size"
+        },
+        "total_pages": {
+          "type": "integer",
+          "title": "Total Pages"
+        }
+      },
+      "type": "object",
+      "required": [
+        "total",
+        "page",
+        "page_size",
+        "total_pages"
+      ],
+      "title": "IncidentListResponse"
+    },
+    "IncidentMetricResponse": {
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Id"
+        },
+        "incident_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Incident Id"
+        },
+        "metric_type": {
+          "type": "string",
+          "title": "Metric Type"
+        },
+        "metric_name": {
+          "type": "string",
+          "title": "Metric Name"
+        },
+        "value": {
+          "type": "number",
+          "title": "Value"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unit"
+        },
+        "source": {
+          "type": "string",
+          "title": "Source"
+        },
+        "captured_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Captured At"
+        },
+        "metadata_json": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Metadata Json"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Created At"
+        }
+      },
+      "type": "object",
+      "required": [
+        "id",
+        "incident_id",
+        "metric_type",
+        "metric_name",
+        "value",
+        "source",
+        "captured_at",
+        "created_at"
+      ],
+      "title": "IncidentMetricResponse"
+    },
+    "IncidentMetricsResponse": {
+      "properties": {
+        "incident_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Incident Id"
+        },
+        "metric_snapshot": {
+          "items": {
+            "$ref": "#/components/schemas/IncidentMetricResponse"
+          },
+          "type": "array",
+          "title": "Metric Snapshot"
+        },
+        "mttd_seconds": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mttd Seconds"
+        },
+        "mtta_seconds": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mtta Seconds"
+        },
+        "mttr_seconds": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mttr Seconds"
+        },
+        "mttd_display": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mttd Display"
+        },
+        "mtta_display": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mtta Display"
+        },
+        "mttr_display": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mttr Display"
+        },
+        "alert_threshold": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Alert Threshold"
+        },
+        "triggered_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Triggered Value"
+        },
+        "error_budget_status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Error Budget Status"
+        }
+      },
+      "type": "object",
+      "required": [
+        "incident_id"
+      ],
+      "title": "IncidentMetricsResponse"
+    },
+    "IncidentMetricsSummaryResponse": {
+      "properties": {
+        "average_mttd_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Average Mttd Seconds"
+        },
+        "average_mtta_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Average Mtta Seconds"
+        },
+        "average_mttr_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Average Mttr Seconds"
+        },
+        "average_mttd_display": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Average Mttd Display"
+        },
+        "average_mtta_display": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Average Mtta Display"
+        },
+        "average_mttr_display": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Average Mttr Display"
+        },
+        "open_incident_count": {
+          "type": "integer",
+          "title": "Open Incident Count"
+        },
+        "resolved_incident_count": {
+          "type": "integer",
+          "title": "Resolved Incident Count"
+        },
+        "sev_1_incident_count": {
+          "type": "integer",
+          "title": "Sev 1 Incident Count"
+        },
+        "sev_2_incident_count": {
+          "type": "integer",
+          "title": "Sev 2 Incident Count"
+        },
+        "sev_3_incident_count": {
+          "type": "integer",
+          "title": "Sev 3 Incident Count"
+        }
+      },
+      "type": "object",
+      "required": [
+        "average_mttd_seconds",
+        "average_mtta_seconds",
+        "average_mttr_seconds",
+        "average_mttd_display",
+        "average_mtta_display",
+        "average_mttr_display",
+        "open_incident_count",
+        "resolved_incident_count",
+        "sev_1_incident_count",
+        "sev_2_incident_count",
+        "sev_3_incident_count"
+      ],
+      "title": "IncidentMetricsSummaryResponse"
+    },
+    "IncidentSeverity": {
+      "type": "string",
+      "enum": [
+        "SEV-1",
+        "SEV-2",
+        "SEV-3"
+      ],
+      "title": "IncidentSeverity"
+    },
+    "IncidentStatus": {
+      "type": "string",
+      "enum": [
+        "DETECTED",
+        "ACKNOWLEDGED",
+        "INVESTIGATING",
+        "ACTION_RECOMMENDED",
+        "REMEDIATING",
+        "RESOLVED",
+        "FAILED_RECOVERY"
+      ],
+      "title": "IncidentStatus"
+    },
+    "IncidentStatusUpdateRequest": {
+      "properties": {
+        "status": {
+          "$ref": "#/components/schemas/IncidentStatus"
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 5000,
+          "minLength": 1,
+          "title": "Reason"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "status",
+        "reason"
+      ],
+      "title": "IncidentStatusUpdateRequest"
+    },
+    "IncidentTimelineEventResponse": {
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Id"
+        },
+        "incident_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Incident Id"
+        },
+        "event_type": {
+          "type": "string",
+          "title": "Event Type"
+        },
+        "source": {
+          "type": "string",
+          "title": "Source"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Message"
+        },
+        "from_status": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/IncidentStatus"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "to_status": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/IncidentStatus"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "actor_user_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Actor User Id"
+        },
+        "actor": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/OperatorSummaryResponse"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "alert_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Alert Id"
+        },
+        "alert": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/ReliabilityAlertSummaryResponse"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "deployment_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Deployment Id"
+        },
+        "deployment": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/DeploymentSummaryResponse"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "metadata_json": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Metadata Json"
+        },
+        "occurred_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Occurred At"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Created At"
+        }
+      },
+      "type": "object",
+      "required": [
+        "id",
+        "incident_id",
+        "event_type",
+        "source",
+        "occurred_at",
+        "created_at"
+      ],
+      "title": "IncidentTimelineEventResponse"
+    },
+    "IncidentTimelineResponse": {
+      "properties": {
+        "incident_id": {
+          "type": "string",
+          "format": "uuid",
+          "title": "Incident Id"
+        },
+        "events": {
+          "items": {
+            "$ref": "#/components/schemas/IncidentTimelineEventResponse"
+          },
+          "type": "array",
+          "title": "Events"
+        }
+      },
+      "type": "object",
+      "required": [
+        "incident_id"
+      ],
+      "title": "IncidentTimelineResponse"
+    }
+  }
+}

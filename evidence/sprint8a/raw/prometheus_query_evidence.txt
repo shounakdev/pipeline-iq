@@ -1,0 +1,67 @@
+backend/app/models.py:236:    source = Column(String, nullable=False, default="prometheus")
+backend/app/models.py:1456:        default="PROMETHEUS",
+backend/app/models.py:1457:        server_default="PROMETHEUS",
+backend/app/observability/metrics.py:1:from prometheus_client import Counter, Histogram, Gauge
+backend/app/observability/metrics_router.py:2:from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+backend/app/deployments/kubernetes_capture.py:175:        config.load_kube_config()
+backend/app/deployments/kubernetes_capture.py:209:    container_statuses = getattr(pod.status, "container_statuses", None) or []
+backend/app/deployments/kubernetes_capture.py:211:    for container_status in container_statuses:
+backend/app/deployments/kubernetes_capture.py:212:        restart_count += _safe_int(getattr(container_status, "restart_count", 0))
+backend/app/main.py:132:async def prometheus_metrics_middleware(request: Request, call_next):
+backend/app/reliability/router.py:24:from app.reliability.prometheus_client import (
+backend/app/reliability/prometheus_client.py:10:PROMETHEUS_URL = os.getenv(
+backend/app/reliability/prometheus_client.py:11:    "PROMETHEUS_URL",
+backend/app/reliability/prometheus_client.py:12:    "http://prometheus:9090",
+backend/app/reliability/prometheus_client.py:15:PROMETHEUS_TIMEOUT_SECONDS = float(
+backend/app/reliability/prometheus_client.py:16:    os.getenv("PROMETHEUS_TIMEOUT_SECONDS", "5")
+backend/app/reliability/prometheus_client.py:20:    "PROMETHEUS_HTTP_REQUEST_COUNT_METRIC",
+backend/app/reliability/prometheus_client.py:25:    "PROMETHEUS_HTTP_REQUEST_BUCKET_METRIC",
+backend/app/reliability/prometheus_client.py:30:    "PROMETHEUS_SERVICE_LABEL",
+backend/app/reliability/prometheus_client.py:35:    "PROMETHEUS_SERVICE_VALUE",
+backend/app/reliability/prometheus_client.py:40:    "PROMETHEUS_HTTP_STATUS_LABEL",
+backend/app/reliability/prometheus_client.py:64:            f"Invalid PromQL identifier configured for "
+backend/app/reliability/prometheus_client.py:95:        "PROMETHEUS_SERVICE_LABEL",
+backend/app/reliability/prometheus_client.py:111:def query_prometheus(query: str) -> float:
+backend/app/reliability/prometheus_client.py:115:        f"{PROMETHEUS_URL}/api/v1/query?"
+backend/app/reliability/prometheus_client.py:130:            timeout=PROMETHEUS_TIMEOUT_SECONDS,
+backend/app/reliability/prometheus_client.py:142:            f"{PROMETHEUS_URL}: {exc.reason}"
+backend/app/reliability/prometheus_client.py:223:        "PROMETHEUS_HTTP_REQUEST_COUNT_METRIC",
+backend/app/reliability/prometheus_client.py:228:        "PROMETHEUS_HTTP_STATUS_LABEL",
+backend/app/reliability/prometheus_client.py:234:        "sum(rate("
+backend/app/reliability/prometheus_client.py:246:        "sum(rate("
+backend/app/reliability/prometheus_client.py:261:    return query_prometheus(query)
+backend/app/reliability/prometheus_client.py:264:def get_error_rate(
+backend/app/reliability/prometheus_client.py:272:        "PROMETHEUS_HTTP_REQUEST_COUNT_METRIC",
+backend/app/reliability/prometheus_client.py:277:        "PROMETHEUS_HTTP_STATUS_LABEL",
+backend/app/reliability/prometheus_client.py:283:        "sum(rate("
+backend/app/reliability/prometheus_client.py:295:        "sum(rate("
+backend/app/reliability/prometheus_client.py:310:    return query_prometheus(query)
+backend/app/reliability/prometheus_client.py:321:        "PROMETHEUS_HTTP_REQUEST_BUCKET_METRIC",
+backend/app/reliability/prometheus_client.py:327:        "histogram_quantile("
+backend/app/reliability/prometheus_client.py:330:        "rate("
+backend/app/reliability/prometheus_client.py:342:    return query_prometheus(query)
+backend/app/reliability/tasks.py:9:from app.reliability.prometheus_client import (
+backend/app/reliability/slo_engine.py:18:from app.reliability.prometheus_client import (
+backend/app/reliability/slo_engine.py:137:        source="PROMETHEUS",
+backend/tests/incidents/test_incident_api.py:1217:        source="PROMETHEUS",
+backend/tests/test_incident_metric_snapshot_service.py:102:    source: str = "PROMETHEUS",
+backend/tests/test_incident_metric_snapshot_service.py:327:    assert availability_snapshot.source == "PROMETHEUS"
+backend/tests/test_incident_lifecycle.py:587:def test_invalid_transition_maps_to_http_409():
+backend/tests/test_incident_lifecycle.py:603:def test_normal_value_error_maps_to_http_400():
+docker-compose.yml:4:    container_name: cicd_postgres
+docker-compose.yml:18:    container_name: platformiq-kafka
+docker-compose.yml:46:    container_name: platformiq-kafka-init
+docker-compose.yml:79:    container_name: platformiq-kafka-ui
+docker-compose.yml:94:    container_name: cicd_redis
+docker-compose.yml:105:    container_name: cicd_backend
+docker-compose.yml:156:    container_name: cicd_worker
+docker-compose.yml:209:    container_name: platformiq-celery-beat
+docker-compose.yml:247:    container_name: cicd_sonarqube_db
+docker-compose.yml:259:    container_name: cicd_sonarqube
+docker-compose.yml:279:  prometheus:
+docker-compose.yml:280:    image: prom/prometheus:latest
+docker-compose.yml:281:    container_name: platformiq-prometheus
+docker-compose.yml:283:      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+docker-compose.yml:291:    container_name: platformiq-grafana
+docker-compose.yml:305:    container_name: platformiq-loki
+docker-compose.yml:316:    container_name: platformiq-promtail

@@ -1,0 +1,79 @@
+backend/app/auth/security.py:4:from jose import JWTError, jwt
+backend/app/auth/security.py:8:SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-only-change-this-secret")
+backend/app/auth/security.py:12:password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+backend/app/auth/security.py:15:def hash_password(password: str) -> str:
+backend/app/auth/security.py:16:    return password_context.hash(password)
+backend/app/auth/security.py:19:def verify_password(plain_password: str, hashed_password: str) -> bool:
+backend/app/auth/security.py:20:    return password_context.verify(plain_password, hashed_password)
+backend/app/auth/security.py:23:def create_access_token(data: dict) -> str:
+backend/app/auth/security.py:30:    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+backend/app/auth/security.py:33:def decode_access_token(token: str) -> dict:
+backend/app/auth/security.py:35:        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+backend/app/auth/security.py:37:    except JWTError:
+backend/app/auth/dependencies.py:2:from fastapi.security import OAuth2PasswordBearer
+backend/app/auth/dependencies.py:4:from app.auth.security import decode_access_token
+backend/app/auth/dependencies.py:9:oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+backend/app/auth/dependencies.py:23:    if not user.roles:
+backend/app/auth/dependencies.py:26:    return user.roles[0].name
+backend/app/auth/dependencies.py:29:def get_current_user(token: str = Depends(oauth2_scheme), db=Depends(get_db)) -> User:
+backend/app/auth/dependencies.py:30:    payload = decode_access_token(token)
+backend/app/auth/dependencies.py:37:            detail="Invalid authentication token",
+backend/app/auth/dependencies.py:57:def require_roles(*allowed_roles: str):
+backend/app/auth/dependencies.py:58:    def checker(current_user: User = Depends(get_current_user)) -> User:
+backend/app/auth/dependencies.py:59:        user_role = get_user_primary_role(current_user)
+backend/app/auth/dependencies.py:61:        if user_role not in allowed_roles:
+backend/app/auth/dependencies.py:64:                detail="Insufficient permissions",
+backend/app/auth/dependencies.py:67:        return current_user
+backend/app/auth/schemas.py:8:    password: str
+backend/app/auth/schemas.py:15:    password: str
+backend/app/auth/schemas.py:25:    access_token: str
+backend/app/auth/schemas.py:26:    token_type: str
+backend/app/auth/router.py:3:from app.auth.dependencies import get_current_user, get_db, get_user_primary_role
+backend/app/auth/router.py:5:from app.auth.security import create_access_token, hash_password, verify_password
+backend/app/auth/router.py:12:    "admin",
+backend/app/auth/router.py:22:    access_token = create_access_token(
+backend/app/auth/router.py:31:        "access_token": access_token,
+backend/app/auth/router.py:32:        "token_type": "bearer",
+backend/app/auth/router.py:58:        requested_role = "admin" if user_count == 0 else "viewer"
+backend/app/auth/router.py:71:            detail="Role not found. Please seed roles first.",
+backend/app/auth/router.py:76:        password_hash=hash_password(payload.password),
+backend/app/auth/router.py:80:    user.roles.append(role)
+backend/app/auth/router.py:95:    if not user or not verify_password(payload.password, user.password_hash):
+backend/app/auth/router.py:98:            detail="Invalid email or password",
+backend/app/auth/router.py:105:def me(current_user: User = Depends(get_current_user)):
+backend/app/auth/router.py:107:        "id": current_user.id,
+backend/app/auth/router.py:108:        "email": current_user.email,
+backend/app/auth/router.py:109:        "role": get_user_primary_role(current_user),
+backend/app/incidents/incident_router.py:22:from app.auth.dependencies import require_roles
+backend/app/incidents/incident_router.py:48:    "admin",
+backend/app/incidents/incident_router.py:55:    "admin",
+backend/app/incidents/incident_router.py:150:    _current_user: User = Depends(
+backend/app/incidents/incident_router.py:151:        require_roles(*INCIDENT_READ_ROLES)
+backend/app/incidents/incident_router.py:191:    _current_user: User = Depends(
+backend/app/incidents/incident_router.py:192:        require_roles(*INCIDENT_READ_ROLES)
+backend/app/incidents/incident_router.py:209:    _current_user: User = Depends(
+backend/app/incidents/incident_router.py:210:        require_roles(*INCIDENT_READ_ROLES)
+backend/app/incidents/incident_router.py:229:    current_user: User = Depends(
+backend/app/incidents/incident_router.py:230:        require_roles(*INCIDENT_MANAGE_ROLES)
+backend/app/incidents/incident_router.py:239:        actor_user_id=str(current_user.id),
+backend/app/incidents/incident_router.py:251:    current_user: User = Depends(
+backend/app/incidents/incident_router.py:252:        require_roles(*INCIDENT_MANAGE_ROLES)
+backend/app/incidents/incident_router.py:261:        assigned_by_user_id=str(current_user.id),
+backend/app/incidents/incident_router.py:273:    current_user: User = Depends(
+backend/app/incidents/incident_router.py:274:        require_roles(*INCIDENT_MANAGE_ROLES)
+backend/app/incidents/incident_router.py:283:        actor_user_id=str(current_user.id),
+backend/app/incidents/incident_router.py:296:    current_user: User = Depends(
+backend/app/incidents/incident_router.py:297:        require_roles(*INCIDENT_MANAGE_ROLES)
+backend/app/incidents/incident_router.py:306:        actor=current_user,
+backend/app/incidents/incident_router.py:317:    _current_user: User = Depends(
+backend/app/incidents/incident_router.py:318:        require_roles(*INCIDENT_READ_ROLES)
+backend/app/incidents/incident_router.py:336:    _current_user: User = Depends(
+backend/app/incidents/incident_router.py:337:        require_roles(*INCIDENT_READ_ROLES)
+backend/app/incidents/incident_router.py:382:    _current_user: User = Depends(
+backend/app/incidents/incident_router.py:383:        require_roles(*INCIDENT_READ_ROLES)
+backend/app/incidents/incident_router.py:425:    _current_user: User = Depends(
+backend/app/incidents/incident_router.py:426:        require_roles(*INCIDENT_READ_ROLES)
+backend/app/incidents/service.py:1831:                    "assign_to_self requires an authenticated actor"
+backend/app/main.py:20:from app.auth.dependencies import require_roles
+backend/app/main.py:173:    current_user: User = Depends(
+backend/app/main.py:174:        require_roles("admin", "developer")
