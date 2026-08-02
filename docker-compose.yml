@@ -159,7 +159,7 @@ services:
       -A app.celery_app:celery_app
       worker
       --loglevel=INFO
-      --queues=pipeline_queue
+      --queues=pipeline_queue,celery
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/cicd_db
       REDIS_URL: redis://redis:6379/0
