@@ -1,0 +1,14 @@
+controllerManager:
+  enableFilterNamespace: true
+
+dashboard:
+  create: true
+  securityMode: true
+  service:
+    type: ClusterIP
+
+chaosDaemon:
+  runtime: containerd
+  socketPath: /run/containerd/containerd.sock
+  mtls:
+    enabled: true

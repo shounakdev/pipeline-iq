@@ -1,0 +1,10 @@
+# Apply these annotations only to non-production namespaces approved for chaos.
+# Chaos Mesh FilterNamespace blocks every namespace without this annotation.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: platformiq-dev
+  annotations:
+    chaos-mesh.org/inject: enabled
+  labels:
+    platformiq.io/environment: development

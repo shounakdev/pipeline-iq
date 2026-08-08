@@ -1,0 +1,19 @@
+# Chaos Mesh chart values for PlatformIQ development/staging clusters.
+controllerManager:
+  # Only namespaces explicitly annotated chaos-mesh.org/inject=enabled can be
+  # targeted. This is a second boundary in addition to PlatformIQ RBAC.
+  enableFilterNamespace: true
+
+dashboard:
+  create: true
+  securityMode: true
+  service:
+    # Do not expose the dashboard publicly. Use kubectl port-forward or a
+    # separately reviewed authenticated ingress.
+    type: ClusterIP
+
+# Keep mTLS between the controller and privileged daemon enabled.
+chaosDaemon:
+  mtls:
+    enabled: true
+

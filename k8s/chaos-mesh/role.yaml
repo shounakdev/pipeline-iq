@@ -1,0 +1,16 @@
+# Keep these Roles namespaced. Do not replace them with a ClusterRole: absence of
+# a Role in production is the Kubernetes-level production safety boundary.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: platformiq-chaos-runner
+  namespace: platformiq-dev
+rules:
+  - apiGroups: ["chaos-mesh.org"]
+    resources:
+      - podchaos
+      - networkchaos
+      - stresschaos
+      - httpchaos
+      - workflows
+    verbs: ["create", "get", "list", "watch", "delete"]
