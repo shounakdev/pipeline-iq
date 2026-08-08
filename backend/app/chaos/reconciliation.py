@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from app.chaos import repository
 from app.chaos.config import ChaosSettings
-from app.chaos.kubernetes_adapter import ChaosMeshAdapter
+from app.chaos.adapters.chaos_mesh_adapter import ChaosMeshAdapter
 from app.chaos.service import cleanup_chaos_run
 from app.database import SessionLocal
 

@@ -14,7 +14,7 @@ from app.chaos.exceptions import (
     ChaosRunNotFoundError,
     ChaosValidationError,
 )
-from app.chaos.kubernetes_adapter import ChaosMeshAdapter
+from app.chaos.adapters.chaos_mesh_adapter import ChaosMeshAdapter
 from app.chaos.schemas import (
     ChaosCleanupResponse,
     ChaosRunCreateRequest,

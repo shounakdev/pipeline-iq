@@ -50,11 +50,12 @@ class FakeAdapter:
 def safety_db():
     engine = create_engine("sqlite:///:memory:")
     tables = [
-        User.__table__,
-        Project.__table__,
-        Service.__table__,
-        ChaosExperiment.__table__,
-        ChaosRun.__table__,
+    User.__table__,
+    Project.__table__,
+    Service.__table__,
+    ChaosExperiment.__table__,
+    ChaosRun.__table__,
+    repository.ChaosObservation.__table__,
     ]
     Base.metadata.create_all(bind=engine, tables=tables)
     session = sessionmaker(bind=engine)()
