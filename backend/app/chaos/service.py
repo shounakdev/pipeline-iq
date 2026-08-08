@@ -19,18 +19,54 @@ from app.chaos.exceptions import (
     ChaosRunNotFoundError,
     ChaosValidationError,
 )
-from app.chaos.kubernetes_adapter import (
-    ChaosMeshAdapter,
-    build_podchaos_manifest,
-)
+from app.chaos.adapters.base import BaseChaosAdapter, FaultInjectionResult
+from app.chaos.events import CHAOS_OBSERVATION_SOURCE
+from app.chaos.kubernetes_adapter import build_podchaos_manifest
 from app.chaos.schemas import ChaosRunCreateRequest
 from app.models import (
     ChaosExperiment,
+    ChaosObservationType,
     ChaosRun,
     ChaosRunStatus,
     ChaosScenarioType,
     Service,
 )
+
+
+def _inject_fault(
+    adapter: BaseChaosAdapter,
+    *,
+    namespace: str,
+    manifest: dict,
+) -> FaultInjectionResult:
+    """Call the 10C contract, accepting 10B test doubles temporarily."""
+    if hasattr(adapter, "inject_fault"):
+        return adapter.inject_fault(namespace=namespace, manifest=manifest)
+    resource = adapter.create_podchaos(  # type: ignore[attr-defined]
+        namespace=namespace,
+        manifest=manifest,
+    )
+    return {
+        "resource_kind": resource.kind,
+        "resource_name": resource.name,
+        "namespace": namespace,
+        "status": "INJECTED",
+        "injected_at": datetime.now(timezone.utc).isoformat(),
+        "resource_uid": resource.uid,
+    }
+
+
+def _injected_at(resource: FaultInjectionResult) -> datetime:
+    raw = resource.get("injected_at")
+    if raw:
+        try:
+            parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                return parsed.replace(tzinfo=timezone.utc)
+            return parsed
+        except ValueError:
+            pass
+    return datetime.now(timezone.utc)
 
 
 def _validate_request(
@@ -92,7 +128,7 @@ def create_chaos_run(
     db: Session,
     request: ChaosRunCreateRequest,
     operator_id: str,
-    adapter: ChaosMeshAdapter,
+    adapter: BaseChaosAdapter,
     settings: ChaosSettings,
 ) -> ChaosRun:
     _validate_request(request, settings)
@@ -131,7 +167,8 @@ def create_chaos_run(
         duration_seconds=request.duration_seconds,
     )
     try:
-        resource = adapter.create_podchaos(
+        resource = _inject_fault(
+            adapter,
             namespace=request.namespace,
             manifest=manifest,
         )
@@ -158,13 +195,25 @@ def create_chaos_run(
     )
     if stored_run is None:
         raise ChaosRunNotFoundError("Chaos run disappeared after creation")
+    injected_at = _injected_at(resource)
     repository.update_run(
         db,
         chaos_run=stored_run,
-        status=ChaosRunStatus.RUNNING,
-        kubernetes_resource_kind=resource.kind,
-        kubernetes_resource_name=resource.name,
-        kubernetes_resource_uid=resource.uid,
+        status=ChaosRunStatus.FAULT_INJECTED,
+        failure_injected_at=injected_at,
+        kubernetes_resource_kind=resource["resource_kind"],
+        kubernetes_resource_name=resource["resource_name"],
+        kubernetes_resource_uid=resource.get("resource_uid"),
+    )
+    repository.create_observation(
+        db,
+        chaos_run_id=stored_run.id,
+        observation_type=ChaosObservationType.FAILURE_INJECTED,
+        source=CHAOS_OBSERVATION_SOURCE,
+        observed_at=injected_at,
+        resource_type=resource["resource_kind"],
+        resource_id=resource["resource_name"],
+        details=dict(resource),
     )
     db.commit()
     db.refresh(stored_run)
@@ -175,7 +224,7 @@ def cleanup_chaos_run(
     *,
     db: Session,
     chaos_run: ChaosRun,
-    adapter: ChaosMeshAdapter,
+    adapter: BaseChaosAdapter,
     reason: str,
     aborted: bool,
 ) -> ChaosRun:
@@ -201,10 +250,22 @@ def cleanup_chaos_run(
     db.commit()
     try:
         if chaos_run.kubernetes_resource_name:
-            adapter.delete_podchaos_and_wait(
-                namespace=chaos_run.target_namespace,
-                name=chaos_run.kubernetes_resource_name,
+            resource_kind = (
+                chaos_run.kubernetes_resource_kind or "PodChaos"
             )
+            adapter.remove_fault(
+                resource_kind=resource_kind,
+                namespace=chaos_run.target_namespace,
+                resource_name=chaos_run.kubernetes_resource_name,
+            )
+            if not adapter.verify_cleanup(
+                resource_kind=resource_kind,
+                namespace=chaos_run.target_namespace,
+                resource_name=chaos_run.kubernetes_resource_name,
+            ):
+                raise ChaosKubernetesError(
+                    "Timed out waiting for Chaos Mesh resource deletion"
+                )
     except Exception as exc:
         stored = repository.get_run_by_id(
             db, chaos_run.id, for_update=True
