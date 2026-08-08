@@ -25,3 +25,5 @@ class ChaosConflictError(ChaosError):
 class ChaosKubernetesError(ChaosError):
     code = "CHAOS_KUBERNETES_ERROR"
 
+class ChaosRunTimeoutError(ChaosError):
+    code = "CHAOS_RUN_TIMEOUT"

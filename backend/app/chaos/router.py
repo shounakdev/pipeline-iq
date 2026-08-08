@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import require_roles
+from app.chaos.adapters.chaos_mesh_adapter import ChaosMeshAdapter
 from app.chaos.config import ChaosSettings
 from app.chaos.exceptions import (
     ChaosConflictError,
@@ -14,17 +15,14 @@ from app.chaos.exceptions import (
     ChaosRunNotFoundError,
     ChaosValidationError,
 )
-from app.chaos.adapters.chaos_mesh_adapter import ChaosMeshAdapter
 from app.chaos.schemas import (
     ChaosCleanupResponse,
     ChaosRunCreateRequest,
     ChaosRunResponse,
 )
-from app.chaos.service import (
-    cleanup_chaos_run,
-    create_chaos_run,
-    get_run_or_raise,
-)
+from app.chaos.service import cleanup_chaos_run, get_run_or_raise
+from app.chaos.services.experiment_service import create_pending_run
+from app.chaos.tasks import execute_chaos_run
 from app.database import get_db
 from app.models import User
 
@@ -72,16 +70,16 @@ def start_chaos_run(
     db: Session = Depends(get_db),
     current_user: User = Depends(operator_roles),
     settings: ChaosSettings = Depends(get_chaos_settings),
-    adapter: ChaosMeshAdapter = Depends(get_chaos_adapter),
 ):
     try:
-        return create_chaos_run(
+        run = create_pending_run(
             db=db,
             request=request,
             operator_id=str(current_user.id),
-            adapter=adapter,
             settings=settings,
         )
+        execute_chaos_run.delay(str(run.id))
+        return run
     except ChaosError as exc:
         raise _translate_error(exc) from exc
 

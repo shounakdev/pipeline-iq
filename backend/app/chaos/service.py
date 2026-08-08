@@ -227,6 +227,7 @@ def cleanup_chaos_run(
     adapter: BaseChaosAdapter,
     reason: str,
     aborted: bool,
+    final_status: ChaosRunStatus | None = None,
 ) -> ChaosRun:
     terminal_statuses = {
         ChaosRunStatus.COMPLETED,
@@ -289,22 +290,38 @@ def cleanup_chaos_run(
     if stored is None:
         raise ChaosRunNotFoundError("Chaos run was not found")
     completed_at = datetime.now(timezone.utc)
+
+    resolved_status = final_status or (
+        ChaosRunStatus.ABORTED
+        if aborted
+        else ChaosRunStatus.COMPLETED
+    )
+
+    if resolved_status not in terminal_statuses:
+        raise ValueError("final_status must be terminal")
+
     values = {
-        "status": (
-            ChaosRunStatus.ABORTED
-            if aborted
-            else ChaosRunStatus.COMPLETED
-        ),
+        "status": resolved_status,
         "cleanup_completed_at": completed_at,
         "cleanup_succeeded": True,
         "cleanup_error": None,
-        "failure_message": reason,
+        "failure_message": (
+            None
+            if resolved_status == ChaosRunStatus.COMPLETED
+            else reason
+        ),
     }
-    if aborted:
+
+    if resolved_status == ChaosRunStatus.ABORTED:
         values["aborted_at"] = completed_at
-    else:
+    elif resolved_status == ChaosRunStatus.COMPLETED:
         values["completed_at"] = completed_at
-    repository.update_run(db, chaos_run=stored, **values)
+
+    repository.update_run(
+        db,
+        chaos_run=stored,
+        **values,
+    )
     db.commit()
     db.refresh(stored)
     return stored
