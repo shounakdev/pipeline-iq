@@ -31,11 +31,11 @@ passed`. No chaos test failed.
 
 | Scenario | Runs | Detection | Incident | RCA correct | Recovery | Avg / max detect | Detect variance | Avg / max recovery | Recovery variance |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| `FAULTY_RELEASE` | 3 | 100% | 100% | 100% | 100% | 11 s / 12 s | 0.667 sÂ² | 123 s / 126 s | 6 sÂ² |
-| `POD_KILL` | 3 | 100% | 100% | 100% | 100% | 11 s / 12 s | 0.667 sÂ² | 123 s / 126 s | 6 sÂ² |
-| `NETWORK_DELAY` | 3 | 100% | 100% | 100% | 100% | 11 s / 12 s | 0.667 sÂ² | 123 s / 126 s | 6 sÂ² |
-| `DATABASE_DELAY` | 3 | 100% | 100% | 100% | 100% | 11 s / 12 s | 0.667 sÂ² | 123 s / 126 s | 6 sÂ² |
-| `CPU_PRESSURE` | 3 | 100% | 100% | 100% | 100% | 11 s / 12 s | 0.667 sÂ² | 123 s / 126 s | 6 sÂ² |
+| `FAULTY_RELEASE` | 3 | 100% | 100% | 100% | 100% | 11 s / 12 s | 0.667 s² | 123 s / 126 s | 6 s² |
+| `POD_KILL` | 3 | 100% | 100% | 100% | 100% | 11 s / 12 s | 0.667 s² | 123 s / 126 s | 6 s² |
+| `NETWORK_DELAY` | 3 | 100% | 100% | 100% | 100% | 11 s / 12 s | 0.667 s² | 123 s / 126 s | 6 s² |
+| `DATABASE_DELAY` | 3 | 100% | 100% | 100% | 100% | 11 s / 12 s | 0.667 s² | 123 s / 126 s | 6 s² |
+| `CPU_PRESSURE` | 3 | 100% | 100% | 100% | 100% | 11 s / 12 s | 0.667 s² | 123 s / 126 s | 6 s² |
 
 The acceptance path also verifies that injection, anomaly, and alert occur in
 order; incident, RCA, remediation, execution, and verification foreign keys point
